@@ -1,0 +1,31 @@
+name: Kompilacja ESPHome
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Pobierz repozytorium
+        uses: actions/checkout@v4
+
+      - name: Zainstaluj ESPHome
+        run: |
+          python -m pip install --upgrade pip
+          pip install esphome
+
+      - name: Kompilacja
+        run: esphome compile waveshare-dashboard.yaml
+
+      - name: Znajdź firmware
+        run: |
+          mkdir output
+          find . -type f -name "*.bin" -exec cp {} output/ \;
+
+      - name: Prześlij firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware
+          path: output/
