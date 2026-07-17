@@ -1,0 +1,26 @@
+esphome:
+  name: waveshare-dashboard
+  friendly_name: Waveshare Dashboard
+
+esp32:
+  board: esp32-s3-devkitc-1
+  framework:
+    type: esp-idf
+
+logger:
+
+api:
+
+ota:
+  - platform: esphome
+    password: "12345678"
+
+wifi:
+  ssid: "ESPTest"
+  password: "12345678"
+
+  ap:
+    ssid: "Waveshare Dashboard Hotspot"
+    password: "12345678"
+
+captive_portal:
