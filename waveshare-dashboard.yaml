@@ -44,23 +44,29 @@ sensor:
   - platform: uptime
     name: "Czas pracy panelu"
 
-text_sensor:
-  - platform: wifi_info
-    ip_address:
-      name: "Adres IP panelu"
-sensor:
   - platform: openweathermap
-    api_key: ""
-    latitude: "43f603e0b341be3dc59f463a6ea78716"
-    longitude: 43f603e0b341be3dc59f463a6ea7871618.2366"
+    api_key: "43f603e0b341be3dc59f463a6ea78716"
+    latitude: "54.6062"
+    longitude: "18.2366"
     temperature:
       name: "Temperatura"
+      id: temp_zewnatrz
+      on_value:
+        then:
+          - lvgl.label.update:
+              id: ekran_temp
+              text: !lambda 'return str_sprintf("%.1f °C", x);'
     humidity:
       name: "Wilgotność"
     wind_speed:
       name: "Prędkość wiatru"
     condition:
       name: "Warunki pogodowe"
+
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "Adres IP panelu"
       
 globals:
   - id: current_page
@@ -72,6 +78,7 @@ i2c:
   sda: GPIO8
   scl: GPIO9
   scan: true
+
 display:
   - platform: rpi_dpi_rgb
     id: lcd
@@ -126,15 +133,16 @@ display:
 
 ch422g:
   - id: ch422g_hub
+
 output:
   - platform: gpio
     id: lcd_backlight
-
     pin:
       ch422g: ch422g_hub
       number: 2
       mode:
         output: true
+
 touchscreen:
   - platform: gt911
     id: touch
@@ -147,6 +155,7 @@ touchscreen:
       number: 1
 
     update_interval: 16ms
+
 light:
   - platform: binary
     id: backlight
@@ -181,3 +190,9 @@ lvgl:
             text: "WiFi OK"
             align: BOTTOM_MID
             y: -20
+
+        - label:
+            id: ekran_temp
+            text: "Czekam na pogode..."
+            align: CENTER
+            y: 50
