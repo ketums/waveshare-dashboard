@@ -59,3 +59,114 @@ i2c:
   sda: GPIO8
   scl: GPIO9
   scan: true
+display:
+  - platform: rpi_dpi_rgb
+    id: lcd
+
+    color_order: RGB
+    pclk_frequency: 16MHz
+
+    dimensions:
+      width: 800
+      height: 480
+
+    de_pin: GPIO5
+
+    hsync_pin:
+      number: GPIO46
+      ignore_strapping_warning: true
+
+    vsync_pin:
+      number: GPIO3
+      ignore_strapping_warning: true
+
+    pclk_pin: GPIO7
+
+    hsync_back_porch: 30
+    hsync_front_porch: 210
+    hsync_pulse_width: 30
+
+    vsync_back_porch: 4
+    vsync_front_porch: 4
+    vsync_pulse_width: 4
+
+    data_pins:
+      red:
+        - GPIO1
+        - GPIO2
+        - GPIO42
+        - GPIO41
+        - GPIO40
+      green:
+        - GPIO39
+        - GPIO0
+        - GPIO45
+        - GPIO48
+        - GPIO47
+        - GPIO21
+      blue:
+        - GPIO14
+        - GPIO38
+        - GPIO18
+        - GPIO17
+        - GPIO10
+
+    lambda: |-
+      it.fill(Color::BLACK);
+ch422g:
+  - id: ch422g_hub
+output:
+  - platform: gpio
+    id: lcd_backlight
+
+    pin:
+      ch422g: ch422g_hub
+      number: 2
+      mode:
+        output: true
+touchscreen:
+  - platform: gt911
+    id: touch
+    display: lcd
+
+    interrupt_pin: GPIO4
+
+    reset_pin:
+      ch422g: ch422g_hub
+      number: 1
+
+    update_interval: 16ms
+light:
+  - platform: monochromatic
+    id: backlight
+    name: "Podświetlenie LCD"
+    output: lcd_backlight
+    restore_mode: ALWAYS_ON
+    default_transition_length: 0s
+lvgl:
+  displays:
+    - lcd
+
+  touchscreens:
+    - touch
+
+  pages:
+    - id: main_page
+      widgets:
+
+        - label:
+            id: title
+            text: "Waveshare Dashboard"
+            align: TOP_MID
+            y: 20
+
+        - label:
+            id: clock
+            text: "--:--"
+            align: CENTER
+
+        - label:
+            id: wifi
+            text: "WiFi OK"
+            align: BOTTOM_MID
+            y: -20
