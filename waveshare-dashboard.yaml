@@ -52,7 +52,7 @@ sensor:
   - platform: openweathermap
     api_key: ""
     latitude: "43f603e0b341be3dc59f463a6ea78716"
-    longitude: "18.2366"
+    longitude: 43f603e0b341be3dc59f463a6ea7871618.2366"
     temperature:
       name: "Temperatura"
     humidity:
