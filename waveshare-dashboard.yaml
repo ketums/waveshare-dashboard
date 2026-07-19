@@ -48,7 +48,20 @@ text_sensor:
   - platform: wifi_info
     ip_address:
       name: "Adres IP panelu"
-
+sensor:
+  - platform: openweathermap
+    api_key: ""
+    latitude: "43f603e0b341be3dc59f463a6ea78716"
+    longitude: "18.2366"
+    temperature:
+      name: "Temperatura"
+    humidity:
+      name: "Wilgotność"
+    wind_speed:
+      name: "Prędkość wiatru"
+    condition:
+      name: "Warunki pogodowe"
+      
 globals:
   - id: current_page
     type: int
