@@ -111,8 +111,6 @@ display:
         - GPIO17
         - GPIO10
 
-    lambda: |-
-      it.fill(Color::BLACK);
 ch422g:
   - id: ch422g_hub
 output:
