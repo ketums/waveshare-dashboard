@@ -166,7 +166,7 @@ lvgl:
             align: CENTER
 
         - label:
-            id: wifi
+            id: status_wifi
             text: "WiFi OK"
             align: BOTTOM_MID
             y: -20
