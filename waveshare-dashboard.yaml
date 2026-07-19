@@ -161,7 +161,7 @@ lvgl:
             y: 20
 
         - label:
-            id: clock
+            id: zegar
             text: "--:--"
             align: CENTER
 
