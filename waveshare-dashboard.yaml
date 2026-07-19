@@ -5,6 +5,8 @@ esphome:
 esp32:
   board: esp32-s3-devkitc-1
   variant: esp32s3
+  framework:
+    type: esp-idf
 
 # Konfiguracja pamięci niezbędna dla wyświetlacza
 psram:
@@ -37,16 +39,17 @@ text_sensor:
     ip_address:
       name: "Adres IP panelu"
 
+# Przełącznik podświetlenia LCD (bezpieczny pin)
 switch:
   - platform: gpio
     name: "Podświetlenie LCD"
-    pin: GPIO2 
+    pin: GPIO45
     restore_mode: ALWAYS_ON
 
-# Konfiguracja I2C dla dotyku
+# Konfiguracja I2C dla dotyku (bezpieczne piny)
 i2c:
-  sda: GPIO8
-  scl: GPIO9
+  sda: GPIO47
+  scl: GPIO48
   scan: true
 
 # Kolory i czcionka dla ekranu
@@ -67,7 +70,7 @@ touchscreen:
     id: my_touch
     display: waveshare_disp
 
-# Wyświetlacz
+# Wyświetlacz RGB
 display:
   - platform: rpi_dpi_rgb
     id: waveshare_disp
@@ -76,17 +79,15 @@ display:
       height: 480
     auto_clear_enabled: true
     update_interval: 1s
-    
     pclk_pin: GPIO42
     hsync_pin: GPIO39
     vsync_pin: GPIO41
     de_pin: GPIO40
-    
     data_pins:
       red: [GPIO1, GPIO2, GPIO3, GPIO4, GPIO5]
       green: [GPIO6, GPIO7, GPIO8, GPIO9, GPIO10, GPIO11]
       blue: [GPIO12, GPIO13, GPIO14, GPIO15, GPIO16]
-    
     lambda: |-
       it.fill(id(color_black));
       it.printf(400, 240, id(font_roboto_large), id(color_white), TextAlign::CENTER, "SYSTEM GOTOWY");
+      
