@@ -20,8 +20,8 @@ ota:
     password: "12345678"
 
 wifi:
-  ssid: "ESPTest"
-  password: "12345678"
+  ssid: "skrapi 2,4GHZ"
+  password: "RejtanA77"
 
   ap:
     ssid: "Waveshare Dashboard Hotspot"
