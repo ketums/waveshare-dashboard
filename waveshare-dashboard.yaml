@@ -136,7 +136,7 @@ touchscreen:
       number: 1
 
     update_interval: 16ms
-  light:
+light:
   - platform: binary
     id: backlight
     name: "Podświetlenie LCD"
