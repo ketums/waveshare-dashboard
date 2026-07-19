@@ -136,13 +136,13 @@ touchscreen:
       number: 1
 
     update_interval: 16ms
-light:
-  - platform: monochromatic
+  light:
+  - platform: binary
     id: backlight
     name: "Podświetlenie LCD"
     output: lcd_backlight
     restore_mode: ALWAYS_ON
-    default_transition_length: 0s
+    
 lvgl:
   displays:
     - lcd
