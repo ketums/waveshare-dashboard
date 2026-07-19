@@ -1,198 +1,92 @@
 esphome:
   name: waveshare-dashboard
-  friendly_name: Waveshare Dashboard
+  friendly_name: "Waveshare Dashboard"
 
 esp32:
   board: esp32-s3-devkitc-1
-  framework:
-    type: esp-idf
+  variant: esp32s3
 
+# Konfiguracja pamięci niezbędna dla wyświetlacza
 psram:
   mode: octal
   speed: 80MHz
 
-logger:
-
-api:
-
-ota:
-  - platform: esphome
-    password: "12345678"
-
+# Konfiguracja WiFi
 wifi:
   ssid: "skrapi 2,4GHZ"
   password: "RejtanA77"
 
-  ap:
-    ssid: "Waveshare Dashboard Hotspot"
-    password: "12345678"
-
-captive_portal:
-
+# Serwer WWW widoczny na Twoim zrzucie ekranu
 web_server:
   port: 80
 
-time:
-  - platform: homeassistant
-    id: ha_time
+# Aktualizacje OTA
+ota:
+  - platform: esphome
 
+# Sensory (Uptime i siła WiFi)
 sensor:
+  - platform: uptime
+    name: "Czas pracy panelu"
   - platform: wifi_signal
     name: "Siła WiFi"
     update_interval: 60s
-
-  - platform: uptime
-    name: "Czas pracy panelu"
-
-  - platform: openweathermap
-    api_key: "43f603e0b341be3dc59f463a6ea78716"
-    latitude: "54.6062"
-    longitude: "18.2366"
-    temperature:
-      name: "Temperatura"
-      id: temp_zewnatrz
-      on_value:
-        then:
-          - lvgl.label.update:
-              id: ekran_temp
-              text: !lambda 'return str_sprintf("%.1f °C", x);'
-    humidity:
-      name: "Wilgotność"
-    wind_speed:
-      name: "Prędkość wiatru"
-    condition:
-      name: "Warunki pogodowe"
 
 text_sensor:
   - platform: wifi_info
     ip_address:
       name: "Adres IP panelu"
-      
-globals:
-  - id: current_page
-    type: int
-    restore_value: no
-    initial_value: "0"
 
+switch:
+  - platform: gpio
+    name: "Podświetlenie LCD"
+    pin: GPIO2 
+    restore_mode: ALWAYS_ON
+
+# Konfiguracja I2C dla dotyku
 i2c:
   sda: GPIO8
   scl: GPIO9
   scan: true
 
+# Kolory i czcionka dla ekranu
+color:
+  - id: color_black
+    hex: "000000"
+  - id: color_white
+    hex: "FFFFFF"
+
+font:
+  - file: "gfonts://Roboto"
+    id: font_roboto_large
+    size: 50
+
+# Ekran dotykowy
+touchscreen:
+  - platform: gt911
+    id: my_touch
+    display: waveshare_disp
+
+# Wyświetlacz
 display:
   - platform: rpi_dpi_rgb
-    id: lcd
-
-    color_order: RGB
-    pclk_frequency: 16MHz
-
+    id: waveshare_disp
     dimensions:
       width: 800
       height: 480
-
-    de_pin: GPIO5
-
-    hsync_pin:
-      number: GPIO46
-      ignore_strapping_warning: true
-
-    vsync_pin:
-      number: GPIO3
-      ignore_strapping_warning: true
-
-    pclk_pin: GPIO7
-
-    hsync_back_porch: 30
-    hsync_front_porch: 210
-    hsync_pulse_width: 30
-
-    vsync_back_porch: 4
-    vsync_front_porch: 4
-    vsync_pulse_width: 4
-
-    data_pins:
-      red:
-        - GPIO1
-        - GPIO2
-        - GPIO42
-        - GPIO41
-        - GPIO40
-      green:
-        - GPIO39
-        - GPIO0
-        - GPIO45
-        - GPIO48
-        - GPIO47
-        - GPIO21
-      blue:
-        - GPIO14
-        - GPIO38
-        - GPIO18
-        - GPIO17
-        - GPIO10
-
-ch422g:
-  - id: ch422g_hub
-
-output:
-  - platform: gpio
-    id: lcd_backlight
-    pin:
-      ch422g: ch422g_hub
-      number: 2
-      mode:
-        output: true
-
-touchscreen:
-  - platform: gt911
-    id: touch
-    display: lcd
-
-    interrupt_pin: GPIO4
-
-    reset_pin:
-      ch422g: ch422g_hub
-      number: 1
-
-    update_interval: 16ms
-
-light:
-  - platform: binary
-    id: backlight
-    name: "Podświetlenie LCD"
-    output: lcd_backlight
-    restore_mode: ALWAYS_ON
+    auto_clear_enabled: true
+    update_interval: 1s
     
-lvgl:
-  displays:
-    - lcd
-
-  touchscreens:
-    - touch
-
-  pages:
-    - id: main_page
-      widgets:
-
-        - label:
-            id: title
-            text: "Waveshare Dashboard"
-            align: TOP_MID
-            y: 20
-
-        - label:
-            id: zegar
-            text: "--:--"
-            align: CENTER
-
-        - label:
-            id: status_wifi
-            text: "WiFi OK"
-            align: BOTTOM_MID
-            y: -20
-
-        - label:
-            id: ekran_temp
-            text: "Czekam na pogode..."
-            align: CENTER
-            y: 50
+    pclk_pin: GPIO42
+    hsync_pin: GPIO39
+    vsync_pin: GPIO41
+    de_pin: GPIO40
+    
+    data_pins:
+      red: [GPIO1, GPIO2, GPIO3, GPIO4, GPIO5]
+      green: [GPIO6, GPIO7, GPIO8, GPIO9, GPIO10, GPIO11]
+      blue: [GPIO12, GPIO13, GPIO14, GPIO15, GPIO16]
+    
+    lambda: |-
+      it.fill(id(color_black));
+      it.printf(400, 240, id(font_roboto_large), id(color_white), TextAlign::CENTER, "SYSTEM GOTOWY");
