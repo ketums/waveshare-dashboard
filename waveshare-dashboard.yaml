@@ -8,8 +8,6 @@ esp32:
   framework:
     type: esp-idf
 
-api:
-
 psram:
   mode: octal
   speed: 80MHz
@@ -29,22 +27,25 @@ time:
     id: my_time
     timezone: "CET-1CEST,M3.5.0,M10.5.0/3"
 
+# Pobieranie temperatury bezpośrednio przez HTTP z wttr.in dla Wejherowa (zwraca samą liczbę)
+text_sensor:
+  - platform: http_request
+    resource: "https://wttr.in/Wejherowo?format=%t"
+    name: "Temperatura z sieci"
+    id: temp_zewnetrzna
+    update_interval: 15min
+
+  - platform: wifi_info
+    ip_address:
+      name: "Adres IP panelu"
+
 sensor:
-  - platform: homeassistant
-    id: ha_temperatura
-    entity_id: sensor.openweathermap_temperature
-    
   - platform: uptime
     name: "Czas pracy panelu"
     
   - platform: wifi_signal
     name: "Siła WiFi"
     update_interval: 60s
-
-text_sensor:
-  - platform: wifi_info
-    ip_address:
-      name: "Adres IP panelu"
 
 switch:
   - platform: gpio
@@ -101,9 +102,10 @@ display:
       // 1. Zegar na samej górze
       it.strftime(400, 80, id(font_time), id(color_text), TextAlign::CENTER, "%H:%M", id(my_time).now());
 
-      // 2. Temperatura z Home Assistanta
-      if (id(ha_temperatura).has_state()) {
-        it.printf(400, 220, id(font_temp), id(color_accent), TextAlign::CENTER, "%.1f °C", id(ha_temperatura).state);
+      // 2. Temperatura bezpośrednio z internetu dla Wejherowa
+      if (id(temp_zewnetrzna).has_state()) {
+        it.print(400, 220, id(font_temp), id(color_accent), TextAlign::CENTER, id(temp_zewnetrzna).state.c_str());
       } else {
-        it.print(400, 220, id(font_temp), id(color_text), TextAlign::CENTER, "Brak danych z HA");
+        it.print(400, 220, id(font_temp), id(color_text), TextAlign::CENTER, "Pobieranie...");
       }
+      
