@@ -8,6 +8,7 @@ esp32:
   framework:
     type: esp-idf
 
+# Wymuszenie poprawnej inicjalizacji pamięci PSRAM dla układów OPI
 psram:
   mode: octal
   speed: 80MHz
@@ -92,14 +93,7 @@ display:
       green: [GPIO6, GPIO7, GPIO8, GPIO9, GPIO10, GPIO11]
       blue: [GPIO12, GPIO13, GPIO14, GPIO15, GPIO16]
     lambda: |-
-      // Tło ekranu
       it.fill(id(color_bg));
-
-      // 1. Główny zegar na środku góry
       it.strftime(400, 120, id(font_time), id(color_text), TextAlign::CENTER, "%H:%M", id(my_time).now());
-
-      // 2. Podpis lokalizacji
       it.print(400, 260, id(font_temp), id(color_accent), TextAlign::CENTER, "Wejherowo");
-
-      // 3. Dodatkowa godzina w prawym górnym rogu (wyrównana do prawej krawędzi)
       it.strftime(760, 40, id(font_small), id(color_text), TextAlign::TOP_RIGHT, "%H:%M", id(my_time).now());
