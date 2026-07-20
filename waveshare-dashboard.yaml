@@ -27,7 +27,6 @@ time:
     id: my_time
     timezone: "CET-1CEST,M3.5.0,M10.5.0/3"
 
-# Konfiguracja klienta HTTP
 http_request:
   verify_ssl: false
   timeout: 15s
@@ -40,7 +39,6 @@ sensor:
     name: "Siła WiFi"
     update_interval: 60s
 
-  # Wirtualne sensory dla pogody z internetu
   - platform: template
     id: out_temp
     name: "Temperatura zewnętrzna"
@@ -55,12 +53,10 @@ text_sensor:
     ip_address:
       name: "Adres IP panelu"
 
-  # Wirtualny sensor z nazwą "ikony"
   - platform: template
     id: weather_desc
     name: "Opis pogody"
 
-# Automatyczne pobieranie danych co 10 minut za pomocą skryptu C++
 interval:
   - interval: 10min
     startup_delay: 5s
@@ -71,13 +67,13 @@ interval:
             then:
               - lambda: |-
                   json::parse_json(body, [](JsonObject root) {
-                    if (root.containsKey("current")) {
+                    // Tutaj jest poprawka! Zamiast containsKey używamy isNull()
+                    if (!root["current"].isNull()) {
                       float temp = root["current"]["temperature_2m"];
                       int code = root["current"]["weather_code"];
                       id(out_temp).publish_state(temp);
                       id(wmo_code).publish_state(code);
                       
-                      // Zamiana kodu z internetu na polski opis pełniący rolę ikony
                       if (code == 0) id(weather_desc).publish_state("Slonecznie");
                       else if (code == 1 || code == 2 || code == 3) id(weather_desc).publish_state("Pochmurno");
                       else if (code == 45 || code == 48) id(weather_desc).publish_state("Mgla");
@@ -145,23 +141,17 @@ display:
     lambda: |-
       it.fill(id(color_bg));
       
-      // Zegar na środku
       it.strftime(400, 80, id(font_time), id(color_text), TextAlign::CENTER, "%H:%M", id(my_time).now());
-      
-      // Napis Wejherowo
       it.print(400, 190, id(font_small), id(color_accent), TextAlign::CENTER, "Wejherowo");
 
-      // Temperatura pobrana z neta
       if (id(out_temp).has_state()) {
         it.printf(400, 260, id(font_temp), id(color_text), TextAlign::CENTER, "%.1f C", id(out_temp).state);
       } else {
         it.print(400, 260, id(font_temp), id(color_text), TextAlign::CENTER, "--.- C");
       }
 
-      // Status pogody (Zastępuje grafikę, żeby uniknąć błędu kompilatora)
       if (id(weather_desc).has_state()) {
         it.printf(400, 360, id(font_weather), id(color_accent), TextAlign::CENTER, "%s", id(weather_desc).state.c_str());
       }
 
-      // Mały zegarek w prawym górnym rogu
       it.strftime(760, 35, id(font_small), id(color_text), TextAlign::TOP_RIGHT, "%H:%M", id(my_time).now());
