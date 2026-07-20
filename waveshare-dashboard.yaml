@@ -27,18 +27,6 @@ time:
     id: my_time
     timezone: "CET-1CEST,M3.5.0,M10.5.0/3"
 
-# Pobieranie temperatury bezpośrednio przez HTTP z wttr.in dla Wejherowa (zwraca samą liczbę)
-text_sensor:
-  - platform: http_request
-    resource: "https://wttr.in/Wejherowo?format=%t"
-    name: "Temperatura z sieci"
-    id: temp_zewnetrzna
-    update_interval: 15min
-
-  - platform: wifi_info
-    ip_address:
-      name: "Adres IP panelu"
-
 sensor:
   - platform: uptime
     name: "Czas pracy panelu"
@@ -46,6 +34,11 @@ sensor:
   - platform: wifi_signal
     name: "Siła WiFi"
     update_interval: 60s
+
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "Adres IP panelu"
 
 switch:
   - platform: gpio
@@ -73,6 +66,9 @@ font:
   - file: "gfonts://Roboto"
     id: font_temp
     size: 70
+  - file: "gfonts://Roboto"
+    id: font_small
+    size: 30
 
 touchscreen:
   - platform: gt911
@@ -99,13 +95,11 @@ display:
       // Tło ekranu
       it.fill(id(color_bg));
 
-      // 1. Zegar na samej górze
-      it.strftime(400, 80, id(font_time), id(color_text), TextAlign::CENTER, "%H:%M", id(my_time).now());
+      // 1. Główny zegar na środku góry
+      it.strftime(400, 120, id(font_time), id(color_text), TextAlign::CENTER, "%H:%M", id(my_time).now());
 
-      // 2. Temperatura bezpośrednio z internetu dla Wejherowa
-      if (id(temp_zewnetrzna).has_state()) {
-        it.print(400, 220, id(font_temp), id(color_accent), TextAlign::CENTER, id(temp_zewnetrzna).state.c_str());
-      } else {
-        it.print(400, 220, id(font_temp), id(color_text), TextAlign::CENTER, "Pobieranie...");
-      }
-      
+      // 2. Podpis lokalizacji
+      it.print(400, 260, id(font_temp), id(color_accent), TextAlign::CENTER, "Wejherowo");
+
+      // 3. Dodatkowa godzina w prawym górnym rogu (wyrównana do prawej krawędzi)
+      it.strftime(760, 40, id(font_small), id(color_text), TextAlign::TOP_RIGHT, "%H:%M", id(my_time).now());
