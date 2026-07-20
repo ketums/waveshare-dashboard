@@ -39,7 +39,7 @@ time:
 sensor:
   - platform: homeassistant
     id: ha_temperatura
-    entity_id: sensor.openweathermap_temperature  # Zmień na swoją nazwę encji temperatury w HA, jeśli jest inna
+    entity_id: sensor.openweathermap_temperature
     
   - platform: uptime
     name: "Czas pracy panelu"
@@ -84,17 +84,17 @@ font:
     id: font_temp
     size: 70
 
-# Deklaracja animacji graficznych z wymaganym parametrem typu
+# Deklaracja animacji graficznych z poprawnym typem obsługiwanym przez ESPHome
 animation:
   - file: "sun.gif"
     id: anim_sun
-    type: GIF
+    type: RGB565
   - file: "cloud.gif"
     id: anim_cloud
-    type: GIF
+    type: RGB565
   - file: "rain.gif"
     id: anim_rain
-    type: GIF
+    type: RGB565
 
 # Ekran dotykowy
 touchscreen:
