@@ -32,16 +32,15 @@ time:
     id: my_time
     timezone: "CET-1CEST,M3.5.0,M10.5.0/3"
 
-# Konfiguracja pogody z OpenWeatherMap dla Wejherowa
-weather:
-  - platform: openweathermap
-    id: my_weather
-    api_key: "43f603e0b341be3dc59f463a6ea78716"
-    latitude: 54.604
-    longitude: 18.236
-
-# Sensory systemowe
+# Sensory systemowe oraz pobieranie temperatury z OpenWeatherMap dla Wejherowa
 sensor:
+  - platform: rest
+    resource: "https://api.openweathermap.org/data/2.5/weather?lat=54.604&lon=18.236&appid=43f603e0b341be3dc59f463a6ea78716&units=metric"
+    name: "Temperatura OWM"
+    id: ha_temperatura
+    value_json: "$.main.temp"
+    update_interval: 15min
+
   - platform: uptime
     name: "Czas pracy panelu"
     
@@ -124,22 +123,13 @@ display:
       // 1. Zegar na samej górze
       it.strftime(400, 80, id(font_time), id(color_text), TextAlign::CENTER, "%H:%M", id(my_time).now());
 
-      // 2. Temperatura z internetu (OpenWeatherMap)
-      it.printf(400, 220, id(font_temp), id(color_accent), TextAlign::CENTER, "%.1f °C", id(my_weather).temperature);
-
-      // 3. Wyświetlanie animacji na podstawie statusu pogody
-      auto condition = id(my_weather).condition;
-      
-      if (condition == weather::WEATHER_CONDITION_SUNNY || condition == weather::WEATHER_CONDITION_CLEAR_NIGHT) {
-        // Rysuje słońce (współrzędne X:350, Y:300 - dostosuj według wielkości swojego GIF-a)
-        it.image(350, 300, id(anim_sun)); 
-      } 
-      else if (condition == weather::WEATHER_CONDITION_RAINY || condition == weather::WEATHER_CONDITION_POURING || condition == weather::WEATHER_CONDITION_LIGHTNING_RAIN) {
-        // Rysuje deszcz
-        it.image(350, 300, id(anim_rain));
-      } 
-      else {
-        // Wszystkie pozostałe stany (chmury, mgła, śnieg)
-        it.image(350, 300, id(anim_cloud));
+      // 2. Temperatura z internetu
+      if (id(ha_temperatura).has_state()) {
+        it.printf(400, 220, id(font_temp), id(color_accent), TextAlign::CENTER, "%.1f °C", id(ha_temperatura).state);
+      } else {
+        it.print(400, 220, id(font_temp), id(color_text), TextAlign::CENTER, "Ładowanie...");
       }
+
+      // 3. Wyświetlanie animacji słońca domyślnie (lub możesz przypisać dowolną animację)
+      it.image(350, 300, id(anim_sun));
       
