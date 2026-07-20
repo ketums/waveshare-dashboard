@@ -8,34 +8,27 @@ esp32:
   framework:
     type: esp-idf
 
-# Komunikacja z Home Assistant (pobieranie pogody i temperatury)
 api:
 
-# Konfiguracja pamięci niezbędna dla wyświetlacza
 psram:
   mode: octal
   speed: 80MHz
 
-# Konfiguracja WiFi
 wifi:
   ssid: "skrapi 2,4GHZ"
   password: "RejtanA77"
 
-# Serwer WWW widoczny pod adresem IP
 web_server:
   port: 80
 
-# Aktualizacje OTA
 ota:
   - platform: esphome
 
-# Czas z internetu (strefa czasowa dla Polski)
 time:
   - platform: sntp
     id: my_time
     timezone: "CET-1CEST,M3.5.0,M10.5.0/3"
 
-# Pobieranie temperatury z Home Assistanta
 sensor:
   - platform: homeassistant
     id: ha_temperatura
@@ -53,20 +46,17 @@ text_sensor:
     ip_address:
       name: "Adres IP panelu"
 
-# Przełącznik podświetlenia LCD (bezpieczny pin)
 switch:
   - platform: gpio
     name: "Podświetlenie LCD"
     pin: GPIO45
     restore_mode: ALWAYS_ON
 
-# Konfiguracja I2C dla dotyku (bezpieczne piny)
 i2c:
   sda: GPIO47
   scl: GPIO48
   scan: true
 
-# Kolory dla interfejsu
 color:
   - id: color_bg
     hex: "121212"
@@ -75,7 +65,6 @@ color:
   - id: color_accent
     hex: "00BFFF"
 
-# Zestaw czcionek
 font:
   - file: "gfonts://Roboto"
     id: font_time
@@ -84,25 +73,11 @@ font:
     id: font_temp
     size: 70
 
-# Deklaracja animacji graficznych z poprawnym typem obsługiwanym przez ESPHome
-animation:
-  - file: "sun.gif"
-    id: anim_sun
-    type: RGB565
-  - file: "cloud.gif"
-    id: anim_cloud
-    type: RGB565
-  - file: "rain.gif"
-    id: anim_rain
-    type: RGB565
-
-# Ekran dotykowy
 touchscreen:
   - platform: gt911
     id: my_touch
     display: waveshare_disp
 
-# Wyświetlacz RGB i rysowanie interfejsu
 display:
   - platform: rpi_dpi_rgb
     id: waveshare_disp
@@ -132,6 +107,3 @@ display:
       } else {
         it.print(400, 220, id(font_temp), id(color_text), TextAlign::CENTER, "Brak danych z HA");
       }
-
-      // 3. Animacja słońca / pogody
-      it.image(350, 300, id(anim_sun));
