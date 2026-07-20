@@ -40,16 +40,28 @@ text_sensor:
     ip_address:
       name: "Adres IP panelu"
 
-switch:
-  - platform: gpio
-    name: "Podświetlenie LCD"
-    pin: GPIO45
-    restore_mode: ALWAYS_ON
-
 i2c:
-  sda: GPIO47
-  scl: GPIO48
-  scan: true
+  - id: bus_i2c
+    sda: GPIO47
+    scl: GPIO48
+  - id: ch422g_bus
+    sda: GPIO8
+    scl: GPIO9
+    scan: true
+
+# Ekspander portów CH422G odpowiedzialny m.in. za podświetlenie w tym modelu
+output:
+  - platform: ch422g
+    id: ds_output
+    i2c_id: ch422g_bus
+    address: 0x24
+
+light:
+  - platform: binary
+    name: "Podświetlenie LCD"
+    output: ds_output
+    id: backlight
+    output_id: 1
 
 color:
   - id: color_bg
@@ -74,6 +86,9 @@ touchscreen:
   - platform: gt911
     id: my_touch
     display: waveshare_disp
+    i2c_id: bus_i2c
+    interrupt_pin: GPIO4
+    reset_pin: GPIO3
 
 display:
   - platform: rpi_dpi_rgb
@@ -83,6 +98,13 @@ display:
       height: 480
     auto_clear_enabled: true
     update_interval: 1s
+    pclk_frequency: 14MHz
+    hsync_front_porch: 210
+    hsync_back_porch: 16
+    hsync_pulse_width: 30
+    vsync_front_porch: 22
+    vsync_back_porch: 13
+    vsync_pulse_width: 3
     pclk_pin: GPIO42
     hsync_pin: GPIO39
     vsync_pin: GPIO41
@@ -102,4 +124,3 @@ display:
 
       // Mały zegarek w prawym górnym rogu
       it.strftime(760, 35, id(font_small), id(color_text), TextAlign::TOP_RIGHT, "%H:%M", id(my_time).now());
-      
