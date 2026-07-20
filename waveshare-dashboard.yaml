@@ -27,7 +27,6 @@ time:
     id: my_time
     timezone: "CET-1CEST,M3.5.0,M10.5.0/3"
 
-# Pobieranie temperatury na żywo bezpośrednio z darmowego API Open-Meteo dla Wejherowa
 http_request:
   user_agent: esphome/device
   timeout: 15s
@@ -40,10 +39,11 @@ sensor:
     name: "Siła WiFi"
     update_interval: 60s
 
-  - platform: json
+  - platform: rest
+    resource: "https://api.open-meteo.com/v1/forecast?latitude=54.605&longitude=18.243&current=temperature_2m"
+    json_path: "current.temperature_2m"
     id: external_temp
-    url: "https://api.open-meteo.com/v1/forecast?latitude=54.605&longitude=18.243&current=temperature_2m"
-    path: "current.temperature_2m"
+    name: "Temperatura zewnętrzna"
     unit_of_measurement: "°C"
     update_interval: 10min
 
@@ -112,7 +112,7 @@ display:
       // Nazwa miejscowości
       it.print(400, 220, id(font_small), id(color_accent), TextAlign::CENTER, "Wejherowo");
 
-      // Temperatura pobierana z internetu (Open-Meteo)
+      // Temperatura pobierana z internetu
       if (id(external_temp).has_state()) {
         it.printf(400, 310, id(font_temp), id(color_text), TextAlign::CENTER, "%.1f °C", id(external_temp).state);
       } else {
