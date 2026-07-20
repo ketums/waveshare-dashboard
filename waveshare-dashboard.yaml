@@ -40,12 +40,16 @@ text_sensor:
     ip_address:
       name: "Adres IP panelu"
 
-# Bezpośrednie włączenie podświetlenia na pinie GPIO, omijając konfliktowe szyny
 switch:
   - platform: gpio
     name: "Podświetlenie LCD"
     pin: GPIO45
     restore_mode: ALWAYS_ON
+
+i2c:
+  sda: GPIO47
+  scl: GPIO48
+  scan: true
 
 color:
   - id: color_bg
@@ -66,6 +70,15 @@ font:
     id: font_small
     size: 30
 
+touchscreen:
+  - platform: gt911
+    id: my_touch
+    display: waveshare_disp
+    sda: GPIO47
+    scl: GPIO48
+    interrupt_pin: GPIO4
+    reset_pin: GPIO3
+
 display:
   - platform: rpi_dpi_rgb
     id: waveshare_disp
@@ -74,13 +87,13 @@ display:
       height: 480
     auto_clear_enabled: true
     update_interval: 1s
-    pclk_frequency: 14MHz
-    hsync_front_porch: 210
-    hsync_back_porch: 16
-    hsync_pulse_width: 30
-    vsync_front_porch: 22
-    vsync_back_porch: 13
-    vsync_pulse_width: 3
+    pclk_frequency: 16MHz
+    hsync_front_porch: 8
+    hsync_back_porch: 40
+    hsync_pulse_width: 48
+    vsync_front_porch: 8
+    vsync_back_porch: 32
+    vsync_pulse_width: 13
     pclk_pin: GPIO42
     hsync_pin: GPIO39
     vsync_pin: GPIO41
