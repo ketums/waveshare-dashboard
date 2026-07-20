@@ -27,8 +27,9 @@ time:
     id: my_time
     timezone: "CET-1CEST,M3.5.0,M10.5.0/3"
 
+# Konfiguracja klienta HTTP
 http_request:
-  user_agent: esphome/device
+  verify_ssl: false
   timeout: 15s
 
 sensor:
@@ -39,18 +40,53 @@ sensor:
     name: "Siła WiFi"
     update_interval: 60s
 
-  - platform: rest
-    resource: "https://api.open-meteo.com/v1/forecast?latitude=54.605&longitude=18.243&current=temperature_2m"
-    json_path: "current.temperature_2m"
-    id: external_temp
+  # Wirtualne sensory dla pogody z internetu
+  - platform: template
+    id: out_temp
     name: "Temperatura zewnętrzna"
     unit_of_measurement: "°C"
-    update_interval: 10min
+
+  - platform: template
+    id: wmo_code
+    name: "Kod pogody"
 
 text_sensor:
   - platform: wifi_info
     ip_address:
       name: "Adres IP panelu"
+
+  # Wirtualny sensor z nazwą "ikony"
+  - platform: template
+    id: weather_desc
+    name: "Opis pogody"
+
+# Automatyczne pobieranie danych co 10 minut za pomocą skryptu C++
+interval:
+  - interval: 10min
+    startup_delay: 5s
+    then:
+      - http_request.get:
+          url: "https://api.open-meteo.com/v1/forecast?latitude=54.605&longitude=18.243&current=temperature_2m,weather_code"
+          on_response:
+            then:
+              - lambda: |-
+                  json::parse_json(body, [](JsonObject root) {
+                    if (root.containsKey("current")) {
+                      float temp = root["current"]["temperature_2m"];
+                      int code = root["current"]["weather_code"];
+                      id(out_temp).publish_state(temp);
+                      id(wmo_code).publish_state(code);
+                      
+                      // Zamiana kodu z internetu na polski opis pełniący rolę ikony
+                      if (code == 0) id(weather_desc).publish_state("Slonecznie");
+                      else if (code == 1 || code == 2 || code == 3) id(weather_desc).publish_state("Pochmurno");
+                      else if (code == 45 || code == 48) id(weather_desc).publish_state("Mgla");
+                      else if (code >= 51 && code <= 67) id(weather_desc).publish_state("Deszcz");
+                      else if (code >= 71 && code <= 86) id(weather_desc).publish_state("Snieg");
+                      else if (code >= 95) id(weather_desc).publish_state("Burza");
+                      else id(weather_desc).publish_state("Nieznana");
+                    }
+                  });
 
 switch:
   - platform: gpio
@@ -81,6 +117,9 @@ font:
   - file: "gfonts://Roboto"
     id: font_small
     size: 30
+  - file: "gfonts://Roboto"
+    id: font_weather
+    size: 50
 
 touchscreen:
   - platform: gt911
@@ -106,17 +145,22 @@ display:
     lambda: |-
       it.fill(id(color_bg));
       
-      // Główny zegar na środku
-      it.strftime(400, 110, id(font_time), id(color_text), TextAlign::CENTER, "%H:%M", id(my_time).now());
+      // Zegar na środku
+      it.strftime(400, 80, id(font_time), id(color_text), TextAlign::CENTER, "%H:%M", id(my_time).now());
       
-      // Nazwa miejscowości
-      it.print(400, 220, id(font_small), id(color_accent), TextAlign::CENTER, "Wejherowo");
+      // Napis Wejherowo
+      it.print(400, 190, id(font_small), id(color_accent), TextAlign::CENTER, "Wejherowo");
 
-      // Temperatura pobierana z internetu
-      if (id(external_temp).has_state()) {
-        it.printf(400, 310, id(font_temp), id(color_text), TextAlign::CENTER, "%.1f °C", id(external_temp).state);
+      // Temperatura pobrana z neta
+      if (id(out_temp).has_state()) {
+        it.printf(400, 260, id(font_temp), id(color_text), TextAlign::CENTER, "%.1f C", id(out_temp).state);
       } else {
-        it.print(400, 310, id(font_temp), id(color_text), TextAlign::CENTER, "--.- °C");
+        it.print(400, 260, id(font_temp), id(color_text), TextAlign::CENTER, "--.- C");
+      }
+
+      // Status pogody (Zastępuje grafikę, żeby uniknąć błędu kompilatora)
+      if (id(weather_desc).has_state()) {
+        it.printf(400, 360, id(font_weather), id(color_accent), TextAlign::CENTER, "%s", id(weather_desc).state.c_str());
       }
 
       // Mały zegarek w prawym górnym rogu
