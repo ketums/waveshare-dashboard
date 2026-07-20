@@ -8,7 +8,10 @@ esp32:
   framework:
     type: esp-idf
 
-# Konfiguracja pamięci niezbędna dla wyświetlacza
+# Wymagane do komunikacji z Home Assistant (pobieranie pogody)
+api:
+
+# Konfiguracja pamięci
 psram:
   mode: octal
   speed: 80MHz
@@ -18,7 +21,7 @@ wifi:
   ssid: "skrapi 2,4GHZ"
   password: "RejtanA77"
 
-# Serwer WWW widoczny na Twoim zrzucie ekranu
+# Serwer WWW
 web_server:
   port: 80
 
@@ -26,8 +29,19 @@ web_server:
 ota:
   - platform: esphome
 
-# Sensory (Uptime i siła WiFi)
+# Czas z internetu (strefa czasowa dla Polski)
+time:
+  - platform: sntp
+    id: my_time
+    timezone: "CET-1CEST,M3.5.0,M10.5.0/3"
+
+# Sensory z Home Assistant
 sensor:
+  # TUTAJ WPISZ SWOJĄ ENCJĘ TEMPERATURY Z HOME ASSISTANT
+  - platform: homeassistant
+    id: ha_temperatura
+    entity_id: sensor.temperatura_zewnetrzna 
+    
   - platform: uptime
     name: "Czas pracy panelu"
   - platform: wifi_signal
@@ -35,34 +49,49 @@ sensor:
     update_interval: 60s
 
 text_sensor:
+  # TUTAJ WPISZ SWOJĄ ENCJĘ POGODY Z HOME ASSISTANT
+  - platform: homeassistant
+    id: ha_stan_pogody
+    entity_id: weather.dom
+    attribute: state
+    
   - platform: wifi_info
     ip_address:
       name: "Adres IP panelu"
 
-# Przełącznik podświetlenia LCD (bezpieczny pin)
+# Przełącznik podświetlenia LCD
 switch:
   - platform: gpio
     name: "Podświetlenie LCD"
     pin: GPIO45
     restore_mode: ALWAYS_ON
 
-# Konfiguracja I2C dla dotyku (bezpieczne piny)
+# Konfiguracja I2C dla dotyku
 i2c:
   sda: GPIO47
   scl: GPIO48
   scan: true
 
-# Kolory i czcionka dla ekranu
+# Kolory dla interfejsu pogody
 color:
-  - id: color_black
-    hex: "000000"
-  - id: color_white
+  - id: color_bg
+    hex: "121212"
+  - id: color_text
     hex: "FFFFFF"
+  - id: color_accent
+    hex: "00BFFF"
 
+# Zestaw czcionek w różnych rozmiarach
 font:
   - file: "gfonts://Roboto"
-    id: font_roboto_large
-    size: 50
+    id: font_time
+    size: 90
+  - file: "gfonts://Roboto"
+    id: font_temp
+    size: 70
+  - file: "gfonts://Roboto"
+    id: font_text
+    size: 40
 
 # Ekran dotykowy
 touchscreen:
@@ -70,7 +99,7 @@ touchscreen:
     id: my_touch
     display: waveshare_disp
 
-# Wyświetlacz RGB
+# Wyświetlacz RGB i rysowanie interfejsu
 display:
   - platform: rpi_dpi_rgb
     id: waveshare_disp
@@ -88,6 +117,20 @@ display:
       green: [GPIO6, GPIO7, GPIO8, GPIO9, GPIO10, GPIO11]
       blue: [GPIO12, GPIO13, GPIO14, GPIO15, GPIO16]
     lambda: |-
-      it.fill(id(color_black));
-      it.printf(400, 240, id(font_roboto_large), id(color_white), TextAlign::CENTER, "SYSTEM GOTOWY");
-      
+      // Tło ekranu
+      it.fill(id(color_bg));
+
+      // 1. Zegar na samej górze
+      it.strftime(400, 80, id(font_time), id(color_text), TextAlign::CENTER, "%H:%M");
+
+      // 2. Temperatura na środku
+      if (id(ha_temperatura).has_state()) {
+        it.printf(400, 220, id(font_temp), id(color_accent), TextAlign::CENTER, "%.1f °C", id(ha_temperatura).state);
+      } else {
+        it.printf(400, 220, id(font_text), id(color_text), TextAlign::CENTER, "Brak danych z HA");
+      }
+
+      // 3. Opis pogody na dole
+      if (id(ha_stan_pogody).has_state()) {
+        it.printf(400, 340, id(font_text), id(color_text), TextAlign::CENTER, "%s", id(ha_stan_pogody).state.c_str());
+      }
