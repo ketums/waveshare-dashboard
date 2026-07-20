@@ -100,3 +100,4 @@ display:
 
       // Mały zegarek w prawym górnym rogu
       it.strftime(760, 35, id(font_small), id(color_text), TextAlign::TOP_RIGHT, "%H:%M", id(my_time).now());
+      
