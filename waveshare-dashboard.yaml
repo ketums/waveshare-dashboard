@@ -84,14 +84,17 @@ font:
     id: font_temp
     size: 70
 
-# Deklaracja animacji graficznych (pliki GIF wgrane wcześniej na GitHub)
+# Deklaracja animacji graficznych z wymaganym parametrem typu
 animation:
   - file: "sun.gif"
     id: anim_sun
+    type: GIF
   - file: "cloud.gif"
     id: anim_cloud
+    type: GIF
   - file: "rain.gif"
     id: anim_rain
+    type: GIF
 
 # Ekran dotykowy
 touchscreen:
@@ -132,4 +135,3 @@ display:
 
       // 3. Animacja słońca / pogody
       it.image(350, 300, id(anim_sun));
-      
