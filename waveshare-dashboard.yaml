@@ -70,13 +70,6 @@ font:
     id: font_small
     size: 30
 
-touchscreen:
-  - platform: gt911
-    id: my_touch
-    display: waveshare_disp
-    interrupt_pin: GPIO4
-    reset_pin: GPIO3
-
 display:
   - platform: rpi_dpi_rgb
     id: waveshare_disp
@@ -111,3 +104,4 @@ display:
 
       // Mały zegarek w prawym górnym rogu
       it.strftime(760, 35, id(font_small), id(color_text), TextAlign::TOP_RIGHT, "%H:%M", id(my_time).now());
+      
