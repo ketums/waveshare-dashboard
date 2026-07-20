@@ -11,7 +11,7 @@ esp32:
 # Wymagane do komunikacji z Home Assistant (pobieranie pogody)
 api:
 
-# Konfiguracja pamięci
+# Konfiguracja pamięci niezbędna dla wyświetlacza
 psram:
   mode: octal
   speed: 80MHz
@@ -21,7 +21,7 @@ wifi:
   ssid: "skrapi 2,4GHZ"
   password: "RejtanA77"
 
-# Serwer WWW
+# Serwer WWW widoczny pod adresem IP
 web_server:
   port: 80
 
@@ -35,21 +35,22 @@ time:
     id: my_time
     timezone: "CET-1CEST,M3.5.0,M10.5.0/3"
 
-# Sensory z Home Assistant
+# Sensory z Home Assistant i systemowe
 sensor:
-  # TUTAJ WPISZ SWOJĄ ENCJĘ TEMPERATURY Z HOME ASSISTANT
+  # Jeśli masz inną nazwę encji temperatury w HA, zmień to poniżej:
   - platform: homeassistant
     id: ha_temperatura
     entity_id: sensor.temperatura_zewnetrzna 
     
   - platform: uptime
     name: "Czas pracy panelu"
+    
   - platform: wifi_signal
     name: "Siła WiFi"
     update_interval: 60s
 
 text_sensor:
-  # TUTAJ WPISZ SWOJĄ ENCJĘ POGODY Z HOME ASSISTANT
+  # Jeśli masz inną nazwę encji pogody w HA, zmień to poniżej:
   - platform: homeassistant
     id: ha_stan_pogody
     entity_id: weather.dom
@@ -59,20 +60,20 @@ text_sensor:
     ip_address:
       name: "Adres IP panelu"
 
-# Przełącznik podświetlenia LCD
+# Przełącznik podświetlenia LCD (bezpieczny pin)
 switch:
   - platform: gpio
     name: "Podświetlenie LCD"
     pin: GPIO45
     restore_mode: ALWAYS_ON
 
-# Konfiguracja I2C dla dotyku
+# Konfiguracja I2C dla dotyku (bezpieczne piny)
 i2c:
   sda: GPIO47
   scl: GPIO48
   scan: true
 
-# Kolory dla interfejsu pogody
+# Kolory dla interfejsu
 color:
   - id: color_bg
     hex: "121212"
@@ -81,7 +82,7 @@ color:
   - id: color_accent
     hex: "00BFFF"
 
-# Zestaw czcionek w różnych rozmiarach
+# Zestaw czcionek
 font:
   - file: "gfonts://Roboto"
     id: font_time
@@ -121,13 +122,13 @@ display:
       it.fill(id(color_bg));
 
       // 1. Zegar na samej górze
-      it.strftime(400, 80, id(font_time), id(color_text), TextAlign::CENTER, "%H:%M");
+      it.strftime(400, 80, id(font_time), id(color_text), TextAlign::CENTER, "%H:%M", id(my_time).now());
 
       // 2. Temperatura na środku
       if (id(ha_temperatura).has_state()) {
         it.printf(400, 220, id(font_temp), id(color_accent), TextAlign::CENTER, "%.1f °C", id(ha_temperatura).state);
       } else {
-        it.printf(400, 220, id(font_text), id(color_text), TextAlign::CENTER, "Brak danych z HA");
+        it.print(400, 220, id(font_text), id(color_text), TextAlign::CENTER, "Brak danych z HA");
       }
 
       // 3. Opis pogody na dole
