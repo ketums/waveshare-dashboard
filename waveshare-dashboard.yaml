@@ -8,9 +8,6 @@ esp32:
   framework:
     type: esp-idf
 
-# Wymagane do komunikacji z Home Assistant (pobieranie pogody)
-api:
-
 # Konfiguracja pamięci niezbędna dla wyświetlacza
 psram:
   mode: octal
@@ -35,13 +32,16 @@ time:
     id: my_time
     timezone: "CET-1CEST,M3.5.0,M10.5.0/3"
 
-# Sensory z Home Assistant i systemowe
+# Konfiguracja pogody z OpenWeatherMap dla Wejherowa
+weather:
+  - platform: openweathermap
+    id: my_weather
+    api_key: "43f603e0b341be3dc59f463a6ea78716"
+    latitude: 54.604
+    longitude: 18.236
+
+# Sensory systemowe
 sensor:
-  # Jeśli masz inną nazwę encji temperatury w HA, zmień to poniżej:
-  - platform: homeassistant
-    id: ha_temperatura
-    entity_id: sensor.temperatura_zewnetrzna 
-    
   - platform: uptime
     name: "Czas pracy panelu"
     
@@ -50,12 +50,6 @@ sensor:
     update_interval: 60s
 
 text_sensor:
-  # Jeśli masz inną nazwę encji pogody w HA, zmień to poniżej:
-  - platform: homeassistant
-    id: ha_stan_pogody
-    entity_id: weather.dom
-    attribute: state
-    
   - platform: wifi_info
     ip_address:
       name: "Adres IP panelu"
@@ -90,9 +84,15 @@ font:
   - file: "gfonts://Roboto"
     id: font_temp
     size: 70
-  - file: "gfonts://Roboto"
-    id: font_text
-    size: 40
+
+# Deklaracja animacji graficznych (pliki GIF muszą być w tym samym folderze co kod)
+animation:
+  - file: "sun.gif"
+    id: anim_sun
+  - file: "cloud.gif"
+    id: anim_cloud
+  - file: "rain.gif"
+    id: anim_rain
 
 # Ekran dotykowy
 touchscreen:
@@ -124,14 +124,22 @@ display:
       // 1. Zegar na samej górze
       it.strftime(400, 80, id(font_time), id(color_text), TextAlign::CENTER, "%H:%M", id(my_time).now());
 
-      // 2. Temperatura na środku
-      if (id(ha_temperatura).has_state()) {
-        it.printf(400, 220, id(font_temp), id(color_accent), TextAlign::CENTER, "%.1f °C", id(ha_temperatura).state);
-      } else {
-        it.print(400, 220, id(font_text), id(color_text), TextAlign::CENTER, "Brak danych z HA");
-      }
+      // 2. Temperatura z internetu (OpenWeatherMap)
+      it.printf(400, 220, id(font_temp), id(color_accent), TextAlign::CENTER, "%.1f °C", id(my_weather).temperature);
 
-      // 3. Opis pogody na dole
-      if (id(ha_stan_pogody).has_state()) {
-        it.printf(400, 340, id(font_text), id(color_text), TextAlign::CENTER, "%s", id(ha_stan_pogody).state.c_str());
+      // 3. Wyświetlanie animacji na podstawie statusu pogody
+      auto condition = id(my_weather).condition;
+      
+      if (condition == weather::WEATHER_CONDITION_SUNNY || condition == weather::WEATHER_CONDITION_CLEAR_NIGHT) {
+        // Rysuje słońce (współrzędne X:350, Y:300 - dostosuj według wielkości swojego GIF-a)
+        it.image(350, 300, id(anim_sun)); 
+      } 
+      else if (condition == weather::WEATHER_CONDITION_RAINY || condition == weather::WEATHER_CONDITION_POURING || condition == weather::WEATHER_CONDITION_LIGHTNING_RAIN) {
+        // Rysuje deszcz
+        it.image(350, 300, id(anim_rain));
+      } 
+      else {
+        // Wszystkie pozostałe stany (chmury, mgła, śnieg)
+        it.image(350, 300, id(anim_cloud));
       }
+      
