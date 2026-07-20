@@ -8,6 +8,9 @@ esp32:
   framework:
     type: esp-idf
 
+# Komunikacja z Home Assistant (pobieranie pogody i temperatury)
+api:
+
 # Konfiguracja pamięci niezbędna dla wyświetlacza
 psram:
   mode: octal
@@ -32,15 +35,12 @@ time:
     id: my_time
     timezone: "CET-1CEST,M3.5.0,M10.5.0/3"
 
-# Sensory systemowe oraz pobieranie temperatury z OpenWeatherMap dla Wejherowa
+# Pobieranie temperatury z Home Assistanta
 sensor:
-  - platform: rest
-    resource: "https://api.openweathermap.org/data/2.5/weather?lat=54.604&lon=18.236&appid=43f603e0b341be3dc59f463a6ea78716&units=metric"
-    name: "Temperatura OWM"
+  - platform: homeassistant
     id: ha_temperatura
-    value_json: "$.main.temp"
-    update_interval: 15min
-
+    entity_id: sensor.openweathermap_temperature  # Zmień na swoją nazwę encji temperatury w HA, jeśli jest inna
+    
   - platform: uptime
     name: "Czas pracy panelu"
     
@@ -84,7 +84,7 @@ font:
     id: font_temp
     size: 70
 
-# Deklaracja animacji graficznych (pliki GIF muszą być w tym samym folderze co kod)
+# Deklaracja animacji graficznych (pliki GIF wgrane wcześniej na GitHub)
 animation:
   - file: "sun.gif"
     id: anim_sun
@@ -123,13 +123,13 @@ display:
       // 1. Zegar na samej górze
       it.strftime(400, 80, id(font_time), id(color_text), TextAlign::CENTER, "%H:%M", id(my_time).now());
 
-      // 2. Temperatura z internetu
+      // 2. Temperatura z Home Assistanta
       if (id(ha_temperatura).has_state()) {
         it.printf(400, 220, id(font_temp), id(color_accent), TextAlign::CENTER, "%.1f °C", id(ha_temperatura).state);
       } else {
-        it.print(400, 220, id(font_temp), id(color_text), TextAlign::CENTER, "Ładowanie...");
+        it.print(400, 220, id(font_temp), id(color_text), TextAlign::CENTER, "Brak danych z HA");
       }
 
-      // 3. Wyświetlanie animacji słońca domyślnie (lub możesz przypisać dowolną animację)
+      // 3. Animacja słońca / pogody
       it.image(350, 300, id(anim_sun));
       
