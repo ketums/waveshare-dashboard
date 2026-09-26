@@ -9,10 +9,10 @@ esp32:
 
 logger:
 
-# Konfiguracja Wi-Fi (uzupełnij swoje dane)
+# Skonfiguruj dane swojej domowej sieci Wi-Fi
 wifi:
-  ssid: "TWOJE_SSID"
-  password: "TWOJE_HASLO"
+  ssid: "skrapi"
+  password: "RejtanA77"
 
   ap:
     ssid: "ESP32-S3 Fallback Hotspot"
@@ -44,7 +44,7 @@ globals:
   - id: aktualna_strona
     type: int
     restore_value: false
-    initial_value: '2' # Ustawione domyślnie na stronę 3 (indeks 2) do testów
+    initial_value: '2' # Strona 3 (indeks 2) z panelem 3D
   - id: weather_condition_code
     type: int
     restore_value: false
@@ -66,7 +66,7 @@ sensor:
         - lambda: |-
             id(weather_condition_code) = round(id(weather_code_sensor).state);
 
-# Cykliczne pobieranie danych pogodowych co 15 minut (dla Wejherowa: lat 54.60, lon 18.25)
+# Cykliczne pobieranie danych pogodowych co 15 minut dla Wejherowa
 interval:
   - interval: 15min
     then:
@@ -82,7 +82,7 @@ interval:
                     id(weather_code_sensor).publish_state(code);
                   });
 
-# Czcionki (upewnij się, że pliki .ttf lub .font znajdują się w folderze projektu)
+# Definicja czcionek (plik fontu musi znajdować się w folderze projektu)
 font:
   - file: "gothic.ttf"
     id: font_mala
@@ -94,13 +94,22 @@ font:
     id: font_duza
     size: 42
 
-# Konfiguracja wyświetlacza (dla rozdzielczości 800x480)
+# Konfiguracja wyświetlacza RGB dla Waveshare ESP32-S3-Touch-LCD-4.3
 display:
-  - platform: ili9488 # (Zmień na swój sterownik ekranu, np. st7701 / rgb_panel w zależności od sprzętu)
-    # Parametry fizyczne wyświetlacza
+  - platform: esp32_s3_lcd_panel
+    id: my_display
     dimensions:
       width: 800
       height: 480
+    data_pins: [42, 41, 40, 39, 48, 47, 21, 14, 13, 12, 11, 10, 9, 46, 3, 8]
+    de_pin: 5
+    vsync_pin: 4
+    hsync_pin: 45
+    pclk_pin: 7
+    pclk_frequency: 14 MHz
+    color_order: RGB
+    init_sequence: ""
+    
     lambda: |-
       // ======================================================
       // STRONA 3 - PANEL 3D (EFEKT WYPUKŁEJ KARTY I GŁĘBI)
@@ -196,6 +205,6 @@ display:
         return; 
       }
 
-      // Tutaj w przyszłości możesz dodać obsługę innych stron (np. id(aktualna_strona) == 0 lub 1)
+      // Pozostałe strony
       it.fill(Color(0, 0, 0));
       it.print(400, 240, id(font_srednia), Color(255, 255, 255), TextAlign::CENTER, "Strona główna sterowania");
