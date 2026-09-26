@@ -71,22 +71,18 @@ font:
   - file: "gfonts://Roboto"
     id: font_small
     size: 20
-    glyphs: '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~ aąćęłńóśźżAĄĆĘŁŃÓŚŹŻ°'
 
   - file: "gfonts://Roboto"
     id: font_medium
     size: 26
-    glyphs: '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~ aąćęłńóśźżAĄĆĘŁŃÓŚŹŻ°'
 
   - file: "gfonts://Roboto"
     id: font_large
     size: 48
-    glyphs: '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~ aąćęłńóśźżAĄĆĘŁŃÓŚŹŻ°'
 
   - file: "gfonts://Roboto"
     id: font_title
     size: 30
-    glyphs: '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~ aąćęłńóśźżAĄĆĘŁŃÓŚŹŻ°'
 
 
 # ============================================================
