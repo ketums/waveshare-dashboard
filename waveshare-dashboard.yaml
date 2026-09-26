@@ -157,133 +157,139 @@ display:
 
     lambda: |-
 
+      // Pobranie aktualnego czasu
+      auto time_now = id(czas_sntp).now();
+
       // ======================================================
-      // TŁO
+      // STRONA 3 - PEŁNY EKRAN POGODOWY (BEZ GÓRNEGO PASKA)
       // ======================================================
 
+      if (id(aktualna_strona) == 2) {
+
+        // Pełne tło dla widoku pogodowego
+        it.fill(Color(15, 23, 42));
+
+        // Subtelna ramka zewnętrzna
+        it.rectangle(15, 15, 770, 450, Color(30, 41, 59));
+
+        // Lokacja / Nagłówek
+        it.print(
+          40, 35,
+          id(font_srednia),
+          Color(148, 163, 184),
+          TextAlign::TOP_LEFT,
+          "Wejherowo • Stacja Pogody"
+        );
+
+        // Aktualna temperatura
+        it.print(
+          40, 80,
+          id(font_duza),
+          Color(255, 255, 255),
+          TextAlign::TOP_LEFT,
+          "18.5 °C"
+        );
+
+        // Stan pogody (tekst)
+        it.print(
+          40, 135,
+          id(font_srednia),
+          Color(56, 189, 248),
+          TextAlign::TOP_LEFT,
+          "Intensywne opady deszczu"
+        );
+
+        // Duży zegar i data w prawym górnym rogu pełnego ekranu
+        if (time_now.is_valid()) {
+          it.strftime(
+            760, 35,
+            id(font_duza),
+            Color(255, 255, 255),
+            TextAlign::TOP_RIGHT,
+            "%H:%M",
+            time_now
+          );
+          it.strftime(
+            760, 90,
+            id(font_mala),
+            Color(148, 163, 184),
+            TextAlign::TOP_RIGHT,
+            "%A, %d %B %Y",
+            time_now
+          );
+        } else {
+          it.print(
+            760, 35,
+            id(font_duza),
+            Color(255, 255, 255),
+            TextAlign::TOP_RIGHT,
+            "--:--"
+          );
+        }
+
+        // ====================================================
+        // ANIMACJA DESZCZU NA CAŁYM EKRANIE
+        // ====================================================
+        uint32_t ms = millis();
+
+        // Rysowanie chmury deszczowej w środkowej/górnej części
+        int cloud_x = 420;
+        int cloud_y = 110;
+        it.filled_circle(cloud_x - 70, cloud_y + 15, 32, Color(51, 65, 85));
+        it.filled_circle(cloud_x - 20, cloud_y, 48, Color(71, 85, 105));
+        it.filled_circle(cloud_x + 40, cloud_y + 10, 38, Color(51, 65, 85));
+        it.filled_rectangle(cloud_x - 80, cloud_y + 15, 150, 45, Color(71, 85, 105));
+
+        // Generowanie padających kropel deszczu w pętli
+        for (int i = 0; i < 70; i++) {
+          int drop_x = 40 + (i * 17 + (i * 3)) % 720;
+          int speed = 15 + (i % 6) * 4; // zróżnicowana prędkość kropel
+          int drop_y = (ms * speed / 35 + i * 31) % 280 + 170;
+          
+          // Skośna kropla deszczu
+          it.line(drop_x, drop_y, drop_x - 4, drop_y + 14, Color(56, 189, 248));
+        }
+
+        return; // Pomijamy rysowanie standardowego paska dla strony 3
+      }
+
+
+      // ======================================================
+      // STANDARDOWY UKŁAD DLA STRON 1 ORAZ 2 (Z GÓRNYM PASKIEM)
+      // ======================================================
+
+      // TŁO
       it.fill(Color(18, 24, 38));
 
-
-      // ======================================================
       // RAMKA
-      // ======================================================
+      it.rectangle(10, 10, 780, 460, Color(45, 55, 72));
 
-      it.rectangle(
-        10, 10,
-        780, 460,
-        Color(45, 55, 72)
-      );
-
-
-      // ======================================================
       // GÓRNY PASEK
-      // ======================================================
+      it.line(10, 70, 790, 70, Color(45, 55, 72));
 
-      it.line(
-        10, 70,
-        790, 70,
-        Color(45, 55, 72)
-      );
+      // TYTUŁ
+      it.print(25, 20, id(font_srednia), Color(200, 210, 225), TextAlign::TOP_LEFT, "DASHBOARD");
 
-
-      // ======================================================
-      // TYTUŁ (Lewa strona góry)
-      // ======================================================
-
-      it.print(
-        25, 20,
-        id(font_srednia),
-        Color(200, 210, 225),
-        TextAlign::TOP_LEFT,
-        "DASHBOARD"
-      );
-
-
-      // ======================================================
       // STAN WIFI
-      // ======================================================
-
       if (id(wifi_ssid).has_state()) {
-
-        it.print(
-          285, 18,
-          id(font_srednia),
-          Color(72, 187, 120),
-          TextAlign::TOP_LEFT,
-          "WIFI OK"
-        );
-
+        it.print(285, 18, id(font_srednia), Color(72, 187, 120), TextAlign::TOP_LEFT, "WIFI OK");
       } else {
-
-        it.print(
-          285, 18,
-          id(font_srednia),
-          Color(229, 62, 62),
-          TextAlign::TOP_LEFT,
-          "WIFI OFF"
-        );
-
+        it.print(285, 18, id(font_srednia), Color(229, 62, 62), TextAlign::TOP_LEFT, "WIFI OFF");
       }
 
-
-      // ======================================================
       // SIŁA SYGNAŁU WIFI
-      // ======================================================
-
       if (!isnan(id(wifi_sila).state)) {
-
-        it.printf(
-          390, 20,
-          id(font_mala),
-          Color(180, 190, 205),
-          TextAlign::TOP_LEFT,
-          "%0.0f dBm",
-          id(wifi_sila).state
-        );
-
+        it.printf(390, 20, id(font_mala), Color(180, 190, 205), TextAlign::TOP_LEFT, "%0.0f dBm", id(wifi_sila).state);
       } else {
-
-        it.print(
-          390, 20,
-          id(font_mala),
-          Color(180, 190, 205),
-          TextAlign::TOP_LEFT,
-          "-- dBm"
-        );
-
+        it.print(390, 20, id(font_mala), Color(180, 190, 205), TextAlign::TOP_LEFT, "-- dBm");
       }
 
-
-      // ======================================================
       // ADRES IP
-      // ======================================================
-
       if (id(wifi_ip).has_state()) {
-
-        it.printf(
-          770, 20,
-          id(font_mala),
-          Color(90, 200, 250),
-          TextAlign::TOP_RIGHT,
-          "%s",
-          id(wifi_ip).state.c_str()
-        );
-
+        it.printf(770, 20, id(font_mala), Color(90, 200, 250), TextAlign::TOP_RIGHT, "%s", id(wifi_ip).state.c_str());
       } else {
-
-        it.print(
-          770, 20,
-          id(font_mala),
-          Color(180, 190, 205),
-          TextAlign::TOP_RIGHT,
-          "brak IP"
-        );
-
+        it.print(770, 20, id(font_mala), Color(180, 190, 205), TextAlign::TOP_RIGHT, "brak IP");
       }
-
-
-      // Pobranie aktualnego czasu dla logiki stron
-      auto time_now = id(czas_sntp).now();
 
 
       // ======================================================
@@ -292,19 +298,10 @@ display:
 
       if (id(aktualna_strona) == 0) {
 
-
-        // Podział ekranu
         it.line(400, 70, 400, 470, Color(45, 55, 72));
         it.line(10, 270, 790, 270, Color(45, 55, 72));
 
-        it.print(
-          770, 75,
-          id(font_mala),
-          Color(120, 130, 145),
-          TextAlign::TOP_RIGHT,
-          "STRONA 1/3"
-        );
-
+        it.print(770, 75, id(font_mala), Color(120, 130, 145), TextAlign::TOP_RIGHT, "STRONA 1/3");
 
         // --- ROLETY ---
         it.print(30, 90, id(font_srednia), Color(237, 137, 54), TextAlign::TOP_LEFT, "ROLETY OKIENNE");
@@ -347,160 +344,11 @@ display:
 
       else if (id(aktualna_strona) == 1) {
 
-        it.print(
-          770, 75,
-          id(font_mala),
-          Color(120, 130, 145),
-          TextAlign::TOP_RIGHT,
-          "STRONA 2/3"
-        );
+        it.print(770, 75, id(font_mala), Color(120, 130, 145), TextAlign::TOP_RIGHT, "STRONA 2/3");
 
-        it.print(
-          400, 150,
-          id(font_duza),
-          Color(255, 255, 255),
-          TextAlign::TOP_CENTER,
-          "DRUGI KAFEL"
-        );
-
-        it.print(
-          400, 220,
-          id(font_srednia),
-          Color(160, 174, 192),
-          TextAlign::TOP_CENTER,
-          "Miejsce na kolejne"
-        );
-
-        it.print(
-          400, 250,
-          id(font_srednia),
-          Color(160, 174, 192),
-          TextAlign::TOP_CENTER,
-          "przyciski i sensory"
-        );
-
-      }
-
-
-      // ======================================================
-      // STRONA 3 (DATA, POGODA I DUŻY ZEGAR)
-      // ======================================================
-
-      else {
-
-        it.print(
-          770, 75,
-          id(font_mala),
-          Color(120, 130, 145),
-          TextAlign::TOP_RIGHT,
-          "STRONA 3/3"
-        );
-
-        // Nagłówek sekcji
-        it.print(
-          40, 95,
-          id(font_srednia),
-          Color(90, 200, 250),
-          TextAlign::TOP_LEFT,
-          "CZAS I POGODA"
-        );
-
-        // Wyświetlanie pełnej daty, jeśli czas jest poprawny
-        if (time_now.is_valid()) {
-          it.strftime(
-            40, 145,
-            id(font_srednia),
-            Color(255, 255, 255),
-            TextAlign::TOP_LEFT,
-            "%A, %d %B %Y",
-            time_now
-          );
-        }
-
-        // Kafel pogodowy (duży prostokąt)
-        it.rectangle(40, 200, 720, 230, Color(26, 37, 56));
-        
-        // Lewa strona kafelka: Informacje o pogodzie
-        it.print(
-          70, 230,
-          id(font_srednia),
-          Color(200, 210, 225),
-          TextAlign::TOP_LEFT,
-          "Open-Meteo (Wejherowo)"
-        );
-
-        it.print(
-          70, 280,
-          id(font_duza),
-          Color(255, 255, 255),
-          TextAlign::TOP_LEFT,
-          "18.5 °C"
-        );
-
-        it.print(
-          70, 345,
-          id(font_mala),
-          Color(160, 174, 192),
-          TextAlign::TOP_LEFT,
-          "Warunki: Częściowe zachmurzenie"
-        );
-
-        // Środek kafelka: Animowana ikona pogody (Słońce z obracającymi się promieniami + chmurka)
-        {
-          uint32_t ms = millis();
-          float angle = (ms % 10000) * (2.0 * 3.14159265 / 10000.0);
-          float cx = 450.0;
-          float cy = 300.0;
-          
-          // Promienie słońca
-          for (int i = 0; i < 8; i++) {
-            float a = angle + i * (2.0 * 3.14159265 / 8.0);
-            int x1 = cx + 24.0 * cosf(a);
-            int y1 = cy + 24.0 * sinf(a);
-            int x2 = cx + 34.0 * cosf(a);
-            int y2 = cy + 34.0 * sinf(a);
-            it.line(x1, y1, x2, y2, Color(255, 204, 0));
-          }
-          
-          // Tarcza słońca
-          it.filled_circle(cx, cy, 18, Color(255, 204, 0));
-
-          // Chmurka częściowego zachmurzenia zachodząca na słońce
-          float cloud_x = 455.0;
-          float cloud_y = 315.0;
-          it.filled_circle(cloud_x - 15, cloud_y + 5, 14, Color(180, 195, 215));
-          it.filled_circle(cloud_x + 10, cloud_y, 18, Color(180, 195, 215));
-          it.filled_circle(cloud_x + 28, cloud_y + 8, 12, Color(180, 195, 215));
-          it.filled_rectangle(cloud_x - 15, cloud_y + 2, 45, 18, Color(180, 195, 215));
-        }
-
-        // Prawa strona kafelka: Duży zegar obok temperatury i animacji
-        it.print(
-          640, 235,
-          id(font_mala),
-          Color(160, 174, 192),
-          TextAlign::TOP_CENTER,
-          "AKTUALNA GODZINA"
-        );
-
-        if (time_now.is_valid()) {
-          it.strftime(
-            640, 275,
-            id(font_duza),
-            Color(255, 255, 255),
-            TextAlign::TOP_CENTER,
-            "%H:%M",
-            time_now
-          );
-        } else {
-          it.print(
-            640, 275,
-            id(font_duza),
-            Color(255, 255, 255),
-            TextAlign::TOP_CENTER,
-            "--:--"
-          );
-        }
+        it.print(400, 150, id(font_duza), Color(255, 255, 255), TextAlign::TOP_CENTER, "DRUGI KAFEL");
+        it.print(400, 220, id(font_srednia), Color(160, 174, 192), TextAlign::TOP_CENTER, "Miejsce na kolejne");
+        it.print(400, 250, id(font_srednia), Color(160, 174, 192), TextAlign::TOP_CENTER, "przyciski i sensory");
 
       }
 
@@ -539,7 +387,18 @@ touchscreen:
 
 
           // ==================================================
-          // GÓRNY PASEK - CYKLICZNA ZMIANA STRON (0 -> 1 -> 2 -> 0)
+          // OBSŁUGA STRONY 3 (PEŁNY EKRAN) - DOTKNIĘCIE WRACA DO STRONY 1
+          // ==================================================
+
+          if (id(aktualna_strona) == 2) {
+            id(aktualna_strona) = 0;
+            ESP_LOGI("TOUCH", "Powrót ze strony 3 na stronę 1");
+            return;
+          }
+
+
+          // ==================================================
+          // GÓRNY PASEK (STRONY 1 i 2) - ZMIANA STRON
           // ==================================================
 
           if (y >= 0 && y <= 70) {
@@ -550,7 +409,7 @@ touchscreen:
 
 
           // ==================================================
-          // STRONA 1 (indeks 0)
+          // STRONA 1 (indeks 0) - AKCJE
           // ==================================================
 
           if (id(aktualna_strona) == 0) {
@@ -579,18 +438,9 @@ touchscreen:
 
 
           // ==================================================
-          // STRONA 2 (indeks 1)
+          // STRONA 2 (indeks 1) - AKCJE
           // ==================================================
 
           else if (id(aktualna_strona) == 1) {
             // Dodatkowe akcje dla strony 2 w przyszłości
-          }
-
-
-          // ==================================================
-          // STRONA 3 (indeks 2)
-          // ==================================================
-
-          else {
-            // Dodatkowe akcje dla strony 3
           }
