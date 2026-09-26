@@ -1,6 +1,6 @@
 esphome:
   name: waveshare-dashboard
-  friendly_name: "Waveshare Dashboard"
+  friendly_name: Dashboard Smart Life
 
 esp32:
   board: esp32-s3-devkitc-1
@@ -8,100 +8,161 @@ esp32:
   framework:
     type: esp-idf
 
-psram:
-  mode: octal
-  speed: 80MHz
+builder: esp-idf
 
 wifi:
-  ssid: "skrapi 2,4GHZ"
-  password: "RejtanA77"
+  ssid: skrapi 2,4GHZ
+  password: RejtanA77
 
-web_server:
-  port: 80
+  ap:
+    ssid: "ESPTest"
+    password: "Password123"
+
+api:
 
 ota:
   - platform: esphome
 
-time:
-  - platform: sntp
-    id: my_time
-    timezone: "CET-1CEST,M3.5.0,M10.5.0/3"
-
-sensor:
-  - platform: uptime
-    name: "Czas pracy panelu"
-    
-  - platform: wifi_signal
-    name: "Siła WiFi"
-    update_interval: 60s
-
-text_sensor:
-  - platform: wifi_info
-    ip_address:
-      name: "Adres IP panelu"
-
-switch:
-  - platform: gpio
-    name: "Podświetlenie LCD"
-    pin: GPIO45
-    restore_mode: ALWAYS_ON
-
+# 1. Magistrala I2C dla panelu dotykowego GT911
 i2c:
-  sda: GPIO47
-  scl: GPIO48
+  sda: GPIO19
+  scl: GPIO20
   scan: true
+  id: bus_i2c
 
-color:
-  - id: color_bg
-    hex: "121212"
-  - id: color_text
-    hex: "FFFFFF"
-  - id: color_accent
-    hex: "00BFFF"
+# 2. Obsługa dotyku GT911 z mapowaniem przycisków dla 1024x600 px
+touchscreen:
+  platform: gt911
+  id: panel_dotykowy
+  i2c_id: bus_i2c
+  interrupt_pin: GPIO0
+  reset_pin: GPIO38
+  transform:
+    swap_xy: false
+    mirror_x: false
+    mirror_y: false
 
+  on_touch:
+    - lambda: |-
+        int x = touch.x;
+        int y = touch.y;
+        
+        // --- ROLETY OKIENNE (Lewy Górny Kafelek) ---
+        if (y >= 180 && y <= 250) {
+          if (x >= 40 && x <= 170) {
+            ESP_LOGI("TOUCH", "Naciśnięto: OTWÓRZ OKNA");
+            id(http_otworz_roleta).send();
+          }
+          else if (x >= 190 && x <= 320) {
+            ESP_LOGI("TOUCH", "Naciśnięto: STOP ROLETY");
+            id(http_stop_roleta).send();
+          }
+          else if (x >= 340 && x <= 470) {
+            ESP_LOGI("TOUCH", "Naciśnięto: ZAMKNIJ OKNA");
+            id(http_zamknij_roleta).send();
+          }
+        }
+
+        // --- KLIMATYZACJA ROTENSO (Prawy Górny Kafelek) ---
+        if (y >= 180 && y <= 250) {
+          if (x >= 550 && x <= 630) {
+            ESP_LOGI("TOUCH", "Naciśnięto: TEMP -");
+            id(http_klima_temp_down).send();
+          }
+          else if (x >= 750 && x <= 830) {
+            ESP_LOGI("TOUCH", "Naciśnięto: TEMP +");
+            id(http_klima_temp_up).send();
+          }
+        }
+
+# 3. Zgłoszenia HTTP do OpenAPI Tuya / Smart Life
+http_request:
+  id: klient_http
+  useragent: "ESPHome Waveshare"
+  timeout: 5s
+
+http_request.post:
+  - id: http_otworz_roleta
+    url: "https://openapi.tuyaeu.com/v1.0/token"
+  - id: http_stop_roleta
+    url: "https://openapi.tuyaeu.com/v1.0/token"
+  - id: http_zamknij_roleta
+    url: "https://openapi.tuyaeu.com/v1.0/token"
+  - id: http_klima_temp_down
+    url: "https://openapi.tuyaeu.com/v1.0/token"
+  - id: http_klima_temp_up
+    url: "https://openapi.tuyaeu.com/v1.0/token"
+
+# Czcionki
 font:
   - file: "gfonts://Roboto"
-    id: font_time
-    size: 90
+    id: font_duza
+    size: 42
   - file: "gfonts://Roboto"
-    id: font_temp
-    size: 70
+    id: font_srednia
+    size: 22
   - file: "gfonts://Roboto"
-    id: font_small
-    size: 30
+    id: font_mala
+    size: 16
 
+# Czas z serwera NTP
+time:
+  - platform: sntp
+    id: czas_sntp
+    timezone: "Europe/Warsaw"
+
+# 4. Wyświetlacz LCD dopasowany do 1024x600 px
 display:
-  - platform: rpi_dpi_rgb
-    id: waveshare_disp
+  - platform: esp32_lcd
+    id: ekran_waveshare
     dimensions:
-      width: 800
-      height: 480
-    auto_clear_enabled: true
-    update_interval: 1s
-    pclk_frequency: 16MHz
-    hsync_front_porch: 8
-    hsync_back_porch: 40
-    hsync_pulse_width: 48
-    vsync_front_porch: 8
-    vsync_back_porch: 32
-    vsync_pulse_width: 13
-    pclk_pin: GPIO42
-    hsync_pin: GPIO39
-    vsync_pin: GPIO41
-    de_pin: GPIO40
-    data_pins:
-      red: [GPIO1, GPIO2, GPIO3, GPIO4, GPIO5]
-      green: [GPIO6, GPIO7, GPIO8, GPIO9, GPIO10, GPIO11]
-      blue: [GPIO12, GPIO13, GPIO14, GPIO15, GPIO16]
+      width: 1024
+      height: 600
+    col_max: 1024
+    row_max: 600
+    color_order: RGB
+    data_rate: 16MHz
     lambda: |-
-      it.fill(id(color_bg));
-      
-      // Główny zegar na środku
-      it.strftime(400, 130, id(font_time), id(color_text), TextAlign::CENTER, "%H:%M", id(my_time).now());
-      
-      // Nazwa miejscowości
-      it.print(400, 260, id(font_temp), id(color_accent), TextAlign::CENTER, "Wejherowo");
+      it.fill(Color(18, 24, 38));
 
-      // Mały zegarek w prawym górnym rogu
-      it.strftime(760, 35, id(font_small), id(color_text), TextAlign::TOP_RIGHT, "%H:%M", id(my_time).now());
+      // Ramka główna i linie podziału kafelków
+      it.rectangle(10, 10, 1004, 580, Color(45, 55, 72));
+      it.line(10, 80, 1014, 80, Color(45, 55, 72));
+      it.line(512, 80, 512, 590, Color(45, 55, 72));
+      it.line(10, 335, 1014, 335, Color(45, 55, 72));
+
+      // Zegar i status
+      auto time_now = id(czas_sntp).now();
+      if (time_now.is_valid()) {
+        it.strftime(40, 20, id(font_duza), Color(255, 255, 255), TextAlign::TOP_LEFT, "%H:%M", time_now);
+      }
+      it.print(984, 30, id(font_srednia), Color(72, 187, 120), TextAlign::TOP_RIGHT, "Smart Life OK");
+
+      // ROLETY OKIENNE
+      it.print(40, 100, id(font_srednia), Color(237, 137, 54), TextAlign::TOP_LEFT, "ROLETY OKIENNE");
+      it.print(40, 140, id(font_mala), Color(160, 174, 192), TextAlign::TOP_LEFT, "okno 1 & okno 2");
       
+      it.rectangle(40, 180, 130, 70, Color(66, 153, 225));
+      it.print(105, 200, id(font_mala), Color(255, 255, 255), TextAlign::TOP_CENTER, "OTWÓRZ");
+      
+      it.rectangle(190, 180, 130, 70, Color(229, 62, 62));
+      it.print(255, 200, id(font_mala), Color(255, 255, 255), TextAlign::TOP_CENTER, "STOP");
+      
+      it.rectangle(340, 180, 130, 70, Color(66, 153, 225));
+      it.print(405, 200, id(font_mala), Color(255, 255, 255), TextAlign::TOP_CENTER, "ZAMKNIJ");
+
+      // KLIMATYZACJA ROTENSO
+      it.print(550, 100, id(font_srednia), Color(90, 200, 250), TextAlign::TOP_LEFT, "KLIMATYZACJA ROTENSO");
+      
+      it.rectangle(550, 180, 80, 70, Color(66, 153, 225));
+      it.print(590, 190, id(font_duza), Color(255, 255, 255), TextAlign::TOP_CENTER, "-");
+      
+      it.print(690, 190, id(font_duza), Color(255, 255, 255), TextAlign::TOP_CENTER, "22°C");
+      
+      it.rectangle(750, 180, 80, 70, Color(229, 62, 62));
+      it.print(790, 190, id(font_duza), Color(255, 255, 255), TextAlign::TOP_CENTER, "+");
+
+      // CZUJNIK ZIGBEE
+      it.print(40, 360, id(font_srednia), Color(72, 187, 120), TextAlign::TOP_LEFT, "CZUJNIK ZIGBEE");
+      it.print(40, 420, id(font_duza), Color(255, 255, 255), TextAlign::TOP_LEFT, "21.5 °C");
+      it.print(40, 490, id(font_srednia), Color(160, 174, 192), TextAlign::TOP_LEFT, "Wilgotność: 55%");
