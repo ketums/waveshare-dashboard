@@ -58,7 +58,6 @@ ch422g:
 
 # ============================================================
 # I2C
-# GT911 + CH422G
 # ============================================================
 
 i2c:
@@ -73,7 +72,6 @@ i2c:
 # ============================================================
 
 globals:
-
   - id: aktualna_strona
     type: int
     restore_value: no
@@ -90,7 +88,7 @@ globals:
     initial_value: '0'
 
 # ============================================================
-# CZUJNIKI POGODOWE
+# CZUJNIKI
 # ============================================================
 
 sensor:
@@ -110,7 +108,7 @@ sensor:
       then:
         - lambda: |-
             if (!isnan(x)) {
-              id(weather_code) = (int) x;
+              id(weather_code) = (int)x;
             }
 
   - platform: template
@@ -139,7 +137,7 @@ sensor:
     accuracy_decimals: 0
 
 # ============================================================
-# INFORMACJE O WI-FI
+# WI-FI
 # ============================================================
 
 text_sensor:
@@ -155,22 +153,17 @@ text_sensor:
       id: wifi_ssid
 
 # ============================================================
-# POGODA Z OPEN-METEO
+# POGODA - OPEN-METEO
 # WEJHEROWO
 # ============================================================
 
 interval:
-
-  # ----------------------------------------------------------
-  # POBIERANIE POGODY CO 10 MINUT
-  # ----------------------------------------------------------
 
   - interval: 10min
     then:
 
       - http_request.get:
           url: "https://api.open-meteo.com/v1/forecast?latitude=54.60&longitude=18.25&current=temperature_2m,relative_humidity_2m,weather_code,cloud_cover,wind_speed_10m"
-
           capture_response: true
 
           on_response:
@@ -189,7 +182,7 @@ interval:
                           if (!root["current"]) {
                             ESP_LOGW(
                               "pogoda",
-                              "Brak sekcji current w odpowiedzi"
+                              "Brak danych current"
                             );
                             return false;
                           }
@@ -197,35 +190,30 @@ interval:
                           JsonObject current = root["current"];
 
                           if (current["temperature_2m"]) {
-
                             id(weather_temp).publish_state(
                               current["temperature_2m"].as<float>()
                             );
                           }
 
                           if (current["relative_humidity_2m"]) {
-
                             id(weather_humidity).publish_state(
                               current["relative_humidity_2m"].as<float>()
                             );
                           }
 
                           if (current["wind_speed_10m"]) {
-
                             id(weather_wind).publish_state(
                               current["wind_speed_10m"].as<float>()
                             );
                           }
 
                           if (current["cloud_cover"]) {
-
                             id(weather_cloud).publish_state(
                               current["cloud_cover"].as<float>()
                             );
                           }
 
                           if (current["weather_code"]) {
-
                             id(weather_wmo).publish_state(
                               current["weather_code"].as<int>()
                             );
@@ -237,13 +225,13 @@ interval:
                   else:
 
                     - logger.log:
-                        format: "Open-Meteo HTTP error: %d"
+                        format: "Blad Open-Meteo HTTP: %d"
                         args:
                           - response->status_code
 
-  # ----------------------------------------------------------
-  # ANIMACJA EKRANU
-  # ----------------------------------------------------------
+  # ==========================================================
+  # ANIMACJA
+  # ==========================================================
 
   - interval: 80ms
     then:
@@ -264,16 +252,556 @@ font:
   - file: "Roboto-Regular.ttf"
     id: font_mala
     size: 16
-    glyphs: " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ĄĆĘŁŃÓŚŹŻąćęłńóśźż°"
+    glyphs: ' !"#$%&''()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~ĄĆĘŁŃÓŚŹŻąćęłńóśźż°'
 
   - file: "Roboto-Regular.ttf"
     id: font_srednia
     size: 24
-    glyphs: " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ĄĆĘŁŃÓŚŹŻąćęłńóśźż°"
+    glyphs: ' !"#$%&''()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~ĄĆĘŁŃÓŚŹŻąćęłńóśźż°'
 
   - file: "Roboto-Regular.ttf"
     id: font_duza
     size: 58
-    glyphs: " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ĄĆĘŁŃÓŚŹŻąćęłńóśźż°"
+    glyphs: ' !"#$%&''()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~ĄĆĘŁŃÓŚŹŻąćęłńóśźż°'
 
-  - file: "Roboto-Regular.ttf
+  - file: "Roboto-Regular.ttf"
+    id: font_ogromna
+    size: 90
+    glyphs: '0123456789-+.°C'
+
+# ============================================================
+# WYŚWIETLACZ WAVESHARE
+# 800 x 480
+# ============================================================
+
+display:
+
+  - platform: mipi_rgb
+    model: ESP32-S3-TOUCH-LCD-4.3
+
+    id: my_display
+
+    rotation: 0
+    update_interval: 80ms
+
+    reset_pin:
+      ch422g: ch422g_hub
+      number: 3
+
+    enable_pin:
+      ch422g: ch422g_hub
+      number: 2
+
+    color_order: RGB
+
+    lambda: |-
+
+      // ======================================================
+      // KARTA 3 - POGODA
+      // ======================================================
+
+      if (id(aktualna_strona) == 2) {
+
+        // TŁO NIEBA
+
+        it.fill(Color(12, 30, 55));
+
+        it.filled_rectangle(
+          0,
+          0,
+          800,
+          260,
+          Color(25, 72, 118)
+        );
+
+        it.filled_rectangle(
+          0,
+          260,
+          800,
+          220,
+          Color(12, 30, 55)
+        );
+
+        // ====================================================
+        // NAGŁÓWEK
+        // ====================================================
+
+        it.print(
+          25,
+          20,
+          id(font_srednia),
+          Color(255, 255, 255),
+          TextAlign::TOP_LEFT,
+          "WEJHEROWO"
+        );
+
+        if (id(time_now).now().is_valid()) {
+
+          it.strftime(
+            25,
+            53,
+            id(font_mala),
+            Color(205, 225, 245),
+            TextAlign::TOP_LEFT,
+            "%A, %d %B %Y",
+            id(time_now).now()
+          );
+
+          it.strftime(
+            775,
+            22,
+            id(font_srednia),
+            Color(255, 255, 255),
+            TextAlign::TOP_RIGHT,
+            "%H:%M",
+            id(time_now).now()
+          );
+        }
+
+        // ====================================================
+        // SŁOŃCE
+        // ====================================================
+
+        if (
+          id(weather_code) == 0 ||
+          id(weather_code) == 1 ||
+          id(weather_code) == 2
+        ) {
+
+          int sun_move = (id(animacja) / 12) % 8;
+
+          int sun_x = 665;
+          int sun_y = 110;
+
+          it.filled_circle(
+            sun_x,
+            sun_y,
+            48,
+            Color(255, 205, 60)
+          );
+
+          it.line(
+            sun_x - 78 - sun_move,
+            sun_y,
+            sun_x - 55,
+            sun_y,
+            Color(255, 225, 110)
+          );
+
+          it.line(
+            sun_x + 55,
+            sun_y,
+            sun_x + 78 + sun_move,
+            sun_y,
+            Color(255, 225, 110)
+          );
+
+          it.line(
+            sun_x,
+            sun_y - 78 - sun_move,
+            sun_x,
+            sun_y - 55,
+            Color(255, 225, 110)
+          );
+
+          it.line(
+            sun_x,
+            sun_y + 55,
+            sun_x,
+            sun_y + 78 + sun_move,
+            Color(255, 225, 110)
+          );
+        }
+
+        // ====================================================
+        // ANIMOWANA CHMURA
+        // ====================================================
+
+        int cloud_move = (id(animacja) / 5) % 120;
+        int cloud_x = 60 + cloud_move;
+        int cloud_y = 125;
+
+        it.filled_circle(
+          cloud_x,
+          cloud_y,
+          28,
+          Color(220, 230, 240)
+        );
+
+        it.filled_circle(
+          cloud_x + 32,
+          cloud_y - 18,
+          38,
+          Color(240, 245, 248)
+        );
+
+        it.filled_circle(
+          cloud_x + 70,
+          cloud_y,
+          28,
+          Color(220, 230, 240)
+        );
+
+        it.filled_rectangle(
+          cloud_x,
+          cloud_y,
+          70,
+          28,
+          Color(225, 235, 242)
+        );
+
+        // ====================================================
+        // TEMPERATURA
+        // ====================================================
+
+        if (!isnan(id(weather_temp).state)) {
+
+          it.printf(
+            40,
+            120,
+            id(font_ogromna),
+            Color(255, 255, 255),
+            TextAlign::TOP_LEFT,
+            "%.1f°C",
+            id(weather_temp).state
+          );
+
+        } else {
+
+          it.print(
+            40,
+            120,
+            id(font_ogromna),
+            Color(255, 255, 255),
+            TextAlign::TOP_LEFT,
+            "--.-°C"
+          );
+        }
+
+        // ====================================================
+        // OPIS POGODY
+        // ====================================================
+
+        if (id(weather_code) == 0) {
+
+          it.print(
+            45,
+            220,
+            id(font_srednia),
+            Color(255, 255, 255),
+            TextAlign::TOP_LEFT,
+            "Bezchmurnie"
+          );
+
+        } else if (
+          id(weather_code) == 1 ||
+          id(weather_code) == 2
+        ) {
+
+          it.print(
+            45,
+            220,
+            id(font_srednia),
+            Color(255, 255, 255),
+            TextAlign::TOP_LEFT,
+            "Czesciowe zachmurzenie"
+          );
+
+        } else if (id(weather_code) == 3) {
+
+          it.print(
+            45,
+            220,
+            id(font_srednia),
+            Color(255, 255, 255),
+            TextAlign::TOP_LEFT,
+            "Pochmurno"
+          );
+
+        } else if (
+          id(weather_code) >= 51 &&
+          id(weather_code) <= 67
+        ) {
+
+          it.print(
+            45,
+            220,
+            id(font_srednia),
+            Color(255, 255, 255),
+            TextAlign::TOP_LEFT,
+            "Deszcz"
+          );
+
+        } else if (
+          id(weather_code) >= 71 &&
+          id(weather_code) <= 77
+        ) {
+
+          it.print(
+            45,
+            220,
+            id(font_srednia),
+            Color(255, 255, 255),
+            TextAlign::TOP_LEFT,
+            "Snieg"
+          );
+
+        } else if (
+          id(weather_code) >= 80 &&
+          id(weather_code) <= 82
+        ) {
+
+          it.print(
+            45,
+            220,
+            id(font_srednia),
+            Color(255, 255, 255),
+            TextAlign::TOP_LEFT,
+            "Przelotny deszcz"
+          );
+
+        } else if (id(weather_code) >= 95) {
+
+          it.print(
+            45,
+            220,
+            id(font_srednia),
+            Color(255, 255, 255),
+            TextAlign::TOP_LEFT,
+            "Burza"
+          );
+
+        } else {
+
+          it.print(
+            45,
+            220,
+            id(font_srednia),
+            Color(255, 255, 255),
+            TextAlign::TOP_LEFT,
+            "Warunki pogodowe"
+          );
+        }
+
+        // ====================================================
+        // WIATR
+        // ====================================================
+
+        it.filled_rectangle(
+          20,
+          300,
+          240,
+          125,
+          Color(24, 45, 70)
+        );
+
+        it.rectangle(
+          20,
+          300,
+          240,
+          125,
+          Color(65, 100, 135)
+        );
+
+        it.print(
+          40,
+          318,
+          id(font_mala),
+          Color(165, 195, 220),
+          TextAlign::TOP_LEFT,
+          "WIATR"
+        );
+
+        if (!isnan(id(weather_wind).state)) {
+
+          it.printf(
+            40,
+            350,
+            id(font_srednia),
+            Color(255, 255, 255),
+            TextAlign::TOP_LEFT,
+            "%.1f km/h",
+            id(weather_wind).state
+          );
+
+        } else {
+
+          it.print(
+            40,
+            350,
+            id(font_srednia),
+            Color(255, 255, 255),
+            TextAlign::TOP_LEFT,
+            "-- km/h"
+          );
+        }
+
+        // ====================================================
+        // WILGOTNOŚĆ
+        // ====================================================
+
+        it.filled_rectangle(
+          280,
+          300,
+          240,
+          125,
+          Color(24, 45, 70)
+        );
+
+        it.rectangle(
+          280,
+          300,
+          240,
+          125,
+          Color(65, 100, 135)
+        );
+
+        it.print(
+          300,
+          318,
+          id(font_mala),
+          Color(165, 195, 220),
+          TextAlign::TOP_LEFT,
+          "WILGOTNOSC"
+        );
+
+        if (!isnan(id(weather_humidity).state)) {
+
+          it.printf(
+            300,
+            350,
+            id(font_srednia),
+            Color(255, 255, 255),
+            TextAlign::TOP_LEFT,
+            "%.0f %%",
+            id(weather_humidity).state
+          );
+
+        } else {
+
+          it.print(
+            300,
+            350,
+            id(font_srednia),
+            Color(255, 255, 255),
+            TextAlign::TOP_LEFT,
+            "-- %"
+          );
+        }
+
+        // ====================================================
+        // ZACHMURZENIE
+        // ====================================================
+
+        it.filled_rectangle(
+          540,
+          300,
+          240,
+          125,
+          Color(24, 45, 70)
+        );
+
+        it.rectangle(
+          540,
+          300,
+          240,
+          125,
+          Color(65, 100, 135)
+        );
+
+        it.print(
+          560,
+          318,
+          id(font_mala),
+          Color(165, 195, 220),
+          TextAlign::TOP_LEFT,
+          "ZACHMURZENIE"
+        );
+
+        if (!isnan(id(weather_cloud).state)) {
+
+          it.printf(
+            560,
+            350,
+            id(font_srednia),
+            Color(255, 255, 255),
+            TextAlign::TOP_LEFT,
+            "%.0f %%",
+            id(weather_cloud).state
+          );
+
+        } else {
+
+          it.print(
+            560,
+            350,
+            id(font_srednia),
+            Color(255, 255, 255),
+            TextAlign::TOP_LEFT,
+            "-- %"
+          );
+        }
+
+        // ====================================================
+        // STOPKA
+        // ====================================================
+
+        it.print(
+          400,
+          450,
+          id(font_mala),
+          Color(130, 160, 190),
+          TextAlign::CENTER,
+          "Dane pogodowe: Open-Meteo"
+        );
+
+        return;
+      }
+
+      // ======================================================
+      // POZOSTAŁE STRONY
+      // ======================================================
+
+      it.fill(Color(0, 0, 0));
+
+      it.print(
+        400,
+        240,
+        id(font_srednia),
+        Color(255, 255, 255),
+        TextAlign::CENTER,
+        "Strona glowna sterowania"
+      );
+
+# ============================================================
+# DOTYK GT911
+# ============================================================
+
+touchscreen:
+
+  - platform: gt911
+
+    id: panel_dotykowy
+
+    i2c_id: bus_i2c
+
+    interrupt_pin: GPIO4
+
+    reset_pin:
+      ch422g: ch422g_hub
+      number: 1
+
+    transform:
+      swap_xy: false
+      mirror_x: false
+      mirror_y: false
+
+    on_touch:
+
+      - lambda: |-
+          ESP_LOGI(
+            "touch",
+            "Dotyk X=%d Y=%d",
+            touch.x,
+            touch.y
+          );
