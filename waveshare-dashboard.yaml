@@ -82,44 +82,22 @@ font:
   - file: "gfonts://Roboto"
     id: font_small
     size: 20
-    glyphs: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZęąśżźćńłóĘĄŚŻŹĆŃŁÓ0123456789°.,:-/_ "
 
   - file: "gfonts://Roboto"
     id: font_medium
     size: 26
-    glyphs: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZęąśżźćńłóĘĄŚŻŹĆŃŁÓ0123456789°.,:-/_ "
 
   - file: "gfonts://Roboto"
     id: font_large
     size: 48
-    glyphs: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZęąśżźćńłóĘĄŚŻŹĆŃŁÓ0123456789°.,:-/_ "
 
   - file: "gfonts://Roboto"
     id: font_title
     size: 30
-    glyphs: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZęąśżźćńłóĘĄŚŻŹĆŃŁÓ0123456789°.,:-/_ "
 
 
 # ============================================================
-# SENSORY POGODOWE (OPENWEATHERMAP)
-# ============================================================
-
-sensor:
-  - platform: openweathermap
-    api_key: "TUTAJ_WPISZ_SWOJ_DARMOWY_KLUCZ_API"
-    latitude: 54.6056
-    longitude: 18.2475
-    update_interval: 15min
-    temperature:
-      id: zew_temp
-      name: "Temperatura Zewnętrzna"
-    humidity:
-      id: zew_wilg
-      name: "Wilgotność Zewnętrzna"
-
-
-# ============================================================
-# WYŚWIETLACZ 800x480 (OBSŁUGA DWÓCH STRON)
+# WYŚWIETLACZ 800x480 (DWIE STRONY)
 # ============================================================
 
 display:
@@ -133,24 +111,66 @@ display:
 
     lambda: |-
 
-      // Tło wspólne
+      // ------------------------------------------------------
+      // TŁO
+      // ------------------------------------------------------
+
       it.fill(Color(15, 18, 24));
 
-      // Górny panel wspólny
-      it.filled_rectangle(0, 0, 800, 75, Color(25, 30, 40));
+
+      // ------------------------------------------------------
+      // GÓRNY PANEL (ZALEŻNY OD STRONY)
+      // ------------------------------------------------------
+
+      it.filled_rectangle(
+        0, 0,
+        800, 75,
+        Color(25, 30, 40)
+      );
 
       if (id(aktualna_strona) == 0) {
-        it.print(20, 20, id(font_title), Color(255, 255, 255), "SMART HOME (STRONA 1/2)");
+        it.print(
+          20, 20,
+          id(font_title),
+          Color(255, 255, 255),
+          "SMART HOME (STRONA 1/2)"
+        );
       } else {
-        it.print(20, 20, id(font_title), Color(100, 200, 255), "DRUGI KAFEL / STRONA 2/2");
+        it.print(
+          20, 20,
+          id(font_title),
+          Color(100, 200, 255),
+          "DRUGI KAFEL (STRONA 2/2)"
+        );
       }
 
+
       // Zegar
+
       auto now = id(zegar).now();
+
       if (now.is_valid()) {
-        it.printf(780, 14, id(font_large), Color(255, 255, 255), TextAlign::TOP_RIGHT, "%02d:%02d", now.hour, now.minute);
+
+        it.printf(
+          780, 14,
+          id(font_large),
+          Color(255, 255, 255),
+          TextAlign::TOP_RIGHT,
+          "%02d:%02d",
+          now.hour,
+          now.minute
+        );
+
       } else {
-        it.print(780, 20, id(font_medium), Color(255, 255, 255), TextAlign::TOP_RIGHT, "--:--");
+
+        it.print(
+          780, 20,
+          id(font_medium),
+          Color(255, 255, 255),
+          TextAlign::TOP_RIGHT,
+          "--:--"
+        );
+
       }
 
 
@@ -159,67 +179,251 @@ display:
       // ======================================================
       if (id(aktualna_strona) == 0) {
 
-        // Linie podziału
-        it.filled_rectangle(399, 75, 401, 480, Color(70, 75, 85));
-        it.filled_rectangle(0, 300, 800, 302, Color(70, 75, 85));
+        // ------------------------------------------------------
+        // LINIE PODZIAŁU
+        // ------------------------------------------------------
 
-        // Lewa góra - Rolety
-        it.print(200, 95, id(font_medium), Color(255, 255, 255), TextAlign::TOP_CENTER, "ROLETY OKIENNE");
+        it.filled_rectangle(
+          399, 75,
+          401, 480,
+          Color(70, 75, 85)
+        );
 
-        it.filled_rectangle(25, 150, 130, 210, Color(40, 45, 55));
-        it.print(77, 165, id(font_medium), Color(255, 255, 255), TextAlign::TOP_CENTER, "GÓRA");
+        it.filled_rectangle(
+          0, 300,
+          800, 302,
+          Color(70, 75, 85)
+        );
 
-        it.filled_rectangle(145, 150, 250, 210, Color(40, 45, 55));
-        it.print(197, 165, id(font_medium), Color(255, 255, 255), TextAlign::TOP_CENTER, "STOP");
 
-        it.filled_rectangle(265, 150, 370, 210, Color(40, 45, 55));
-        it.print(317, 165, id(font_medium), Color(255, 255, 255), TextAlign::TOP_CENTER, "DÓŁ");
+        // ------------------------------------------------------
+        // LEWA GÓRA - ROLETY
+        // ------------------------------------------------------
 
-        it.print(200, 235, id(font_small), Color(150, 160, 175), TextAlign::TOP_CENTER, "STEROWANIE ROLETAMI");
+        it.print(
+          200, 95,
+          id(font_medium),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "ROLETY OKIENNE"
+        );
 
-        // Prawa góra - Klimatyzacja
-        it.print(600, 95, id(font_medium), Color(255, 255, 255), TextAlign::TOP_CENTER, "ROTENSO");
-        it.print(600, 130, id(font_title), Color(100, 200, 255), TextAlign::TOP_CENTER, "KLIMATYZACJA");
 
-        it.filled_rectangle(440, 170, 560, 230, Color(40, 45, 55));
-        it.print(500, 184, id(font_small), Color(255, 255, 255), TextAlign::TOP_CENTER, "ON / OFF");
+        // Przyciski rolet
 
-        it.filled_rectangle(580, 170, 760, 230, Color(40, 45, 55));
-        it.print(670, 184, id(font_small), Color(255, 255, 255), TextAlign::TOP_CENTER, "TRYB");
+        it.filled_rectangle(
+          25, 150,
+          130, 210,
+          Color(40, 45, 55)
+        );
 
-        it.print(600, 255, id(font_small), Color(150, 160, 175), TextAlign::TOP_CENTER, "STATUS: GOTOWA");
+        it.print(
+          77, 165,
+          id(font_medium),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "GÓRA"
+        );
 
-        // Lewy dół - Pogoda z internetu
-        it.print(200, 325, id(font_medium), Color(255, 255, 255), TextAlign::TOP_CENTER, "POGODA INTERNET");
 
-        if (id(zew_temp).has_state()) {
-          it.printf(110, 385, id(font_large), Color(255, 180, 80), TextAlign::TOP_CENTER, "%.1f°C", id(zew_temp).state);
-        } else {
-          it.print(110, 395, id(font_medium), Color(150, 150, 150), TextAlign::TOP_CENTER, "--.-°C");
-        }
+        it.filled_rectangle(
+          145, 150,
+          250, 210,
+          Color(40, 45, 55)
+        );
 
-        if (id(zew_wilg).has_state()) {
-          it.printf(285, 395, id(font_medium), Color(100, 200, 255), TextAlign::TOP_CENTER, "%.0f%% RH", id(zew_wilg).state);
-        } else {
-          it.print(285, 395, id(font_medium), Color(150, 150, 150), TextAlign::TOP_CENTER, "--%");
-        }
+        it.print(
+          197, 165,
+          id(font_medium),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "STOP"
+        );
 
-        // Prawy dół - Status systemu
-        it.print(600, 325, id(font_medium), Color(255, 255, 255), TextAlign::TOP_CENTER, "STATUS SYSTEMU");
-        it.print(600, 375, id(font_medium), Color(100, 255, 130), TextAlign::TOP_CENTER, "ESP32 ONLINE");
-        it.print(600, 420, id(font_small), Color(160, 170, 180), TextAlign::TOP_CENTER, "Dotknij góry, aby zmienić stronę");
+
+        it.filled_rectangle(
+          265, 150,
+          370, 210,
+          Color(40, 45, 55)
+        );
+
+        it.print(
+          317, 165,
+          id(font_medium),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "DÓŁ"
+        );
+
+
+        // Status rolet
+
+        it.print(
+          200, 235,
+          id(font_small),
+          Color(150, 160, 175),
+          TextAlign::TOP_CENTER,
+          "STEROWANIE ROLETAMI"
+        );
+
+
+        // ------------------------------------------------------
+        // PRAWA GÓRA - KLIMATYZACJA
+        // ------------------------------------------------------
+
+        it.print(
+          600, 95,
+          id(font_medium),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "ROTENSO"
+        );
+
+        it.print(
+          600, 130,
+          id(font_title),
+          Color(100, 200, 255),
+          TextAlign::TOP_CENTER,
+          "KLIMATYZACJA"
+        );
+
+
+        it.filled_rectangle(
+          440, 170,
+          560, 230,
+          Color(40, 45, 55)
+        );
+
+        it.print(
+          500, 184,
+          id(font_small),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "ON / OFF"
+        );
+
+
+        it.filled_rectangle(
+          580, 170,
+          760, 230,
+          Color(40, 45, 55)
+        );
+
+        it.print(
+          670, 184,
+          id(font_small),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "TRYB"
+        );
+
+
+        it.print(
+          600, 255,
+          id(font_small),
+          Color(150, 160, 175),
+          TextAlign::TOP_CENTER,
+          "STATUS: GOTOWA"
+        );
+
+
+        // ------------------------------------------------------
+        // LEWY DÓŁ - CZUJNIK ZIGBEE
+        // ------------------------------------------------------
+
+        it.print(
+          200, 325,
+          id(font_medium),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "CZUJNIK ZIGBEE"
+        );
+
+
+        it.print(
+          110, 385,
+          id(font_large),
+          Color(255, 180, 80),
+          TextAlign::TOP_CENTER,
+          "21.5°C"
+        );
+
+
+        it.print(
+          285, 395,
+          id(font_medium),
+          Color(100, 200, 255),
+          TextAlign::TOP_CENTER,
+          "55% RH"
+        );
+
+
+        // ------------------------------------------------------
+        // PRAWY DÓŁ - STATUS SYSTEMU
+        // ------------------------------------------------------
+
+        it.print(
+          600, 325,
+          id(font_medium),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "STATUS SYSTEMU"
+        );
+
+
+        it.print(
+          600, 375,
+          id(font_medium),
+          Color(100, 255, 130),
+          TextAlign::TOP_CENTER,
+          "ESP32 ONLINE"
+        );
+
+
+        it.print(
+          600, 420,
+          id(font_small),
+          Color(160, 170, 180),
+          TextAlign::TOP_CENTER,
+          "Dotknij góry, aby zmienić stronę"
+        );
 
       } else {
 
         // ======================================================
         // ZAWARTOŚĆ STRONY 1 (DRUGI KAFEL / EKRAN)
         // ======================================================
-        it.print(400, 150, id(font_title), Color(255, 255, 255), TextAlign::TOP_CENTER, "DRUGI KAFEL / STRONA 2");
-        it.print(400, 220, id(font_medium), Color(200, 200, 200), TextAlign::TOP_CENTER, "Tutaj możesz umieścić kolejne przyciski lub sensory");
-        
+
+        it.print(
+          400, 150,
+          id(font_title),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "DRUGI KAFEL / STRONA 2"
+        );
+
+        it.print(
+          400, 220,
+          id(font_medium),
+          Color(200, 200, 200),
+          TextAlign::TOP_CENTER,
+          "Tutaj możesz umieścić kolejne przyciski lub sensory"
+        );
+
         // Przycisk wizualny powrotu
-        it.filled_rectangle(250, 320, 550, 390, Color(40, 50, 70));
-        it.print(400, 338, id(font_medium), Color(255, 255, 255), TextAlign::TOP_CENTER, "WRÓĆ DO STRONY GŁÓWNEJ");
+        it.filled_rectangle(
+          250, 320,
+          550, 390,
+          Color(40, 50, 70)
+        );
+
+        it.print(
+          400, 338,
+          id(font_medium),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "WRÓĆ DO STRONY GŁÓWNEJ"
+        );
 
       }
 
@@ -239,8 +443,10 @@ touchscreen:
 
     address: 0x5D
 
+    # IRQ dotyku jest bezpośrednio na GPIO4
     interrupt_pin: GPIO4
 
+    # RESET GT911 jest przez CH422G IO1
     reset_pin:
       ch422g: ch422g_hub
       number: 1
@@ -252,6 +458,16 @@ touchscreen:
 
     update_interval: 50ms
 
+    on_touch:
+      - lambda: |-
+
+          ESP_LOGI(
+            "touch",
+            "Dotyk: X=%d Y=%d",
+            touch.x,
+            touch.y
+          );
+
 
 # ============================================================
 # PRZYCISKI DOTYKOWE (BINARY SENSORS)
@@ -259,7 +475,7 @@ touchscreen:
 
 binary_sensor:
 
-  # Przycisk zmiany strony (kliknięcie w górny pasek nagłówka od Y: 0 do 75)
+  # Przycisk zmiany strony (kliknięcie w górny pasek nagłówka Y: 0 do 75)
   - platform: touchscreen
     name: "Zmień Stronę"
     id: zmiana_strony
@@ -277,7 +493,7 @@ binary_sensor:
           id(ekran).schedule_update();
 
 
-  # Przyciski dla strony głównej
+  # --- ROLETARIUM (Strona 0) ---
   - platform: touchscreen
     name: "Roleta Góra"
     id: roleta_gora
@@ -289,6 +505,7 @@ binary_sensor:
       - logger.log:
           format: "Naciśnięto ROLETY GÓRA"
           level: INFO
+
 
   - platform: touchscreen
     name: "Roleta Stop"
@@ -302,6 +519,7 @@ binary_sensor:
           format: "Naciśnięto ROLETY STOP"
           level: INFO
 
+
   - platform: touchscreen
     name: "Roleta Dół"
     id: roleta_dol
@@ -314,6 +532,8 @@ binary_sensor:
           format: "Naciśnięto ROLETY DÓŁ"
           level: INFO
 
+
+  # --- KLIMATYZACJA (Strona 0) ---
   - platform: touchscreen
     name: "Klimatyzacja"
     id: klimatyzacja
@@ -324,6 +544,7 @@ binary_sensor:
     on_press:
       - logger.log:
           format: "Naciśnięto KLIMATYZACJA"
+
 
   - platform: touchscreen
     name: "Tryb klimatyzacji"
