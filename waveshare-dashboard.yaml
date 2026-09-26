@@ -64,25 +64,29 @@ time:
 
 
 # ============================================================
-# CZCIONKI
+# CZCIONKI (z obsługą polskich znaków)
 # ============================================================
 
 font:
   - file: "gfonts://Roboto"
     id: font_small
     size: 20
+    glyphs: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZęąśżźćńłóĘĄŚŻŹĆŃŁÓ0123456789°.,:-/_ "
 
   - file: "gfonts://Roboto"
     id: font_medium
     size: 26
+    glyphs: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZęąśżźćńłóĘĄŚŻŹĆŃŁÓ0123456789°.,:-/_ "
 
   - file: "gfonts://Roboto"
     id: font_large
     size: 48
+    glyphs: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZęąśżźćńłóĘĄŚŻŹĆŃŁÓ0123456789°.,:-/_ "
 
   - file: "gfonts://Roboto"
     id: font_title
     size: 30
+    glyphs: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZęąśżźćńłóĘĄŚŻŹĆŃŁÓ0123456789°.,:-/_ "
 
 
 # ============================================================
@@ -379,10 +383,8 @@ touchscreen:
 
     address: 0x5D
 
-    # IRQ dotyku jest bezpośrednio na GPIO4
     interrupt_pin: GPIO4
 
-    # RESET GT911 jest przez CH422G IO1
     reset_pin:
       ch422g: ch422g_hub
       number: 1
@@ -406,7 +408,7 @@ touchscreen:
 
 
 # ============================================================
-# PRZYCISKI DOTYKOWE - ROLETA GÓRA
+# PRZYCISKI DOTYKOWE - BINARY SENSORS
 # ============================================================
 
 binary_sensor:
@@ -456,10 +458,6 @@ binary_sensor:
           level: INFO
 
 
-# ============================================================
-# PRZYCISK DOTYKOWY - KLIMATYZACJA
-# ============================================================
-
   - platform: touchscreen
     name: "Klimatyzacja"
     id: klimatyzacja
@@ -473,10 +471,6 @@ binary_sensor:
       - logger.log:
           format: "Naciśnięto KLIMATYZACJA"
 
-
-# ============================================================
-# PRZYCISK DOTYKOWY - TRYB KLIMATYZACJI
-# ============================================================
 
   - platform: touchscreen
     name: "Tryb klimatyzacji"
