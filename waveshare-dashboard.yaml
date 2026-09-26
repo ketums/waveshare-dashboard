@@ -107,20 +107,22 @@ time:
 # ============================================================
 # CZCIONKI
 # ============================================================
-
 font:
-
-  - file: "gfonts://Roboto"
+  - file: "Roboto-Regular.ttf"
     id: font_duza
     size: 42
+    glyphs: " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ĄĆĘŁŃÓŚŹŻąćęłńóśźż°"
 
-  - file: "gfonts://Roboto"
+  - file: "Roboto-Regular.ttf"
     id: font_srednia
     size: 22
+    glyphs: " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ĄĆĘŁŃÓŚŹŻąćęłńóśźż°"
 
-  - file: "gfonts://Roboto"
+  - file: "Roboto-Regular.ttf"
     id: font_mala
     size: 16
+    glyphs: " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ĄĆĘŁŃÓŚŹŻąćęłńóśźż°"
+
 
 
 # ============================================================
