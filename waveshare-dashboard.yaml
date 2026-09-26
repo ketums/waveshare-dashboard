@@ -21,9 +21,9 @@ api:
 ota:
   - platform: esphome
 
-# Zewnętrzny komponent bez tagu gałęzi
+# Pobranie zweryfikowanego komponentu rgb_display z PR #4578
 external_components:
-  - source: github://clydebarrow/esphome
+  - source: github://pr#4578
     components: [ rgb_display ]
 
 # 1. Magistrala I2C dla panelu dotykowego GT911
