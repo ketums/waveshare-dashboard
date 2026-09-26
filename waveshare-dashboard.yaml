@@ -445,9 +445,38 @@ display:
           "Warunki: Częściowe zachmurzenie"
         );
 
-        // Prawa strona kafelka: Duży zegar obok temperatury
+        // Środek kafelka: Animowana ikona pogody (Słońce z obracającymi się promieniami + chmurka)
+        {
+          uint32_t ms = millis();
+          float angle = (ms % 10000) * (2.0 * 3.14159265 / 10000.0);
+          float cx = 450.0;
+          float cy = 300.0;
+          
+          // Promienie słońca
+          for (int i = 0; i < 8; i++) {
+            float a = angle + i * (2.0 * 3.14159265 / 8.0);
+            int x1 = cx + 24.0 * cosf(a);
+            int y1 = cy + 24.0 * sinf(a);
+            int x2 = cx + 34.0 * cosf(a);
+            int y2 = cy + 34.0 * sinf(a);
+            it.line(x1, y1, x2, y2, Color(255, 204, 0));
+          }
+          
+          // Tarcza słońca
+          it.filled_circle(cx, cy, 18, Color(255, 204, 0));
+
+          // Chmurka częściowego zachmurzenia zachodząca na słońce
+          float cloud_x = 455.0;
+          float cloud_y = 315.0;
+          it.filled_circle(cloud_x - 15, cloud_y + 5, 14, Color(180, 195, 215));
+          it.filled_circle(cloud_x + 10, cloud_y, 18, Color(180, 195, 215));
+          it.filled_circle(cloud_x + 28, cloud_y + 8, 12, Color(180, 195, 215));
+          it.filled_rectangle(cloud_x - 15, cloud_y + 2, 45, 18, Color(180, 195, 215));
+        }
+
+        // Prawa strona kafelka: Duży zegar obok temperatury i animacji
         it.print(
-          580, 235,
+          640, 235,
           id(font_mala),
           Color(160, 174, 192),
           TextAlign::TOP_CENTER,
@@ -456,7 +485,7 @@ display:
 
         if (time_now.is_valid()) {
           it.strftime(
-            580, 275,
+            640, 275,
             id(font_duza),
             Color(255, 255, 255),
             TextAlign::TOP_CENTER,
@@ -465,7 +494,7 @@ display:
           );
         } else {
           it.print(
-            580, 275,
+            640, 275,
             id(font_duza),
             Color(255, 255, 255),
             TextAlign::TOP_CENTER,
