@@ -21,10 +21,9 @@ api:
 ota:
   - platform: esphome
 
-# Pobranie zweryfikowanego komponentu rgb_display z PR #4578
+# Właściwe, dedykowane repozytorium dla rgb_display
 external_components:
-  - source: github://pr#4578
-    components: [ rgb_display ]
+  - source: github://clydebarrow/esphome-rgb-display
 
 # 1. Magistrala I2C dla panelu dotykowego GT911
 i2c:
@@ -33,13 +32,13 @@ i2c:
   scan: true
   id: bus_i2c
 
-# 2. Klient HTTP do zapytan Tuya / Smart Life
+# 2. Klient HTTP do zapytań Tuya / Smart Life
 http_request:
   id: klient_http
   useragent: "ESPHome Waveshare"
   timeout: 5s
 
-# 3. Obsluga dotyku GT911 z mapowaniem przyciskow dla 1024x600 px
+# 3. Obsługa dotyku GT911 z mapowaniem przycisków dla 1024x600 px
 touchscreen:
   platform: gt911
   id: panel_dotykowy
@@ -56,7 +55,7 @@ touchscreen:
         int x = touch.x;
         int y = touch.y;
         
-        // --- ROLETY OKIENNE (Lewy Gorny Kafelek) ---
+        // --- ROLETY OKIENNE (Lewy Górny Kafelek) ---
         if (y >= 180 && y <= 250) {
           if (x >= 40 && x <= 170) {
             ESP_LOGI("TOUCH", "Nacisnieto: OTWORZ OKNA");
@@ -72,7 +71,7 @@ touchscreen:
           }
         }
 
-        // --- KLIMATYZACJA ROTENSO (Prawy Gorny Kafelek) ---
+        // --- KLIMATYZACJA ROTENSO (Prawy Górny Kafelek) ---
         if (y >= 180 && y <= 250) {
           if (x >= 550 && x <= 630) {
             ESP_LOGI("TOUCH", "Nacisnieto: TEMP -");
@@ -102,7 +101,7 @@ time:
     id: czas_sntp
     timezone: "Europe/Warsaw"
 
-# 4. Wyswietlacz LCD dopasowany do 1024x600 px
+# 4. Wyświetlacz LCD dopasowany do 1024x600 px
 display:
   - platform: rgb_display
     id: ekran_waveshare
@@ -116,7 +115,7 @@ display:
     lambda: |-
       it.fill(Color(18, 24, 38));
 
-      // Ramka glowna i linie podzialu kafelkow
+      // Ramka główna i linie podziału kafelków
       it.rectangle(10, 10, 1004, 580, Color(45, 55, 72));
       it.line(10, 80, 1014, 80, Color(45, 55, 72));
       it.line(512, 80, 512, 590, Color(45, 55, 72));
