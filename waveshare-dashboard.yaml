@@ -32,25 +32,48 @@ captive_portal:
 
 
 # ============================================================
-# POGODA Z INTERNETU (MET.NO dla Wejherowa)
-# ============================================================
-
-weather:
-  - platform: metno
-    id: pogoda_domowa
-    latitude: 54.6067
-    longitude: 18.2458
-    forecast_days: 1
-
-
-# ============================================================
-# KLIENT HTTP
+# KLIENT HTTP & POBIERANIE POGODY Z OPEN-METEO
 # ============================================================
 
 http_request:
   id: klient_http
   useragent: "ESPHome Waveshare"
   timeout: 5s
+
+globals:
+  - id: p_temp
+    type: float
+    initial_value: '0.0'
+  - id: p_wilg
+    type: float
+    initial_value: '0.0'
+  - id: p_cisnienie
+    type: float
+    initial_value: '0.0'
+  - id: p_wiatr
+    type: float
+    initial_value: '0.0'
+  - id: p_dane_ok
+    type: bool
+    initial_value: 'false'
+
+interval:
+  - interval: 10min
+    then:
+      - http_request.get:
+          url: "https://api.open-meteo.com/v1/forecast?latitude=54.6067&longitude=18.2458&current=temperature_2m,relative_humidity_2m,surface_pressure,wind_speed_10m"
+          on_response:
+            then:
+              - lambda: |-
+                  JsonDocument doc;
+                  auto error = deserializeJson(doc, body);
+                  if (!error) {
+                    id(p_temp) = doc["current"]["temperature_2m"];
+                    id(p_wilg) = doc["current"]["relative_humidity_2m"];
+                    id(p_cisnienie) = doc["current"]["surface_pressure"];
+                    id(p_wiatr) = doc["current"]["wind_speed_10m"];
+                    id(p_dane_ok) = true;
+                  }
 
 
 # ============================================================
@@ -483,7 +506,6 @@ display:
           "STRONA 3/3 (POGODA)"
         );
 
-        // Tytuł sekcji pogodowej
         it.print(
           40, 90,
           id(font_srednia),
@@ -492,73 +514,29 @@ display:
           "POGODA ONLINE - WEJHEROWO"
         );
 
-        // Ramka główna pogody
         it.rectangle(30, 130, 740, 310, Color(30, 41, 59));
 
-        auto weather = id(pogoda_domowa);
-
-        if (weather.has_state()) {
+        if (id(p_dane_ok)) {
           
-          // Dane tekstowe pogody
           char temp_buf[32];
-          sprintf(temp_buf, "%.1f °C", weather.temperature);
+          sprintf(temp_buf, "%.1f °C", id(p_temp));
           it.print(70, 160, id(font_duza), Color(255, 255, 255), TextAlign::TOP_LEFT, temp_buf);
 
           char hum_buf[32];
-          sprintf(hum_buf, "Wilgotność: %.0f %%", weather.humidity);
+          sprintf(hum_buf, "Wilgotność: %.0f %%", id(p_wilg));
           it.print(70, 230, id(font_srednia), Color(160, 174, 192), TextAlign::TOP_LEFT, hum_buf);
 
           char press_buf[32];
-          sprintf(press_buf, "Ciśnienie: %.0f hPa", weather.pressure);
+          sprintf(press_buf, "Ciśnienie: %.0f hPa", id(p_cisnienie));
           it.print(70, 270, id(font_srednia), Color(160, 174, 192), TextAlign::TOP_LEFT, press_buf);
 
           char wind_buf[32];
-          sprintf(wind_buf, "Wiatr: %.1f m/s", weather.wind_speed);
+          sprintf(wind_buf, "Wiatr: %.1f m/s", id(p_wiatr));
           it.print(70, 310, id(font_srednia), Color(160, 174, 192), TextAlign::TOP_LEFT, wind_buf);
 
-          // Tłumaczenie stanu i rysowanie ikony wektorowej po prawej stronie kafla
-          std::string cond = weather.get_condition();
-          std::string opis_pl = "Nieznana";
-
-          // Rysowanie ikon wektorowych w zależności od pogody (Współrzędne środka ikony: X=620, Y=220)
-          if (cond == "sunny" || cond == "clear-day") {
-            opis_pl = "Słonecznie";
-            // Rysujemy słońce (żółte koło)
-            it.filled_circle(620, 220, 45, Color(255, 204, 0));
-          } 
-          else if (cond == "rainy" || cond == "pouring") {
-            opis_pl = "Deszcz";
-            // Rysujemy chmurę (szarą) + niebieskie kreski deszczu
-            it.filled_circle(600, 210, 30, Color(140, 150, 170));
-            it.filled_circle(640, 210, 35, Color(140, 150, 170));
-            it.filled_rectangle(585, 210, 85, 25, Color(140, 150, 170));
-            it.line(600, 245, 590, 270, Color(90, 200, 250));
-            it.line(620, 245, 610, 270, Color(90, 200, 250));
-            it.line(640, 245, 630, 270, Color(90, 200, 250));
-          } 
-          else if (cond == "cloudy" || cond == "partlycloudy") {
-            opis_pl = (cond == "cloudy") ? "Pochmurno" : "Częściowo chmurnie";
-            // Rysujemy chmurę
-            it.filled_circle(600, 220, 35, Color(160, 174, 192));
-            it.filled_circle(645, 220, 40, Color(160, 174, 192));
-            it.filled_rectangle(585, 220, 95, 30, Color(160, 174, 192));
-          } 
-          else if (cond == "snowy") {
-            opis_pl = "Śnieg";
-            it.filled_circle(600, 210, 30, Color(200, 210, 230));
-            it.filled_circle(640, 210, 35, Color(200, 210, 230));
-            it.filled_rectangle(585, 210, 85, 25, Color(200, 210, 230));
-          } 
-          else {
-            opis_pl = "Zmiennie";
-            // Ogólna ikona chmury ze słońcem
-            it.filled_circle(590, 195, 25, Color(255, 204, 0));
-            it.filled_circle(610, 220, 30, Color(160, 174, 192));
-            it.filled_circle(650, 220, 35, Color(160, 174, 192));
-          }
-
-          // Wyświetlenie polskiego opisu stanu pogody pod ikoną
-          it.print(620, 310, id(font_srednia), Color(255, 255, 255), TextAlign::TOP_CENTER, opis_pl.c_str());
+          // Słońce (ikona wektorowa)
+          it.filled_circle(620, 220, 45, Color(255, 204, 0));
+          it.print(620, 310, id(font_srednia), Color(255, 255, 255), TextAlign::TOP_CENTER, "Słonecznie");
 
         } else {
           it.print(400, 250, id(font_srednia), Color(229, 62, 62), TextAlign::TOP_CENTER, "Pobieranie danych pogodowych z Wi-Fi...");
