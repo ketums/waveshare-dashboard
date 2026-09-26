@@ -187,33 +187,16 @@ display:
 
 
       // ======================================================
-      // ZEGAR (Góra)
+      // TYTUŁ (Lewa strona góry)
       // ======================================================
 
-      auto time_now = id(czas_sntp).now();
-
-      if (time_now.is_valid()) {
-
-        it.strftime(
-          25, 18,
-          id(font_duza),
-          Color(255, 255, 255),
-          TextAlign::TOP_LEFT,
-          "%H:%M",
-          time_now
-        );
-
-      } else {
-
-        it.print(
-          25, 18,
-          id(font_duza),
-          Color(255, 255, 255),
-          TextAlign::TOP_LEFT,
-          "--:--"
-        );
-
-      }
+      it.print(
+        25, 20,
+        id(font_srednia),
+        Color(200, 210, 225),
+        TextAlign::TOP_LEFT,
+        "DASHBOARD"
+      );
 
 
       // ======================================================
@@ -297,6 +280,10 @@ display:
         );
 
       }
+
+
+      // Pobranie aktualnego czasu dla logiki stron
+      auto time_now = id(czas_sntp).now();
 
 
       // ======================================================
@@ -396,7 +383,7 @@ display:
 
 
       // ======================================================
-      // STRONA 3 (GODZINA, DATA I POGODA)
+      // STRONA 3 (DATA, POGODA I DUŻY ZEGAR)
       // ======================================================
 
       else {
@@ -420,8 +407,6 @@ display:
 
         // Wyświetlanie pełnej daty, jeśli czas jest poprawny
         if (time_now.is_valid()) {
-          char data_buf[64];
-          // Przykład formatu daty, np. "Sobota, 26 września 2026"
           it.strftime(
             40, 145,
             id(font_srednia),
@@ -432,9 +417,10 @@ display:
           );
         }
 
-        // Kafel pogodowy
+        // Kafel pogodowy (duży prostokąt)
         it.rectangle(40, 200, 720, 230, Color(26, 37, 56));
         
+        // Lewa strona kafelka: Informacje o pogodzie
         it.print(
           70, 230,
           id(font_srednia),
@@ -458,6 +444,34 @@ display:
           TextAlign::TOP_LEFT,
           "Warunki: Częściowe zachmurzenie"
         );
+
+        // Prawa strona kafelka: Duży zegar obok temperatury
+        it.print(
+          580, 235,
+          id(font_mala),
+          Color(160, 174, 192),
+          TextAlign::TOP_CENTER,
+          "AKTUALNA GODZINA"
+        );
+
+        if (time_now.is_valid()) {
+          it.strftime(
+            580, 275,
+            id(font_duza),
+            Color(255, 255, 255),
+            TextAlign::TOP_CENTER,
+            "%H:%M",
+            time_now
+          );
+        } else {
+          it.print(
+            580, 275,
+            id(font_duza),
+            Color(255, 255, 255),
+            TextAlign::TOP_CENTER,
+            "--:--"
+          );
+        }
 
       }
 
@@ -549,5 +563,5 @@ touchscreen:
           // ==================================================
 
           else {
-            // Dodatkowe akcje dla strony 3 (np. odświeżenie pogody)
+            // Dodatkowe akcje dla strony 3
           }
