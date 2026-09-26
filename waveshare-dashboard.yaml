@@ -1,5 +1,5 @@
 esphome:
-  name: esp32-s3-display
+  name: waveshare-dashboard
   friendly_name: ESP32-S3 Panel Pogodowy
 
 esp32:
@@ -37,12 +37,12 @@ captive_portal:
 time:
   - platform: sntp
     id: time_now
+    timezone: Europe/Warsaw
     servers:
       - "pl.pool.ntp.org"
-    timezone: Europe/Warsaw
 
 # ============================================================
-# INTERNET / OPEN-METEO
+# INTERNET
 # ============================================================
 
 http_request:
@@ -57,7 +57,8 @@ ch422g:
   - id: ch422g_hub
 
 # ============================================================
-# I2C - GT911
+# I2C
+# GT911 + CH422G
 # ============================================================
 
 i2c:
@@ -89,7 +90,7 @@ globals:
     initial_value: '0'
 
 # ============================================================
-# CZUJNIKI POGODY
+# CZUJNIKI POGODOWE
 # ============================================================
 
 sensor:
@@ -109,7 +110,7 @@ sensor:
       then:
         - lambda: |-
             if (!isnan(x)) {
-              id(weather_code) = (int)x;
+              id(weather_code) = (int) x;
             }
 
   - platform: template
@@ -138,7 +139,7 @@ sensor:
     accuracy_decimals: 0
 
 # ============================================================
-# WI-FI
+# INFORMACJE O WI-FI
 # ============================================================
 
 text_sensor:
@@ -154,71 +155,103 @@ text_sensor:
       id: wifi_ssid
 
 # ============================================================
-# POBIERANIE AKTUALNEJ POGODY
+# POGODA Z OPEN-METEO
 # WEJHEROWO
 # ============================================================
 
 interval:
 
-  - interval: 10min
+  # ----------------------------------------------------------
+  # POBIERANIE POGODY CO 10 MINUT
+  # ----------------------------------------------------------
 
+  - interval: 10min
     then:
 
       - http_request.get:
-          url: "https://api.open-meteo.com/v1/forecast?latitude=54.60&longitude=18.25&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,cloud_cover,wind_speed_10m"
+          url: "https://api.open-meteo.com/v1/forecast?latitude=54.60&longitude=18.25&current=temperature_2m,relative_humidity_2m,weather_code,cloud_cover,wind_speed_10m"
+
+          capture_response: true
 
           on_response:
-
             then:
 
-              - lambda: |-
+              - if:
+                  condition:
+                    lambda: |-
+                      return response->status_code == 200;
 
-                  json::parse_json(response->body, [](JsonObject root) {
+                  then:
 
-                    JsonObject current = root["current"];
+                    - lambda: |-
+                        json::parse_json(body, [](JsonObject root) -> bool {
 
-                    if (!current.isNull()) {
+                          if (!root["current"]) {
+                            ESP_LOGW(
+                              "pogoda",
+                              "Brak sekcji current w odpowiedzi"
+                            );
+                            return false;
+                          }
 
-                      float temp =
-                        current["temperature_2m"].as<float>();
+                          JsonObject current = root["current"];
 
-                      float humidity =
-                        current["relative_humidity_2m"].as<float>();
+                          if (current["temperature_2m"]) {
 
-                      float wind =
-                        current["wind_speed_10m"].as<float>();
+                            id(weather_temp).publish_state(
+                              current["temperature_2m"].as<float>()
+                            );
+                          }
 
-                      float cloud =
-                        current["cloud_cover"].as<float>();
+                          if (current["relative_humidity_2m"]) {
 
-                      int code =
-                        current["weather_code"].as<int>();
+                            id(weather_humidity).publish_state(
+                              current["relative_humidity_2m"].as<float>()
+                            );
+                          }
 
-                      id(weather_temp).publish_state(temp);
-                      id(weather_humidity).publish_state(humidity);
-                      id(weather_wind).publish_state(wind);
-                      id(weather_cloud).publish_state(cloud);
-                      id(weather_wmo).publish_state(code);
+                          if (current["wind_speed_10m"]) {
 
-                    }
+                            id(weather_wind).publish_state(
+                              current["wind_speed_10m"].as<float>()
+                            );
+                          }
 
-                  });
+                          if (current["cloud_cover"]) {
 
-# ============================================================
-# ANIMACJA
-# ============================================================
+                            id(weather_cloud).publish_state(
+                              current["cloud_cover"].as<float>()
+                            );
+                          }
 
-interval:
+                          if (current["weather_code"]) {
+
+                            id(weather_wmo).publish_state(
+                              current["weather_code"].as<int>()
+                            );
+                          }
+
+                          return true;
+                        });
+
+                  else:
+
+                    - logger.log:
+                        format: "Open-Meteo HTTP error: %d"
+                        args:
+                          - response->status_code
+
+  # ----------------------------------------------------------
+  # ANIMACJA EKRANU
+  # ----------------------------------------------------------
 
   - interval: 80ms
-
     then:
 
       - lambda: |-
-
           id(animacja)++;
 
-          if (id(animacja) > 1000) {
+          if (id(animacja) >= 1000) {
             id(animacja) = 0;
           }
 
@@ -243,111 +276,4 @@ font:
     size: 58
     glyphs: " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ĄĆĘŁŃÓŚŹŻąćęłńóśźż°"
 
-  - file: "Roboto-Regular.ttf"
-    id: font_ogromna
-    size: 92
-    glyphs: "0123456789-+.°C"
-
-# ============================================================
-# WYŚWIETLACZ
-# WAVESHARE ESP32-S3 TOUCH LCD 4.3
-# 800 x 480
-# ============================================================
-
-display:
-
-  - platform: mipi_rgb
-
-    model: ESP32-S3-TOUCH-LCD-4.3
-
-    id: my_display
-
-    rotation: 0
-
-    update_interval: 80ms
-
-    reset_pin:
-      ch422g: ch422g_hub
-      number: 3
-
-    enable_pin:
-      ch422g: ch422g_hub
-      number: 2
-
-    color_order: RGB
-
-    lambda: |-
-
-      // ======================================================
-      // KARTA 3 - PEŁNOEKRANOWA POGODA
-      // ======================================================
-
-      if (id(aktualna_strona) == 2) {
-
-        // ----------------------------------------------------
-        // TŁO
-        // ----------------------------------------------------
-
-        it.fill(Color(18, 28, 48));
-
-        // ----------------------------------------------------
-        // GÓRNA CZĘŚĆ NIEBA
-        // ----------------------------------------------------
-
-        it.filled_rectangle(
-          0,
-          0,
-          800,
-          260,
-          Color(25, 70, 115)
-        );
-
-        // ----------------------------------------------------
-        // DOLNA CZĘŚĆ
-        // ----------------------------------------------------
-
-        it.filled_rectangle(
-          0,
-          260,
-          800,
-          220,
-          Color(18, 28, 48)
-        );
-
-        // ====================================================
-        // ANIMOWANE SŁOŃCE
-        // ====================================================
-
-        if (id(weather_code) == 0 ||
-            id(weather_code) == 1 ||
-            id(weather_code) == 2) {
-
-          int sun_x = 665;
-          int sun_y = 105;
-
-          int ruch =
-            (id(animacja) / 10) % 8;
-
-          it.filled_circle(
-            sun_x,
-            sun_y,
-            48,
-            Color(255, 205, 70)
-          );
-
-          // promienie
-
-          it.line(
-            sun_x - 75 - ruch,
-            sun_y,
-            sun_x - 55,
-            sun_y,
-            Color(255, 220, 100)
-          );
-
-          it.line(
-            sun_x + 55,
-            sun_y,
-            sun_x + 75 + ruch,
-            sun_y,
-            Color(255, 220, 100)
+  - file: "Roboto-Regular.ttf
