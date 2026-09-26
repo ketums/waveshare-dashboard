@@ -1,105 +1,6 @@
-esphome:
-  name: waveshare-dashboard
-  friendly_name: Dashboard Smart Life
-
-esp32:
-  board: esp32-s3-devkitc-1
-  variant: esp32s3
-  framework:
-    type: esp-idf
-
-wifi:
-  ssid: skrapi 2,4GHZ
-  password: RejtanA77
-
-  ap:
-    ssid: "ESPTest"
-    password: "Password123"
-
-api:
-
-ota:
-  - platform: esphome
-
-# 1. Magistrala I2C dla panelu dotykowego GT911
-i2c:
-  sda: GPIO19
-  scl: GPIO20
-  scan: true
-  id: bus_i2c
-
-# 2. Klient HTTP do zapytan Tuya / Smart Life
-http_request:
-  id: klient_http
-  useragent: "ESPHome Waveshare"
-  timeout: 5s
-
-# 3. Obsluga dotyku GT911 z mapowaniem przyciskow dla 1024x600 px
-touchscreen:
-  platform: gt911
-  id: panel_dotykowy
-  i2c_id: bus_i2c
-  interrupt_pin: GPIO0
-  reset_pin: GPIO38
-  transform:
-    swap_xy: false
-    mirror_x: false
-    mirror_y: false
-
-  on_touch:
-    - lambda: |-
-        int x = touch.x;
-        int y = touch.y;
-        
-        // --- ROLETY OKIENNE (Lewy Gorny Kafelek) ---
-        if (y >= 180 && y <= 250) {
-          if (x >= 40 && x <= 170) {
-            ESP_LOGI("TOUCH", "Nacisnieto: OTWORZ OKNA");
-            id(klient_http).post("https://openapi.tuyaeu.com/v1.0/token");
-          }
-          else if (x >= 190 && x <= 320) {
-            ESP_LOGI("TOUCH", "Nacisnieto: STOP ROLETY");
-            id(klient_http).post("https://openapi.tuyaeu.com/v1.0/token");
-          }
-          else if (x >= 340 && x <= 470) {
-            ESP_LOGI("TOUCH", "Nacisnieto: ZAMKNIJ OKNA");
-            id(klient_http).post("https://openapi.tuyaeu.com/v1.0/token");
-          }
-        }
-
-        // --- KLIMATYZACJA ROTENSO (Prawy Gorny Kafelek) ---
-        if (y >= 180 && y <= 250) {
-          if (x >= 550 && x <= 630) {
-            ESP_LOGI("TOUCH", "Nacisnieto: TEMP -");
-            id(klient_http).post("https://openapi.tuyaeu.com/v1.0/token");
-          }
-          else if (x >= 750 && x <= 830) {
-            ESP_LOGI("TOUCH", "Nacisnieto: TEMP +");
-            id(klient_http).post("https://openapi.tuyaeu.com/v1.0/token");
-          }
-        }
-
-# Czcionki
-font:
-  - file: "gfonts://Roboto"
-    id: font_duza
-    size: 42
-  - file: "gfonts://Roboto"
-    id: font_srednia
-    size: 22
-  - file: "gfonts://Roboto"
-    id: font_mala
-    size: 16
-
-# Czas z serwera NTP
-time:
-  - platform: sntp
-    id: czas_sntp
-    timezone: "Europe/Warsaw"
-
-# 4. Wyswietlacz LCD dopasowany do 1024x600 px
+# 4. Wyświetlacz LCD dopasowany do 1024x600 px
 display:
-  - platform: esp32_lcd
+  - platform: esp32_displays
     id: ekran_waveshare
     dimensions:
       width: 1024
@@ -111,7 +12,7 @@ display:
     lambda: |-
       it.fill(Color(18, 24, 38));
 
-      // Ramka glowna i linie podzialu kafelkow
+      // Ramka główna i linie podziału kafelków
       it.rectangle(10, 10, 1004, 580, Color(45, 55, 72));
       it.line(10, 80, 1014, 80, Color(45, 55, 72));
       it.line(512, 80, 512, 590, Color(45, 55, 72));
@@ -129,7 +30,7 @@ display:
       it.print(40, 140, id(font_mala), Color(160, 174, 192), TextAlign::TOP_LEFT, "okno 1 & okno 2");
       
       it.rectangle(40, 180, 130, 70, Color(66, 153, 225));
-      it.print(105, 200, id(font_mala), Color(255, 255, 255), TextAlign::TOP_CENTER, "OTWORZ");
+      it.print(105, 200, id(font_mala), Color(255, 255, 255), TextAlign::TOP_CENTER, "OTWÓRZ");
       
       it.rectangle(190, 180, 130, 70, Color(229, 62, 62));
       it.print(255, 200, id(font_mala), Color(255, 255, 255), TextAlign::TOP_CENTER, "STOP");
@@ -151,4 +52,4 @@ display:
       // CZUJNIK ZIGBEE
       it.print(40, 360, id(font_srednia), Color(72, 187, 120), TextAlign::TOP_LEFT, "CZUJNIK ZIGBEE");
       it.print(40, 420, id(font_duza), Color(255, 255, 255), TextAlign::TOP_LEFT, "21.5 °C");
-      it.print(40, 490, id(font_srednia), Color(160, 174, 192), TextAlign::TOP_LEFT, "Wilgotnosc: 55%");
+      it.print(40, 490, id(font_srednia), Color(160, 174, 192), TextAlign::TOP_LEFT, "Wilgotność: 55%");
