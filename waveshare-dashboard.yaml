@@ -21,9 +21,10 @@ api:
 ota:
   - platform: esphome
 
-# Właściwe, dedykowane repozytorium dla rgb_display
+# Prawidłowa nazwa gałęzi z myślnikiem
 external_components:
-  - source: github://clydebarrow/esphome-rgb-display
+  - source: github://clydebarrow/esphome@rgb-display
+    components: [ rgb_display ]
 
 # 1. Magistrala I2C dla panelu dotykowego GT911
 i2c:
