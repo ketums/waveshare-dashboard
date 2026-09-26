@@ -32,6 +32,18 @@ captive_portal:
 
 
 # ============================================================
+# POGODA Z INTERNETU (MET.NO dla Wejherowa)
+# ============================================================
+
+weather:
+  - platform: metno
+    id: pogoda_domowa
+    latitude: 54.6067
+    longitude: 18.2458
+    forecast_days: 1
+
+
+# ============================================================
 # KLIENT HTTP
 # ============================================================
 
@@ -42,7 +54,7 @@ http_request:
 
 
 # ============================================================
-# SKRYPTY AKCJI HTTP (Poprawiono format json na {})
+# SKRYPTY AKCJI HTTP
 # ============================================================
 
 script:
@@ -78,7 +90,7 @@ script:
 
 
 # ============================================================
-# ZMIENNA - AKTUALNA STRONA
+# ZMIENNA - AKTUALNA STRONA (0, 1 lub 2)
 # ============================================================
 
 globals:
@@ -214,7 +226,7 @@ display:
 
 
       // ======================================================
-      // STRONA 1
+      // STRONA 1 (GŁÓWNA)
       // ======================================================
 
       if (id(aktualna_strona) == 0) {
@@ -224,7 +236,7 @@ display:
           id(font_srednia),
           Color(72, 187, 120),
           TextAlign::TOP_RIGHT,
-          "STRONA 1/2"
+          "STRONA 1/3"
         );
 
 
@@ -415,17 +427,17 @@ display:
 
 
       // ======================================================
-      // STRONA 2
+      // STRONA 2 (DRUGI KAFEL)
       // ======================================================
 
-      else {
+      else if (id(aktualna_strona) == 1) {
 
         it.print(
           770, 25,
           id(font_srednia),
           Color(90, 200, 250),
           TextAlign::TOP_RIGHT,
-          "STRONA 2/2"
+          "STRONA 2/3"
         );
 
 
@@ -454,28 +466,109 @@ display:
           "przyciski i sensory"
         );
 
+      }
 
-        // POWRÓT
 
-        it.rectangle(
-          250, 320,
-          300, 70,
-          Color(66, 153, 225)
-        );
+      // ======================================================
+      // STRONA 3 (DASHBOARD POGODOWY Z IKONAMI)
+      // ======================================================
+
+      else {
 
         it.print(
-          400, 340,
+          770, 25,
           id(font_srednia),
-          Color(255, 255, 255),
-          TextAlign::TOP_CENTER,
-          "POWRÓT"
+          Color(237, 137, 54),
+          TextAlign::TOP_RIGHT,
+          "STRONA 3/3 (POGODA)"
         );
+
+        // Tytuł sekcji pogodowej
+        it.print(
+          40, 90,
+          id(font_srednia),
+          Color(90, 200, 250),
+          TextAlign::TOP_LEFT,
+          "POGODA ONLINE - WEJHEROWO"
+        );
+
+        // Ramka główna pogody
+        it.rectangle(30, 130, 740, 310, Color(30, 41, 59));
+
+        auto weather = id(pogoda_domowa);
+
+        if (weather.has_state()) {
+          
+          // Dane tekstowe pogody
+          char temp_buf[32];
+          sprintf(temp_buf, "%.1f °C", weather.temperature);
+          it.print(70, 160, id(font_duza), Color(255, 255, 255), TextAlign::TOP_LEFT, temp_buf);
+
+          char hum_buf[32];
+          sprintf(hum_buf, "Wilgotność: %.0f %%", weather.humidity);
+          it.print(70, 230, id(font_srednia), Color(160, 174, 192), TextAlign::TOP_LEFT, hum_buf);
+
+          char press_buf[32];
+          sprintf(press_buf, "Ciśnienie: %.0f hPa", weather.pressure);
+          it.print(70, 270, id(font_srednia), Color(160, 174, 192), TextAlign::TOP_LEFT, press_buf);
+
+          char wind_buf[32];
+          sprintf(wind_buf, "Wiatr: %.1f m/s", weather.wind_speed);
+          it.print(70, 310, id(font_srednia), Color(160, 174, 192), TextAlign::TOP_LEFT, wind_buf);
+
+          // Tłumaczenie stanu i rysowanie ikony wektorowej po prawej stronie kafla
+          std::string cond = weather.get_condition();
+          std::string opis_pl = "Nieznana";
+
+          // Rysowanie ikon wektorowych w zależności od pogody (Współrzędne środka ikony: X=620, Y=220)
+          if (cond == "sunny" || cond == "clear-day") {
+            opis_pl = "Słonecznie";
+            // Rysujemy słońce (żółte koło)
+            it.filled_circle(620, 220, 45, Color(255, 204, 0));
+          } 
+          else if (cond == "rainy" || cond == "pouring") {
+            opis_pl = "Deszcz";
+            // Rysujemy chmurę (szarą) + niebieskie kreski deszczu
+            it.filled_circle(600, 210, 30, Color(140, 150, 170));
+            it.filled_circle(640, 210, 35, Color(140, 150, 170));
+            it.filled_rectangle(585, 210, 85, 25, Color(140, 150, 170));
+            it.line(600, 245, 590, 270, Color(90, 200, 250));
+            it.line(620, 245, 610, 270, Color(90, 200, 250));
+            it.line(640, 245, 630, 270, Color(90, 200, 250));
+          } 
+          else if (cond == "cloudy" || cond == "partlycloudy") {
+            opis_pl = (cond == "cloudy") ? "Pochmurno" : "Częściowo chmurnie";
+            // Rysujemy chmurę
+            it.filled_circle(600, 220, 35, Color(160, 174, 192));
+            it.filled_circle(645, 220, 40, Color(160, 174, 192));
+            it.filled_rectangle(585, 220, 95, 30, Color(160, 174, 192));
+          } 
+          else if (cond == "snowy") {
+            opis_pl = "Śnieg";
+            it.filled_circle(600, 210, 30, Color(200, 210, 230));
+            it.filled_circle(640, 210, 35, Color(200, 210, 230));
+            it.filled_rectangle(585, 210, 85, 25, Color(200, 210, 230));
+          } 
+          else {
+            opis_pl = "Zmiennie";
+            // Ogólna ikona chmury ze słońcem
+            it.filled_circle(590, 195, 25, Color(255, 204, 0));
+            it.filled_circle(610, 220, 30, Color(160, 174, 192));
+            it.filled_circle(650, 220, 35, Color(160, 174, 192));
+          }
+
+          // Wyświetlenie polskiego opisu stanu pogody pod ikoną
+          it.print(620, 310, id(font_srednia), Color(255, 255, 255), TextAlign::TOP_CENTER, opis_pl.c_str());
+
+        } else {
+          it.print(400, 250, id(font_srednia), Color(229, 62, 62), TextAlign::TOP_CENTER, "Pobieranie danych pogodowych z Wi-Fi...");
+        }
 
       }
 
 
 # ============================================================
-# GT911 - DOTYK
+# GT911 - DOTYK (Obsługa 3 stron)
 # ============================================================
 
 touchscreen:
@@ -513,29 +606,22 @@ touchscreen:
 
 
           // ==================================================
-          // GÓRNY PASEK - ZMIANA STRONY
+          // GÓRNY PASEK - CYKLICZNA ZMIANA STRON (0 -> 1 -> 2 -> 0)
           // ==================================================
 
           if (y >= 0 && y <= 70) {
 
             if (id(aktualna_strona) == 0) {
-
               id(aktualna_strona) = 1;
-
-              ESP_LOGI(
-                "TOUCH",
-                "Przełączono na STRONĘ 2"
-              );
-
-            } else {
-
+              ESP_LOGI("TOUCH", "Przełączono na STRONĘ 2");
+            } 
+            else if (id(aktualna_strona) == 1) {
+              id(aktualna_strona) = 2;
+              ESP_LOGI("TOUCH", "Przełączono na STRONĘ 3 (Pogoda)");
+            } 
+            else {
               id(aktualna_strona) = 0;
-
-              ESP_LOGI(
-                "TOUCH",
-                "Przełączono na STRONĘ 1"
-              );
-
+              ESP_LOGI("TOUCH", "Przełączono na STRONĘ 1 (Główna)");
             }
 
             return;
@@ -543,81 +629,37 @@ touchscreen:
 
 
           // ==================================================
-          // STRONA 1
+          // STRONA 1 (GŁÓWNA)
           // ==================================================
 
           if (id(aktualna_strona) == 0) {
 
-
-            // ----------------------------------------------
-            // ROLETY
-            // ----------------------------------------------
-
             if (y >= 170 && y <= 220) {
 
-
               // OTWÓRZ
-
               if (x >= 30 && x <= 130) {
-
-                ESP_LOGI(
-                  "TOUCH",
-                  "Naciśnięto: OTWÓRZ OKNA"
-                );
+                ESP_LOGI("TOUCH", "Naciśnięto: OTWÓRZ OKNA");
                 id(akcja_otworz_roleta)->execute();
-
               }
-
-
               // STOP
-
               else if (x >= 140 && x <= 240) {
-
-                ESP_LOGI(
-                  "TOUCH",
-                  "Naciśnięto: STOP ROLETY"
-                );
+                ESP_LOGI("TOUCH", "Naciśnięto: STOP ROLETY");
                 id(akcja_stop_roleta)->execute();
-
               }
-
-
               // ZAMKNIJ
-
               else if (x >= 250 && x <= 350) {
-
-                ESP_LOGI(
-                  "TOUCH",
-                  "Naciśnięto: ZAMKNIJ OKNA"
-                );
+                ESP_LOGI("TOUCH", "Naciśnięto: ZAMKNIJ OKNA");
                 id(akcja_zamknij_roleta)->execute();
-
               }
-
-
               // KLIMATYZACJA -
-
               else if (x >= 430 && x <= 490) {
-
-                ESP_LOGI(
-                  "TOUCH",
-                  "Naciśnięto: TEMP -"
-                );
+                ESP_LOGI("TOUCH", "Naciśnięto: TEMP -");
                 id(akcja_klima_down)->execute();
-
               }
-
-
               // KLIMATYZACJA +
-
               else if (x >= 580 && x <= 640) {
-
-                ESP_LOGI(
-                  "TOUCH",
-                  "Naciśnięto: TEMP +"
-                );
+                ESP_LOGI("TOUCH", "Naciśnięto: TEMP +");
                 id(akcja_klima_up)->execute();
-
               }
 
             }
@@ -629,22 +671,15 @@ touchscreen:
           // STRONA 2
           // ==================================================
 
+          else if (id(aktualna_strona) == 1) {
+            // Miejsce na akcje z drugiego kafla w przyszłości
+          }
+
+
+          // ==================================================
+          // STRONA 3 (POGODA)
+          // ==================================================
+
           else {
-
-            if (
-              y >= 320 &&
-              y <= 390 &&
-              x >= 250 &&
-              x <= 550
-            ) {
-
-              id(aktualna_strona) = 0;
-
-              ESP_LOGI(
-                "TOUCH",
-                "Powrót do strony głównej"
-              );
-
-            }
-
+            // Ewentualne kliknięcia na stronie pogody
           }
