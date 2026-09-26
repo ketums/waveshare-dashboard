@@ -4,12 +4,24 @@ esphome:
 
 esp32:
   board: esp32-s3-devkitc-1
+  variant: esp32s3
   framework:
-    type: arduino
+    type: esp-idf
+
+psram:
+  mode: octal
+  speed: 80MHz
 
 logger:
+  level: DEBUG
 
-# Konfiguracja Wi-Fi
+api:
+  encryption:
+    key: "GENEROWANY_KLUCZ_API"
+
+ota:
+  - platform: esphome
+
 wifi:
   ssid: "TWOJE_SSID"
   password: "TWOJE_HASLO"
@@ -20,38 +32,67 @@ wifi:
 
 captive_portal:
 
-api:
-  encryption:
-    key: "GENEROWANY_KLUCZ_API"
+# ============================================================
+# CZAS
+# ============================================================
 
-ota:
-  - platform: esphome
-
-# Pobieranie czasu sieciowego (SNTP)
 time:
   - platform: sntp
     id: time_now
-    server: "pl.pool.ntp.org"
-    timezone: "Europe/Warsaw"
+    servers:
+      - "pl.pool.ntp.org"
+    timezone: Europe/Warsaw
 
-# Klient HTTP do komunikacji z API pogody
+# ============================================================
+# HTTP - OPEN-METEO
+# ============================================================
+
 http_request:
-  user_agent: esphome/device
+  useragent: "ESPHome ESP32-S3 Panel Pogodowy"
   timeout: 10s
 
-# Zmienne globalne stanu urządzenia
+# ============================================================
+# CH422G - UKŁAD ROZSZERZENIA GPIO NA PŁYCIE WAVESHARE
+# ============================================================
+
+ch422g:
+  - id: ch422g_hub
+
+# ============================================================
+# I2C
+# GPIO8 = SDA
+# GPIO9 = SCL
+# ============================================================
+
+i2c:
+  - id: bus_i2c
+    sda: GPIO8
+    scl: GPIO9
+    frequency: 400kHz
+    scan: true
+
+# ============================================================
+# ZMIENNE
+# ============================================================
+
 globals:
+
   - id: aktualna_strona
     type: int
-    restore_value: false
-    initial_value: '2' # Strona 3 (indeks 2) z panelem 3D
+    restore_value: no
+    initial_value: '2'
+
   - id: weather_condition_code
     type: int
-    restore_value: false
+    restore_value: no
     initial_value: '0'
 
-# Sensory przechowujące dane z Open-Meteo
+# ============================================================
+# CZUJNIKI POGODOWE
+# ============================================================
+
 sensor:
+
   - platform: template
     name: "Temperatura Zewnętrzna"
     id: weather_temp_sensor
@@ -61,148 +102,336 @@ sensor:
   - platform: template
     name: "Kod Pogody WMO"
     id: weather_code_sensor
-    on_raw_value:
+    accuracy_decimals: 0
+
+    on_value:
       then:
         - lambda: |-
-            id(weather_condition_code) = round(id(weather_code_sensor).state);
+            if (!isnan(x)) {
+              id(weather_condition_code) = (int) x;
+            }
 
-# Cykliczne pobieranie danych pogodowych co 15 minut dla Wejherowa
+# ============================================================
+# WI-FI
+# ============================================================
+
+  - platform: wifi_signal
+    name: "Siła WiFi"
+    id: wifi_signal_db
+    update_interval: 10s
+    unit_of_measurement: "dBm"
+    accuracy_decimals: 0
+
+text_sensor:
+
+  - platform: wifi_info
+    ip_address:
+      name: "Adres IP panelu"
+      id: wifi_ip
+
+    ssid:
+      name: "Sieć WiFi"
+      id: wifi_ssid
+
+# ============================================================
+# POBIERANIE POGODY Z OPEN-METEO
+# WEJHEROWO
+# ============================================================
+
 interval:
+
   - interval: 15min
     then:
+
       - http_request.get:
           url: "https://api.open-meteo.com/v1/forecast?latitude=54.60&longitude=18.25&current=temperature_2m,weather_code"
+
           on_response:
             then:
+
               - lambda: |-
                   json::parse_json(response->body, [](JsonObject root) {
-                    float temp = root["current"]["temperature_2m"];
-                    int code = root["current"]["weather_code"];
-                    id(weather_temp_sensor).publish_state(temp);
-                    id(weather_code_sensor).publish_state(code);
+
+                    if (root["current"]["temperature_2m"].is<float>()) {
+
+                      float temp =
+                        root["current"]["temperature_2m"].as<float>();
+
+                      int code =
+                        root["current"]["weather_code"].as<int>();
+
+                      id(weather_temp_sensor).publish_state(temp);
+
+                      id(weather_code_sensor).publish_state(code);
+                    }
                   });
 
-# Definicja czcionek
+# ============================================================
+# CZCIONKI
+# ROBOTO Z POLSKIMI ZNAKAMI
+# ============================================================
+
 font:
-  - file: "gothic.ttf"
+
+  - file: "Roboto-Regular.ttf"
     id: font_mala
     size: 14
-  - file: "gothic.ttf"
+    glyphs: " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ĄĆĘŁŃÓŚŹŻąćęłńóśźż°"
+
+  - file: "Roboto-Regular.ttf"
     id: font_srednia
     size: 20
-  - file: "gothic.ttf"
+    glyphs: " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ĄĆĘŁŃÓŚŹŻąćęłńóśźż°"
+
+  - file: "Roboto-Regular.ttf"
     id: font_duza
     size: 42
+    glyphs: " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ĄĆĘŁŃÓŚŹŻąćęłńóśźż°"
 
-# Poprawna konfiguracja wyświetlacza RGB dla Waveshare ESP32-S3-Touch-LCD-4.3
+# ============================================================
+# WYŚWIETLACZ WAVESHARE
+# 800 x 480
+# ============================================================
+
 display:
-  - platform: rgb_panel
+
+  - platform: mipi_rgb
+    model: ESP32-S3-TOUCH-LCD-4.3
+
     id: my_display
-    width: 800
-    height: 480
-    hsync_pin: 45
-    vsync_pin: 4
-    de_pin: 5
-    pclk_pin: 7
-    pclk_frequency: 14 MHz
-    data_pins: [42, 41, 40, 39, 48, 47, 21, 14, 13, 12, 11, 10, 9, 46, 3, 8]
+
+    rotation: 0
+
+    update_interval: 1s
+
+    reset_pin:
+      ch422g: ch422g_hub
+      number: 3
+
+    enable_pin:
+      ch422g: ch422g_hub
+      number: 2
+
     color_order: RGB
-    
+
     lambda: |-
+
       // ======================================================
-      // STRONA 3 - PANEL 3D (EFEKT WYPUKŁEJ KARTY I GŁĘBI)
+      // TŁO
       // ======================================================
 
-      if (id(aktualna_strona) == 2) {
+      it.fill(Color(11, 15, 25));
 
-        // 1. GŁĘBOKIE, ELEGANCKIE TŁO CAŁEGO EKRANU
-        it.fill(Color(11, 15, 25));
+      // ======================================================
+      // GŁÓWNA KARTA
+      // ======================================================
 
-        // 2. RYSOWANIE GŁĘBOKIEGO CIENIA KARTY 3D
-        it.filled_rectangle(122, 62, 556, 360, Color(4, 7, 13));
+      it.filled_rectangle(
+        122,
+        62,
+        556,
+        360,
+        Color(4, 7, 13)
+      );
 
-        // 3. GŁÓWNA BRYŁA KARTY 3D (Wypukły panel w stylu Claymorphism)
-        it.filled_rectangle(120, 58, 556, 360, Color(30, 41, 59)); // Jasny grafit
+      it.filled_rectangle(
+        120,
+        58,
+        556,
+        360,
+        Color(30, 41, 59)
+      );
 
-        // 4. EFEKT TRÓJWYMIAROWY - KRAWĘDZIE 
-        it.rectangle(120, 58, 556, 360, Color(71, 85, 105)); // Górna/lewa krawędź (światło)
-        it.rectangle(122, 60, 552, 356, Color(15, 23, 42));  // Ciemna krawędź wewnętrzna (cień)
+      it.rectangle(
+        120,
+        58,
+        556,
+        360,
+        Color(71, 85, 105)
+      );
 
-        // 5. DATA NA GÓRZE KARTY
-        if (time_now.is_valid()) {
-          it.strftime(
-            400, 85,
-            id(font_srednia),
-            Color(148, 163, 184),
-            TextAlign::TOP_CENTER,
-            "%A, %d %B %Y",
-            time_now
-          );
+      it.rectangle(
+        122,
+        60,
+        552,
+        356,
+        Color(15, 23, 42)
+      );
 
-          // GIGANTYCZNY ZEGAR
-          it.strftime(
-            400, 125,
-            id(font_duza),
-            Color(255, 255, 255),
-            TextAlign::TOP_CENTER,
-            "%H:%M",
-            time_now
-          );
-        } else {
-          it.print(
-            400, 125,
-            id(font_duza),
-            Color(255, 255, 255),
-            TextAlign::TOP_CENTER,
-            "--:--"
-          );
-        }
+      // ======================================================
+      // DATA
+      // ======================================================
 
-        // 6. WEWNĘTRZNA "WKLĘŚNIĘTA" KIESZONKA NA TEMPERATURĘ
-        it.filled_rectangle(200, 235, 400, 95, Color(15, 23, 42)); // Wgłębienie
-        it.rectangle(200, 235, 400, 95, Color(51, 65, 85));       // Obramowanie wgłębienia
+      if (id(time_now).is_valid()) {
 
-        // AKTUALNA TEMPERATURA Z OPEN-METEO
-        if (!isnan(id(weather_temp_sensor).state)) {
-          it.printf(
-            400, 245,
-            id(font_duza),
-            Color(56, 189, 248),
-            TextAlign::TOP_CENTER,
-            "%.1f °C",
-            id(weather_temp_sensor).state
-          );
-        } else {
-          it.print(
-            400, 245,
-            id(font_duza),
-            Color(56, 189, 248),
-            TextAlign::TOP_CENTER,
-            "--.- °C"
-          );
-        }
-
-        // 7. PODPIS LOKALIZACJI NA DOLE KARTY
-        it.print(
-          400, 350,
+        it.strftime(
+          400,
+          85,
           id(font_srednia),
-          Color(203, 213, 225),
+          Color(148, 163, 184),
           TextAlign::TOP_CENTER,
-          "Wejherowo • Warunki zewnętrzne"
+          "%A, %d %B %Y",
+          id(time_now).now()
         );
 
-        // 8. DOLNY KOMUNIKAT NA TLE EKRANU
+        // ====================================================
+        // ZEGAR
+        // ====================================================
+
+        it.strftime(
+          400,
+          125,
+          id(font_duza),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "%H:%M",
+          id(time_now).now()
+        );
+
+      } else {
+
         it.print(
-          400, 440,
-          id(font_mala),
-          Color(100, 116, 139),
+          400,
+          125,
+          id(font_duza),
+          Color(255, 255, 255),
           TextAlign::TOP_CENTER,
-          "Dotknij ekranu, aby wrócić do menu"
+          "--:--"
         );
-
-        return; 
       }
 
-      // Pozostałe strony
-      it.fill(Color(0, 0, 0));
-      it.print(400, 240, id(font_srednia), Color(255, 255, 255), TextAlign::CENTER, "Strona główna sterowania");
+      // ======================================================
+      // KIESZEŃ TEMPERATURY
+      // ======================================================
+
+      it.filled_rectangle(
+        200,
+        235,
+        400,
+        95,
+        Color(15, 23, 42)
+      );
+
+      it.rectangle(
+        200,
+        235,
+        400,
+        95,
+        Color(51, 65, 85)
+      );
+
+      // ======================================================
+      // TEMPERATURA
+      // ======================================================
+
+      if (!isnan(id(weather_temp_sensor).state)) {
+
+        it.printf(
+          400,
+          245,
+          id(font_duza),
+          Color(56, 189, 248),
+          TextAlign::TOP_CENTER,
+          "%.1f °C",
+          id(weather_temp_sensor).state
+        );
+
+      } else {
+
+        it.print(
+          400,
+          245,
+          id(font_duza),
+          Color(56, 189, 248),
+          TextAlign::TOP_CENTER,
+          "--.- °C"
+        );
+      }
+
+      // ======================================================
+      // LOKALIZACJA
+      // ======================================================
+
+      it.print(
+        400,
+        350,
+        id(font_srednia),
+        Color(203, 213, 225),
+        TextAlign::TOP_CENTER,
+        "Wejherowo - Warunki zewnętrzne"
+      );
+
+      // ======================================================
+      // WI-FI
+      // ======================================================
+
+      if (id(wifi_signal_db).has_state()) {
+
+        it.printf(
+          400,
+          390,
+          id(font_mala),
+          Color(148, 163, 184),
+          TextAlign::TOP_CENTER,
+          "WiFi: %.0f dBm",
+          id(wifi_signal_db).state
+        );
+
+      } else {
+
+        it.print(
+          400,
+          390,
+          id(font_mala),
+          Color(148, 163, 184),
+          TextAlign::TOP_CENTER,
+          "WiFi: -- dBm"
+        );
+      }
+
+      // ======================================================
+      // DOLNY NAPIS
+      // ======================================================
+
+      it.print(
+        400,
+        440,
+        id(font_mala),
+        Color(100, 116, 139),
+        TextAlign::TOP_CENTER,
+        "Panel pogodowy ESP32-S3"
+      );
+
+# ============================================================
+# DOTYK GT911
+# ============================================================
+
+touchscreen:
+
+  - platform: gt911
+
+    id: panel_dotykowy
+
+    i2c_id: bus_i2c
+
+    interrupt_pin: GPIO4
+
+    reset_pin:
+      ch422g: ch422g_hub
+      number: 1
+
+    transform:
+      swap_xy: false
+      mirror_x: false
+      mirror_y: false
+
+    on_touch:
+
+      - lambda: |-
+
+          ESP_LOGI(
+            "touch",
+            "Dotyk X=%d Y=%d",
+            touch.x,
+            touch.y
+          );
