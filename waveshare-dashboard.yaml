@@ -40,6 +40,11 @@ http_request:
   useragent: "ESPHome Waveshare"
   timeout: 5s
 
+
+# ============================================================
+# ZMIENNE GLOBALNE (WSZYSTKO W JEDNYM MIEJSCU)
+# ============================================================
+
 globals:
   - id: p_temp
     type: float
@@ -56,6 +61,11 @@ globals:
   - id: p_dane_ok
     type: bool
     initial_value: 'false'
+  - id: aktualna_strona
+    type: int
+    restore_value: no
+    initial_value: '0'
+
 
 interval:
   - interval: 10min
@@ -110,17 +120,6 @@ script:
       - http_request.post:
           url: "https://openapi.tuyaeu.com/v1.0/token"
           json: {}
-
-
-# ============================================================
-# ZMIENNA - AKTUALNA STRONA (0, 1 lub 2)
-# ============================================================
-
-globals:
-  - id: aktualna_strona
-    type: int
-    restore_value: no
-    initial_value: '0'
 
 
 # ============================================================
