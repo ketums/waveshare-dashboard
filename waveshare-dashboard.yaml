@@ -30,7 +30,13 @@ i2c:
   scan: true
   id: bus_i2c
 
-# 2. Obsługa dotyku GT911 z mapowaniem przycisków dla 1024x600 px
+# 2. Klient HTTP do zapytan Tuya / Smart Life
+http_request:
+  id: klient_http
+  useragent: "ESPHome Waveshare"
+  timeout: 5s
+
+# 3. Obsluga dotyku GT911 z mapowaniem przyciskow dla 1024x600 px
 touchscreen:
   platform: gt911
   id: panel_dotykowy
@@ -47,51 +53,33 @@ touchscreen:
         int x = touch.x;
         int y = touch.y;
         
-        // --- ROLETY OKIENNE (Lewy Górny Kafelek) ---
+        // --- ROLETY OKIENNE (Lewy Gorny Kafelek) ---
         if (y >= 180 && y <= 250) {
           if (x >= 40 && x <= 170) {
-            ESP_LOGI("TOUCH", "Naciśnięto: OTWÓRZ OKNA");
-            id(http_otworz_roleta).send();
+            ESP_LOGI("TOUCH", "Nacisnieto: OTWORZ OKNA");
+            id(klient_http).post("https://openapi.tuyaeu.com/v1.0/token");
           }
           else if (x >= 190 && x <= 320) {
-            ESP_LOGI("TOUCH", "Naciśnięto: STOP ROLETY");
-            id(http_stop_roleta).send();
+            ESP_LOGI("TOUCH", "Nacisnieto: STOP ROLETY");
+            id(klient_http).post("https://openapi.tuyaeu.com/v1.0/token");
           }
           else if (x >= 340 && x <= 470) {
-            ESP_LOGI("TOUCH", "Naciśnięto: ZAMKNIJ OKNA");
-            id(http_zamknij_roleta).send();
+            ESP_LOGI("TOUCH", "Nacisnieto: ZAMKNIJ OKNA");
+            id(klient_http).post("https://openapi.tuyaeu.com/v1.0/token");
           }
         }
 
-        // --- KLIMATYZACJA ROTENSO (Prawy Górny Kafelek) ---
+        // --- KLIMATYZACJA ROTENSO (Prawy Gorny Kafelek) ---
         if (y >= 180 && y <= 250) {
           if (x >= 550 && x <= 630) {
-            ESP_LOGI("TOUCH", "Naciśnięto: TEMP -");
-            id(http_klima_temp_down).send();
+            ESP_LOGI("TOUCH", "Nacisnieto: TEMP -");
+            id(klient_http).post("https://openapi.tuyaeu.com/v1.0/token");
           }
           else if (x >= 750 && x <= 830) {
-            ESP_LOGI("TOUCH", "Naciśnięto: TEMP +");
-            id(http_klima_temp_up).send();
+            ESP_LOGI("TOUCH", "Nacisnieto: TEMP +");
+            id(klient_http).post("https://openapi.tuyaeu.com/v1.0/token");
           }
         }
-
-# 3. Zgłoszenia HTTP do OpenAPI Tuya / Smart Life
-http_request:
-  id: klient_http
-  useragent: "ESPHome Waveshare"
-  timeout: 5s
-
-http_request.post:
-  - id: http_otworz_roleta
-    url: "https://openapi.tuyaeu.com/v1.0/token"
-  - id: http_stop_roleta
-    url: "https://openapi.tuyaeu.com/v1.0/token"
-  - id: http_zamknij_roleta
-    url: "https://openapi.tuyaeu.com/v1.0/token"
-  - id: http_klima_temp_down
-    url: "https://openapi.tuyaeu.com/v1.0/token"
-  - id: http_klima_temp_up
-    url: "https://openapi.tuyaeu.com/v1.0/token"
 
 # Czcionki
 font:
@@ -111,7 +99,7 @@ time:
     id: czas_sntp
     timezone: "Europe/Warsaw"
 
-# 4. Wyświetlacz LCD dopasowany do 1024x600 px
+# 4. Wyswietlacz LCD dopasowany do 1024x600 px
 display:
   - platform: esp32_lcd
     id: ekran_waveshare
@@ -125,7 +113,7 @@ display:
     lambda: |-
       it.fill(Color(18, 24, 38));
 
-      // Ramka główna i linie podziału kafelków
+      // Ramka glowna i linie podzialu kafelkow
       it.rectangle(10, 10, 1004, 580, Color(45, 55, 72));
       it.line(10, 80, 1014, 80, Color(45, 55, 72));
       it.line(512, 80, 512, 590, Color(45, 55, 72));
@@ -143,7 +131,7 @@ display:
       it.print(40, 140, id(font_mala), Color(160, 174, 192), TextAlign::TOP_LEFT, "okno 1 & okno 2");
       
       it.rectangle(40, 180, 130, 70, Color(66, 153, 225));
-      it.print(105, 200, id(font_mala), Color(255, 255, 255), TextAlign::TOP_CENTER, "OTWÓRZ");
+      it.print(105, 200, id(font_mala), Color(255, 255, 255), TextAlign::TOP_CENTER, "OTWORZ");
       
       it.rectangle(190, 180, 130, 70, Color(229, 62, 62));
       it.print(255, 200, id(font_mala), Color(255, 255, 255), TextAlign::TOP_CENTER, "STOP");
@@ -165,4 +153,4 @@ display:
       // CZUJNIK ZIGBEE
       it.print(40, 360, id(font_srednia), Color(72, 187, 120), TextAlign::TOP_LEFT, "CZUJNIK ZIGBEE");
       it.print(40, 420, id(font_duza), Color(255, 255, 255), TextAlign::TOP_LEFT, "21.5 °C");
-      it.print(40, 490, id(font_srednia), Color(160, 174, 192), TextAlign::TOP_LEFT, "Wilgotność: 55%");
+      it.print(40, 490, id(font_srednia), Color(160, 174, 192), TextAlign::TOP_LEFT, "Wilgotnosc: 55%");
