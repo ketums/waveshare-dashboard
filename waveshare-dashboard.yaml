@@ -32,7 +32,7 @@ captive_portal:
 
 
 # ============================================================
-# KLIENT HTTP (Dodany do komunikacji sieciowej)
+# KLIENT HTTP
 # ============================================================
 
 http_request:
@@ -42,7 +42,7 @@ http_request:
 
 
 # ============================================================
-# SKRYPTY AKCJI HTTP (Dodane do wywoływania z dotyku)
+# SKRYPTY AKCJI HTTP (Poprawiono format json na {})
 # ============================================================
 
 script:
@@ -50,8 +50,7 @@ script:
     then:
       - http_request.post:
           url: "https://openapi.tuyaeu.com/v1.0/token"
-          json:
-            anuluj: false
+          json: {}
 
   - id: akcja_stop_roleta
     then:
