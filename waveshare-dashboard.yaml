@@ -35,7 +35,31 @@ i2c:
   scan: true
   id: bus_i2c
 
-# 2. Konfiguracja Panelu Dotykowego GT911
+# 2. Klient HTTP (czysta definicja bez błędnych kropek na górnym poziomie)
+http_request:
+  id: klient_http
+  useragent: "ESPHome Waveshare"
+  timeout: 5s
+
+# 3. Skrypty do obsługi zapytań HTTP (wywoływane bezpiecznie ze skryptu)
+script:
+  - id: akcja_otworz_roleta
+    then:
+      - http_request.post: "https://openapi.tuyaeu.com/v1.0/token"
+  - id: akcja_stop_roleta
+    then:
+      - http_request.post: "https://openapi.tuyaeu.com/v1.0/token"
+  - id: akcja_zamknij_roleta
+    then:
+      - http_request.post: "https://openapi.tuyaeu.com/v1.0/token"
+  - id: akcja_klima_down
+    then:
+      - http_request.post: "https://openapi.tuyaeu.com/v1.0/token"
+  - id: akcja_klima_up
+    then:
+      - http_request.post: "https://openapi.tuyaeu.com/v1.0/token"
+
+# 4. Konfiguracja Panelu Dotykowego GT911
 touchscreen:
   platform: gt911
   id: panel_dotykowy
@@ -47,7 +71,7 @@ touchscreen:
     mirror_x: false
     mirror_y: false
 
-  # Definicje stref dotykowych (Przycisków) na ekranie 800x480
+  # Obsługa dotyku i przełączania stron oraz skryptów HTTP
   on_touch:
     - lambda: |-
         int x = touch.x;
@@ -71,15 +95,15 @@ touchscreen:
           if (y >= 170 && y <= 220) {
             if (x >= 30 && x <= 130) {
               ESP_LOGI("TOUCH", "Naciśnięto: OTWÓRZ OKNA");
-              id(http_otworz_roleta).send();
+              id(akcja_otworz_roleta)->execute();
             }
             else if (x >= 140 && x <= 240) {
               ESP_LOGI("TOUCH", "Naciśnięto: STOP ROLETY");
-              id(http_stop_roleta).send();
+              id(akcja_stop_roleta)->execute();
             }
             else if (x >= 250 && x <= 350) {
               ESP_LOGI("TOUCH", "Naciśnięto: ZAMKNIJ OKNA");
-              id(http_zamknij_roleta).send();
+              id(akcja_zamknij_roleta)->execute();
             }
           }
 
@@ -87,11 +111,11 @@ touchscreen:
           if (y >= 170 && y <= 220) {
             if (x >= 430 && x <= 490) {
               ESP_LOGI("TOUCH", "Naciśnięto: TEMP -");
-              id(http_klima_temp_down).send();
+              id(akcja_klima_down)->execute();
             }
             else if (x >= 580 && x <= 640) {
               ESP_LOGI("TOUCH", "Naciśnięto: TEMP +");
-              id(http_klima_temp_up).send();
+              id(akcja_klima_up)->execute();
             }
           }
         } 
@@ -103,24 +127,6 @@ touchscreen:
             ESP_LOGI("TOUCH", "Powrót do strony głównej");
           }
         }
-
-# 3. Definicje Wyzwalaczy HTTP (Do Chmury Tuya/Smart Life)
-http_request:
-  id: klient_http
-  useragent: "ESPHome Waveshare"
-  timeout: 5s
-
-http_request.post:
-  - id: http_otworz_roleta
-    url: "https://openapi.tuyaeu.com/v1.0/token"
-  - id: http_stop_roleta
-    url: "https://openapi.tuyaeu.com/v1.0/token"
-  - id: http_zamknij_roleta
-    url: "https://openapi.tuyaeu.com/v1.0/token"
-  - id: http_klima_temp_down
-    url: "https://openapi.tuyaeu.com/v1.0/token"
-  - id: http_klima_temp_up
-    url: "https://openapi.tuyaeu.com/v1.0/token"
 
 # Czcionki
 font:
