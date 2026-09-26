@@ -8,6 +8,18 @@ esp32:
   framework:
     type: esp-idf
 
+psram:
+  mode: octal
+  speed: 80MHz
+
+logger:
+  level: DEBUG
+
+api:
+
+ota:
+  - platform: esphome
+
 wifi:
   ssid: "skrapi 2,4GHZ"
   password: "RejtanA77"
@@ -16,204 +28,572 @@ wifi:
     ssid: "ESPTest"
     password: "Password123"
 
-api:
+captive_portal:
 
-ota:
-  - platform: esphome
 
-# Zmienna globalna do obsługi stron
+# ============================================================
+# ZMIENNA - AKTUALNA STRONA
+# ============================================================
+
 globals:
   - id: aktualna_strona
     type: int
     restore_value: no
     initial_value: '0'
 
-# 1. Konfiguracja Magistrali I2C dla kontrolera dotyku GT911
+
+# ============================================================
+# CH422G
+# ============================================================
+
+ch422g:
+  - id: ch422g_hub
+
+
+# ============================================================
+# I2C
+# GPIO8  = SDA
+# GPIO9  = SCL
+# ============================================================
+
 i2c:
-  sda: GPIO19
-  scl: GPIO20
-  scan: true
-  id: bus_i2c
+  - id: bus_i2c
+    sda: GPIO8
+    scl: GPIO9
+    frequency: 400kHz
+    scan: true
 
-# 2. Klient HTTP (czysta definicja bez błędnych kropek na górnym poziomie)
-http_request:
-  id: klient_http
-  useragent: "ESPHome Waveshare"
-  timeout: 5s
 
-# 3. Skrypty do obsługi zapytań HTTP (wywoływane bezpiecznie ze skryptu)
-script:
-  - id: akcja_otworz_roleta
-    then:
-      - http_request.post: "https://openapi.tuyaeu.com/v1.0/token"
-  - id: akcja_stop_roleta
-    then:
-      - http_request.post: "https://openapi.tuyaeu.com/v1.0/token"
-  - id: akcja_zamknij_roleta
-    then:
-      - http_request.post: "https://openapi.tuyaeu.com/v1.0/token"
-  - id: akcja_klima_down
-    then:
-      - http_request.post: "https://openapi.tuyaeu.com/v1.0/token"
-  - id: akcja_klima_up
-    then:
-      - http_request.post: "https://openapi.tuyaeu.com/v1.0/token"
+# ============================================================
+# CZAS
+# ============================================================
 
-# 4. Konfiguracja Panelu Dotykowego GT911
-touchscreen:
-  platform: gt911
-  id: panel_dotykowy
-  i2c_id: bus_i2c
-  interrupt_pin: GPIO0
-  reset_pin: GPIO38
-  transform:
-    swap_xy: false
-    mirror_x: false
-    mirror_y: false
+time:
+  - platform: sntp
+    id: czas_sntp
+    timezone: Europe/Warsaw
 
-  # Obsługa dotyku i przełączania stron oraz skryptów HTTP
-  on_touch:
-    - lambda: |-
-        int x = touch.x;
-        int y = touch.y;
-        
-        // --- GÓRNY PASEK: PRZEŁĄCZANIE STRON (Y od 0 do 70) ---
-        if (y >= 0 && y <= 70) {
-          if (id(aktualna_strona) == 0) {
-            id(aktualna_strona) = 1;
-            ESP_LOGI("TOUCH", "Przełączono na Stronę 2");
-          } else {
-            id(aktualna_strona) = 0;
-            ESP_LOGI("TOUCH", "Przełączono na Stronę 1");
-          }
-          return;
-        }
 
-        // --- STRONA 0 (GŁÓWNA) ---
-        if (id(aktualna_strona) == 0) {
-          // --- STREFA 1: ROLETY ---
-          if (y >= 170 && y <= 220) {
-            if (x >= 30 && x <= 130) {
-              ESP_LOGI("TOUCH", "Naciśnięto: OTWÓRZ OKNA");
-              id(akcja_otworz_roleta)->execute();
-            }
-            else if (x >= 140 && x <= 240) {
-              ESP_LOGI("TOUCH", "Naciśnięto: STOP ROLETY");
-              id(akcja_stop_roleta)->execute();
-            }
-            else if (x >= 250 && x <= 350) {
-              ESP_LOGI("TOUCH", "Naciśnięto: ZAMKNIJ OKNA");
-              id(akcja_zamknij_roleta)->execute();
-            }
-          }
+# ============================================================
+# CZCIONKI
+# ============================================================
 
-          // --- STREFA 2: KLIMATYZACJA ROTENSO ---
-          if (y >= 170 && y <= 220) {
-            if (x >= 430 && x <= 490) {
-              ESP_LOGI("TOUCH", "Naciśnięto: TEMP -");
-              id(akcja_klima_down)->execute();
-            }
-            else if (x >= 580 && x <= 640) {
-              ESP_LOGI("TOUCH", "Naciśnięto: TEMP +");
-              id(akcja_klima_up)->execute();
-            }
-          }
-        } 
-        # --- STRONA 1 (DRUGI KAFEL) ---
-        else {
-          // Przycisk powrotu
-          if (y >= 320 && y <= 390 && x >= 250 && x <= 550) {
-            id(aktualna_strona) = 0;
-            ESP_LOGI("TOUCH", "Powrót do strony głównej");
-          }
-        }
-
-# Czcionki
 font:
   - file: "gfonts://Roboto"
     id: font_duza
     size: 42
+
   - file: "gfonts://Roboto"
     id: font_srednia
     size: 22
+
   - file: "gfonts://Roboto"
     id: font_mala
     size: 16
 
-# Czas NTP
-time:
-  - platform: sntp
-    id: czas_sntp
-    timezone: "Europe/Warsaw"
 
-# Wyświetlacz LCD ESP32-S3 (800x480) z obsługą dwóch stron
+# ============================================================
+# WYŚWIETLACZ WAVESHARE
+# ESP32-S3-Touch-LCD-4.3
+# 800 x 480
+# ============================================================
+
 display:
-  - platform: esp32_lcd
+  - platform: mipi_rgb
+    model: ESP32-S3-TOUCH-LCD-4.3
+
     id: ekran_waveshare
-    dimensions:
-      width: 800
-      height: 480
-    col_max: 800
-    row_max: 480
-    color_order: RGB
-    data_rate: 16MHz
+
+    rotation: 0
+
+    update_interval: 1s
+
+    reset_pin:
+      ch422g: ch422g_hub
+      number: 3
+
     lambda: |-
-      // Ciemny motyw tła
+
+      // ======================================================
+      // TŁO
+      // ======================================================
+
       it.fill(Color(18, 24, 38));
 
-      // Ramki i obramowania
-      it.rectangle(10, 10, 780, 460, Color(45, 55, 72));
-      it.line(10, 70, 790, 70, Color(45, 55, 72));
+      // Ramka
 
-      // Zegar
+      it.rectangle(
+        10, 10,
+        780, 460,
+        Color(45, 55, 72)
+      );
+
+      // Linia nagłówka
+
+      it.line(
+        10, 70,
+        790, 70,
+        Color(45, 55, 72)
+      );
+
+
+      // ======================================================
+      // ZEGAR
+      // ======================================================
+
       auto time_now = id(czas_sntp).now();
+
       if (time_now.is_valid()) {
-        it.strftime(30, 20, id(font_duza), Color(255, 255, 255), TextAlign::TOP_LEFT, "%H:%M", time_now);
-      }
 
-      // Status w nagłówku w zależności od strony
-      if (id(aktualna_strona) == 0) {
-        it.print(770, 25, id(font_srednia), Color(72, 187, 120), TextAlign::TOP_RIGHT, "Strona 1/2 [Dotknij góry]");
-
-        it.line(400, 70, 400, 470, Color(45, 55, 72));
-        it.line(10, 270, 790, 270, Color(45, 55, 72));
-
-        // --- KAFELEK 1: ROLETY ---
-        it.print(30, 90, id(font_srednia), Color(237, 137, 54), TextAlign::TOP_LEFT, "ROLETY OKIENNE");
-        it.print(30, 130, id(font_mala), Color(160, 174, 192), TextAlign::TOP_LEFT, "okno 1 & okno 2");
-        
-        it.rectangle(30, 170, 100, 50, Color(66, 153, 225));
-        it.print(80, 185, id(font_mala), Color(255, 255, 255), TextAlign::TOP_CENTER, "OTWÓRZ");
-        
-        it.rectangle(140, 170, 100, 50, Color(229, 62, 62));
-        it.print(190, 185, id(font_mala), Color(255, 255, 255), TextAlign::TOP_CENTER, "STOP");
-        
-        it.rectangle(250, 170, 100, 50, Color(66, 153, 225));
-        it.print(300, 185, id(font_mala), Color(255, 255, 255), TextAlign::TOP_CENTER, "ZAMKNIJ");
-
-        // --- KAFELEK 2: KLIMATYZATOR ROTENSO ---
-        it.print(430, 90, id(font_srednia), Color(90, 200, 250), TextAlign::TOP_LEFT, "KLIMATYZACJA ROTENSO");
-        
-        it.rectangle(430, 170, 60, 50, Color(66, 153, 225));
-        it.print(460, 182, id(font_duza), Color(255, 255, 255), TextAlign::TOP_CENTER, "-");
-        
-        it.print(535, 175, id(font_duza), Color(255, 255, 255), TextAlign::TOP_CENTER, "22°C");
-        
-        it.rectangle(580, 170, 60, 50, Color(229, 62, 62));
-        it.print(610, 182, id(font_duza), Color(255, 255, 255), TextAlign::TOP_CENTER, "+");
-
-        // --- KAFELEK 3: CZUJNIK ZIGBEE ---
-        it.print(30, 290, id(font_srednia), Color(72, 187, 120), TextAlign::TOP_LEFT, "CZUJNIK ZIGBEE");
-        it.print(30, 340, id(font_duza), Color(255, 255, 255), TextAlign::TOP_LEFT, "21.5 °C");
-        it.print(30, 400, id(font_srednia), Color(160, 174, 192), TextAlign::TOP_LEFT, "Wilgotność: 55%");
+        it.strftime(
+          30, 20,
+          id(font_duza),
+          Color(255, 255, 255),
+          TextAlign::TOP_LEFT,
+          "%H:%M",
+          time_now
+        );
 
       } else {
-        it.print(770, 25, id(font_srednia), Color(90, 200, 250), TextAlign::TOP_RIGHT, "Strona 2/2 [Powrót]");
 
-        // --- ZAWARTOŚĆ DRUGIEGO KAFLA ---
-        it.print(400, 150, id(font_duza), Color(255, 255, 255), TextAlign::TOP_CENTER, "DRUGI KAFEL / STRONA 2");
-        it.print(400, 220, id(font_srednia), Color(160, 174, 192), TextAlign::TOP_CENTER, "Miejsce na kolejne przyciski i sensory");
+        it.print(
+          30, 20,
+          id(font_duza),
+          Color(255, 255, 255),
+          TextAlign::TOP_LEFT,
+          "--:--"
+        );
 
-        it.rectangle(250, 320, 300, 70, Color(66, 153, 225));
-        it.print(400, 340, id(font_srednia), Color(255, 255, 255), TextAlign::TOP_CENTER, "POWRÓT DO STRONY GŁÓWNEJ");
       }
+
+
+      // ======================================================
+      // STRONA 1
+      // ======================================================
+
+      if (id(aktualna_strona) == 0) {
+
+        it.print(
+          770, 25,
+          id(font_srednia),
+          Color(72, 187, 120),
+          TextAlign::TOP_RIGHT,
+          "STRONA 1/2"
+        );
+
+
+        // ----------------------------------------------------
+        // PODZIAŁ EKRANU
+        // ----------------------------------------------------
+
+        it.line(
+          400, 70,
+          400, 470,
+          Color(45, 55, 72)
+        );
+
+        it.line(
+          10, 270,
+          790, 270,
+          Color(45, 55, 72)
+        );
+
+
+        // ====================================================
+        // ROLETY
+        // ====================================================
+
+        it.print(
+          30, 90,
+          id(font_srednia),
+          Color(237, 137, 54),
+          TextAlign::TOP_LEFT,
+          "ROLETY OKIENNE"
+        );
+
+        it.print(
+          30, 130,
+          id(font_mala),
+          Color(160, 174, 192),
+          TextAlign::TOP_LEFT,
+          "okno 1 & okno 2"
+        );
+
+
+        // OTWÓRZ
+
+        it.rectangle(
+          30, 170,
+          100, 50,
+          Color(66, 153, 225)
+        );
+
+        it.print(
+          80, 185,
+          id(font_mala),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "OTWÓRZ"
+        );
+
+
+        // STOP
+
+        it.rectangle(
+          140, 170,
+          100, 50,
+          Color(229, 62, 62)
+        );
+
+        it.print(
+          190, 185,
+          id(font_mala),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "STOP"
+        );
+
+
+        // ZAMKNIJ
+
+        it.rectangle(
+          250, 170,
+          100, 50,
+          Color(66, 153, 225)
+        );
+
+        it.print(
+          300, 185,
+          id(font_mala),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "ZAMKNIJ"
+        );
+
+
+        // ====================================================
+        // KLIMATYZACJA ROTENSO
+        // ====================================================
+
+        it.print(
+          430, 90,
+          id(font_srednia),
+          Color(90, 200, 250),
+          TextAlign::TOP_LEFT,
+          "KLIMATYZACJA"
+        );
+
+        it.print(
+          430, 120,
+          id(font_mala),
+          Color(160, 174, 192),
+          TextAlign::TOP_LEFT,
+          "ROTENSO"
+        );
+
+
+        // MINUS
+
+        it.rectangle(
+          430, 170,
+          60, 50,
+          Color(66, 153, 225)
+        );
+
+        it.print(
+          460, 177,
+          id(font_duza),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "-"
+        );
+
+
+        // TEMPERATURA
+
+        it.print(
+          535, 175,
+          id(font_duza),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "22°C"
+        );
+
+
+        // PLUS
+
+        it.rectangle(
+          580, 170,
+          60, 50,
+          Color(229, 62, 62)
+        );
+
+        it.print(
+          610, 177,
+          id(font_duza),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "+"
+        );
+
+
+        // ====================================================
+        // CZUJNIK ZIGBEE
+        // ====================================================
+
+        it.print(
+          30, 290,
+          id(font_srednia),
+          Color(72, 187, 120),
+          TextAlign::TOP_LEFT,
+          "CZUJNIK ZIGBEE"
+        );
+
+        it.print(
+          30, 340,
+          id(font_duza),
+          Color(255, 255, 255),
+          TextAlign::TOP_LEFT,
+          "21.5 °C"
+        );
+
+        it.print(
+          30, 400,
+          id(font_srednia),
+          Color(160, 174, 192),
+          TextAlign::TOP_LEFT,
+          "Wilgotność: 55%"
+        );
+
+      }
+
+
+      // ======================================================
+      // STRONA 2
+      // ======================================================
+
+      else {
+
+        it.print(
+          770, 25,
+          id(font_srednia),
+          Color(90, 200, 250),
+          TextAlign::TOP_RIGHT,
+          "STRONA 2/2"
+        );
+
+
+        it.print(
+          400, 150,
+          id(font_duza),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "DRUGI KAFEL"
+        );
+
+
+        it.print(
+          400, 220,
+          id(font_srednia),
+          Color(160, 174, 192),
+          TextAlign::TOP_CENTER,
+          "Miejsce na kolejne"
+        );
+
+        it.print(
+          400, 250,
+          id(font_srednia),
+          Color(160, 174, 192),
+          TextAlign::TOP_CENTER,
+          "przyciski i sensory"
+        );
+
+
+        // POWRÓT
+
+        it.rectangle(
+          250, 320,
+          300, 70,
+          Color(66, 153, 225)
+        );
+
+        it.print(
+          400, 340,
+          id(font_srednia),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "POWRÓT"
+        );
+
+      }
+
+
+# ============================================================
+# GT911 - DOTYK
+# ============================================================
+
+touchscreen:
+  - platform: gt911
+
+    id: panel_dotykowy
+
+    i2c_id: bus_i2c
+
+    # GPIO4 = INT GT911
+    interrupt_pin: GPIO4
+
+    # CH422G IO1 = RESET GT911
+    reset_pin:
+      ch422g: ch422g_hub
+      number: 1
+
+    transform:
+      swap_xy: false
+      mirror_x: false
+      mirror_y: false
+
+    on_touch:
+      - lambda: |-
+
+          int x = touch.x;
+          int y = touch.y;
+
+          ESP_LOGI(
+            "TOUCH",
+            "Dotyk X=%d Y=%d",
+            x,
+            y
+          );
+
+
+          // ==================================================
+          // GÓRNY PASEK - ZMIANA STRONY
+          // ==================================================
+
+          if (y >= 0 && y <= 70) {
+
+            if (id(aktualna_strona) == 0) {
+
+              id(aktualna_strona) = 1;
+
+              ESP_LOGI(
+                "TOUCH",
+                "Przełączono na STRONĘ 2"
+              );
+
+            } else {
+
+              id(aktualna_strona) = 0;
+
+              ESP_LOGI(
+                "TOUCH",
+                "Przełączono na STRONĘ 1"
+              );
+
+            }
+
+            return;
+          }
+
+
+          // ==================================================
+          // STRONA 1
+          // ==================================================
+
+          if (id(aktualna_strona) == 0) {
+
+
+            // ----------------------------------------------
+            // ROLETY
+            // ----------------------------------------------
+
+            if (y >= 170 && y <= 220) {
+
+
+              // OTWÓRZ
+
+              if (x >= 30 && x <= 130) {
+
+                ESP_LOGI(
+                  "TOUCH",
+                  "Naciśnięto: OTWÓRZ OKNA"
+                );
+
+              }
+
+
+              // STOP
+
+              else if (x >= 140 && x <= 240) {
+
+                ESP_LOGI(
+                  "TOUCH",
+                  "Naciśnięto: STOP ROLETY"
+                );
+
+              }
+
+
+              // ZAMKNIJ
+
+              else if (x >= 250 && x <= 350) {
+
+                ESP_LOGI(
+                  "TOUCH",
+                  "Naciśnięto: ZAMKNIJ OKNA"
+                );
+
+              }
+
+
+              // KLIMATYZACJA -
+
+              else if (x >= 430 && x <= 490) {
+
+                ESP_LOGI(
+                  "TOUCH",
+                  "Naciśnięto: TEMP -"
+                );
+
+              }
+
+
+              // KLIMATYZACJA +
+
+              else if (x >= 580 && x <= 640) {
+
+                ESP_LOGI(
+                  "TOUCH",
+                  "Naciśnięto: TEMP +"
+                );
+
+              }
+
+            }
+
+          }
+
+
+          // ==================================================
+          // STRONA 2
+          // ==================================================
+
+          else {
+
+            if (
+              y >= 320 &&
+              y <= 390 &&
+              x >= 250 &&
+              x <= 550
+            ) {
+
+              id(aktualna_strona) = 0;
+
+              ESP_LOGI(
+                "TOUCH",
+                "Powrót do strony głównej"
+              );
+
+            }
+
+          }
