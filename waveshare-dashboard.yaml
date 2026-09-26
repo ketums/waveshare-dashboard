@@ -8,8 +8,6 @@ esp32:
   framework:
     type: esp-idf
 
-builder: esp-idf
-
 wifi:
   ssid: "skrapi 2,4GHZ"
   password: "RejtanA77"
@@ -23,10 +21,7 @@ api:
 ota:
   - platform: esphome
 
-# ============================================================
-# ZMIENNE GLOBALNE (STAN STRONY)
-# ============================================================
-
+# Zmienna globalna do obsługi stron
 globals:
   - id: aktualna_strona
     type: int
@@ -40,13 +35,7 @@ i2c:
   scan: true
   id: bus_i2c
 
-# 3. Klient HTTP (bez błędnego zapisu z kropką na poziomie głównym)
-http_request:
-  id: klient_http
-  useragent: "ESPHome Waveshare"
-  timeout: 5s
-
-# 2. Konfiguracja Panelu Dotykowego GT911 + Obsługa stron i akcji HTTP
+# 2. Konfiguracja Panelu Dotykowego GT911
 touchscreen:
   platform: gt911
   id: panel_dotykowy
@@ -58,12 +47,13 @@ touchscreen:
     mirror_x: false
     mirror_y: false
 
+  # Definicje stref dotykowych (Przycisków) na ekranie 800x480
   on_touch:
     - lambda: |-
         int x = touch.x;
         int y = touch.y;
         
-        // --- PRZEŁĄCZANIE STRON (Górny pasek: y od 0 do 70) ---
+        // --- GÓRNY PASEK: PRZEŁĄCZANIE STRON (Y od 0 do 70) ---
         if (y >= 0 && y <= 70) {
           if (id(aktualna_strona) == 0) {
             id(aktualna_strona) = 1;
@@ -75,49 +65,62 @@ touchscreen:
           return;
         }
 
-        // --- OBSŁUGA DLA STRONY GŁÓWNEJ (0) ---
+        // --- STRONA 0 (GŁÓWNA) ---
         if (id(aktualna_strona) == 0) {
           // --- STREFA 1: ROLETY ---
           if (y >= 170 && y <= 220) {
-            // Przycisk: OTWÓRZ OKNA
             if (x >= 30 && x <= 130) {
               ESP_LOGI("TOUCH", "Naciśnięto: OTWÓRZ OKNA");
-              id(klient_http)->post("https://openapi.tuyaeu.com/v1.0/token");
+              id(http_otworz_roleta).send();
             }
-            // Przycisk: STOP
             else if (x >= 140 && x <= 240) {
               ESP_LOGI("TOUCH", "Naciśnięto: STOP ROLETY");
-              id(klient_http)->post("https://openapi.tuyaeu.com/v1.0/token");
+              id(http_stop_roleta).send();
             }
-            // Przycisk: ZAMKNIJ OKNA
             else if (x >= 250 && x <= 350) {
               ESP_LOGI("TOUCH", "Naciśnięto: ZAMKNIJ OKNA");
-              id(klient_http)->post("https://openapi.tuyaeu.com/v1.0/token");
+              id(http_zamknij_roleta).send();
             }
           }
 
           // --- STREFA 2: KLIMATYZACJA ROTENSO ---
           if (y >= 170 && y <= 220) {
-            // Przycisk: - (Zmniejsz temperaturę)
             if (x >= 430 && x <= 490) {
               ESP_LOGI("TOUCH", "Naciśnięto: TEMP -");
-              id(klient_http)->post("https://openapi.tuyaeu.com/v1.0/token");
+              id(http_klima_temp_down).send();
             }
-            // Przycisk: + (Zwiększ temperaturę)
             else if (x >= 580 && x <= 640) {
               ESP_LOGI("TOUCH", "Naciśnięto: TEMP +");
-              id(klient_http)->post("https://openapi.tuyaeu.com/v1.0/token");
+              id(http_klima_temp_up).send();
             }
           }
         } 
-        // --- OBSŁUGA DLA DRUGIEGO KAFLA / STRONY (1) ---
+        # --- STRONA 1 (DRUGI KAFEL) ---
         else {
-          // Przycisk powrotu na stronie 2
+          // Przycisk powrotu
           if (y >= 320 && y <= 390 && x >= 250 && x <= 550) {
             id(aktualna_strona) = 0;
             ESP_LOGI("TOUCH", "Powrót do strony głównej");
           }
         }
+
+# 3. Definicje Wyzwalaczy HTTP (Do Chmury Tuya/Smart Life)
+http_request:
+  id: klient_http
+  useragent: "ESPHome Waveshare"
+  timeout: 5s
+
+http_request.post:
+  - id: http_otworz_roleta
+    url: "https://openapi.tuyaeu.com/v1.0/token"
+  - id: http_stop_roleta
+    url: "https://openapi.tuyaeu.com/v1.0/token"
+  - id: http_zamknij_roleta
+    url: "https://openapi.tuyaeu.com/v1.0/token"
+  - id: http_klima_temp_down
+    url: "https://openapi.tuyaeu.com/v1.0/token"
+  - id: http_klima_temp_up
+    url: "https://openapi.tuyaeu.com/v1.0/token"
 
 # Czcionki
 font:
@@ -137,7 +140,7 @@ time:
     id: czas_sntp
     timezone: "Europe/Warsaw"
 
-# Wyświetlacz LCD ESP32-S3 (800x480) - Obsługa dwóch stron
+# Wyświetlacz LCD ESP32-S3 (800x480) z obsługą dwóch stron
 display:
   - platform: esp32_lcd
     id: ekran_waveshare
@@ -152,7 +155,7 @@ display:
       // Ciemny motyw tła
       it.fill(Color(18, 24, 38));
 
-      // Wspólne ramki i górny pasek
+      // Ramki i obramowania
       it.rectangle(10, 10, 780, 460, Color(45, 55, 72));
       it.line(10, 70, 790, 70, Color(45, 55, 72));
 
@@ -162,18 +165,9 @@ display:
         it.strftime(30, 20, id(font_duza), Color(255, 255, 255), TextAlign::TOP_LEFT, "%H:%M", time_now);
       }
 
-      // Status w nagłówku zależny od strony
+      // Status w nagłówku w zależności od strony
       if (id(aktualna_strona) == 0) {
         it.print(770, 25, id(font_srednia), Color(72, 187, 120), TextAlign::TOP_RIGHT, "Strona 1/2 [Dotknij góry]");
-      } else {
-        it.print(770, 25, id(font_srednia), Color(90, 200, 250), TextAlign::TOP_RIGHT, "Strona 2/2 [Powrót]");
-      }
-
-
-      // ======================================================
-      // ZAWARTOŚĆ STRONY 0 (GŁÓWNA)
-      // ======================================================
-      if (id(aktualna_strona) == 0) {
 
         it.line(400, 70, 400, 470, Color(45, 55, 72));
         it.line(10, 270, 790, 270, Color(45, 55, 72));
@@ -207,17 +201,13 @@ display:
         it.print(30, 340, id(font_duza), Color(255, 255, 255), TextAlign::TOP_LEFT, "21.5 °C");
         it.print(30, 400, id(font_srednia), Color(160, 174, 192), TextAlign::TOP_LEFT, "Wilgotność: 55%");
 
-      } 
-      // ======================================================
-      // ZAWARTOŚĆ STRONY 1 (DRUGI KAFEL / STRONA 2)
-      // ======================================================
-      else {
+      } else {
+        it.print(770, 25, id(font_srednia), Color(90, 200, 250), TextAlign::TOP_RIGHT, "Strona 2/2 [Powrót]");
 
+        // --- ZAWARTOŚĆ DRUGIEGO KAFLA ---
         it.print(400, 150, id(font_duza), Color(255, 255, 255), TextAlign::TOP_CENTER, "DRUGI KAFEL / STRONA 2");
-        it.print(400, 220, id(font_srednia), Color(160, 174, 192), TextAlign::TOP_CENTER, "Miejsce na kolejne przyciski i czujniki");
+        it.print(400, 220, id(font_srednia), Color(160, 174, 192), TextAlign::TOP_CENTER, "Miejsce na kolejne przyciski i sensory");
 
-        // Wizualny przycisk powrotu
         it.rectangle(250, 320, 300, 70, Color(66, 153, 225));
         it.print(400, 340, id(font_srednia), Color(255, 255, 255), TextAlign::TOP_CENTER, "POWRÓT DO STRONY GŁÓWNEJ");
-
       }
