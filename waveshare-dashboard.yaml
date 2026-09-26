@@ -32,96 +32,14 @@ captive_portal:
 
 
 # ============================================================
-# KLIENT HTTP & POBIERANIE POGODY Z OPEN-METEO
-# ============================================================
-
-http_request:
-  id: klient_http
-  useragent: "ESPHome Waveshare"
-  timeout: 5s
-
-
-# ============================================================
-# ZMIENNE GLOBALNE (WSZYSTKO W JEDNYM MIEJSCU)
+# ZMIENNA - AKTUALNA STRONA
 # ============================================================
 
 globals:
-  - id: p_temp
-    type: float
-    initial_value: '0.0'
-  - id: p_wilg
-    type: float
-    initial_value: '0.0'
-  - id: p_cisnienie
-    type: float
-    initial_value: '0.0'
-  - id: p_wiatr
-    type: float
-    initial_value: '0.0'
-  - id: p_dane_ok
-    type: bool
-    initial_value: 'false'
   - id: aktualna_strona
     type: int
     restore_value: no
     initial_value: '0'
-
-
-interval:
-  - interval: 10min
-    then:
-      - http_request.get:
-          url: "https://api.open-meteo.com/v1/forecast?latitude=54.6067&longitude=18.2458&current=temperature_2m,relative_humidity_2m,surface_pressure,wind_speed_10m"
-          on_response:
-            then:
-              - lambda: |- (int status, std::string body)
-                  if (status == 200) {
-                    JsonDocument doc;
-                    auto error = deserializeJson(doc, body);
-                    if (!error) {
-                      id(p_temp) = doc["current"]["temperature_2m"];
-                      id(p_wilg) = doc["current"]["relative_humidity_2m"];
-                      id(p_cisnienie) = doc["current"]["surface_pressure"];
-                      id(p_wiatr) = doc["current"]["wind_speed_10m"];
-                      id(p_dane_ok) = true;
-                    }
-                  }
-
-
-# ============================================================
-# SKRYPTY AKCJI HTTP
-# ============================================================
-
-script:
-  - id: akcja_otworz_roleta
-    then:
-      - http_request.post:
-          url: "https://openapi.tuyaeu.com/v1.0/token"
-          json: {}
-
-  - id: akcja_stop_roleta
-    then:
-      - http_request.post:
-          url: "https://openapi.tuyaeu.com/v1.0/token"
-          json: {}
-
-  - id: akcja_zamknij_roleta
-    then:
-      - http_request.post:
-          url: "https://openapi.tuyaeu.com/v1.0/token"
-          json: {}
-
-  - id: akcja_klima_down
-    then:
-      - http_request.post:
-          url: "https://openapi.tuyaeu.com/v1.0/token"
-          json: {}
-
-  - id: akcja_klima_up
-    then:
-      - http_request.post:
-          url: "https://openapi.tuyaeu.com/v1.0/token"
-          json: {}
 
 
 # ============================================================
@@ -147,6 +65,36 @@ i2c:
 
 
 # ============================================================
+# WIFI - SIŁA SYGNAŁU
+# ============================================================
+
+sensor:
+
+  - platform: wifi_signal
+    id: wifi_sila
+    name: "Siła WiFi"
+    update_interval: 10s
+    unit_of_measurement: "dBm"
+    accuracy_decimals: 0
+
+
+# ============================================================
+# WIFI - INFORMACJE
+# ============================================================
+
+text_sensor:
+
+  - platform: wifi_info
+    ip_address:
+      id: wifi_ip
+      name: "Adres IP panelu"
+
+    ssid:
+      id: wifi_ssid
+      name: "Sieć WiFi panelu"
+
+
+# ============================================================
 # CZAS
 # ============================================================
 
@@ -161,6 +109,7 @@ time:
 # ============================================================
 
 font:
+
   - file: "gfonts://Roboto"
     id: font_duza
     size: 42
@@ -176,11 +125,13 @@ font:
 
 # ============================================================
 # WYŚWIETLACZ WAVESHARE
-# ESP32-S3-Touch-LCD-4.3
+#
+# Waveshare ESP32-S3-Touch-LCD-4.3
 # 800 x 480
 # ============================================================
 
 display:
+
   - platform: mipi_rgb
     model: ESP32-S3-TOUCH-LCD-4.3
 
@@ -202,7 +153,10 @@ display:
 
       it.fill(Color(18, 24, 38));
 
-      // Ramka
+
+      // ======================================================
+      // RAMKA
+      // ======================================================
 
       it.rectangle(
         10, 10,
@@ -210,7 +164,10 @@ display:
         Color(45, 55, 72)
       );
 
-      // Linia nagłówka
+
+      // ======================================================
+      // GÓRNY PASEK
+      // ======================================================
 
       it.line(
         10, 70,
@@ -228,7 +185,7 @@ display:
       if (time_now.is_valid()) {
 
         it.strftime(
-          30, 20,
+          25, 18,
           id(font_duza),
           Color(255, 255, 255),
           TextAlign::TOP_LEFT,
@@ -239,7 +196,7 @@ display:
       } else {
 
         it.print(
-          30, 20,
+          25, 18,
           id(font_duza),
           Color(255, 255, 255),
           TextAlign::TOP_LEFT,
@@ -250,18 +207,93 @@ display:
 
 
       // ======================================================
-      // STRONA 1 (GŁÓWNA)
+      // STAN WIFI
+      // ======================================================
+
+      if (id(wifi_ssid).has_state()) {
+
+        it.print(
+          285, 18,
+          id(font_srednia),
+          Color(72, 187, 120),
+          TextAlign::TOP_LEFT,
+          "WIFI OK"
+        );
+
+      } else {
+
+        it.print(
+          285, 18,
+          id(font_srednia),
+          Color(229, 62, 62),
+          TextAlign::TOP_LEFT,
+          "WIFI OFF"
+        );
+
+      }
+
+
+      // ======================================================
+      // SIŁA SYGNAŁU WIFI
+      // ======================================================
+
+      if (!isnan(id(wifi_sila).state)) {
+
+        it.printf(
+          390, 20,
+          id(font_mala),
+          Color(180, 190, 205),
+          TextAlign::TOP_LEFT,
+          "%0.0f dBm",
+          id(wifi_sila).state
+        );
+
+      } else {
+
+        it.print(
+          390, 20,
+          id(font_mala),
+          Color(180, 190, 205),
+          TextAlign::TOP_LEFT,
+          "-- dBm"
+        );
+
+      }
+
+
+      // ======================================================
+      // ADRES IP
+      // ======================================================
+
+      if (id(wifi_ip).has_state()) {
+
+        it.printf(
+          770, 20,
+          id(font_mala),
+          Color(90, 200, 250),
+          TextAlign::TOP_RIGHT,
+          "%s",
+          id(wifi_ip).state.c_str()
+        );
+
+      } else {
+
+        it.print(
+          770, 20,
+          id(font_mala),
+          Color(180, 190, 205),
+          TextAlign::TOP_RIGHT,
+          "brak IP"
+        );
+
+      }
+
+
+      // ======================================================
+      // STRONA 1
       // ======================================================
 
       if (id(aktualna_strona) == 0) {
-
-        it.print(
-          770, 25,
-          id(font_srednia),
-          Color(72, 187, 120),
-          TextAlign::TOP_RIGHT,
-          "STRONA 1/3"
-        );
 
 
         // ----------------------------------------------------
@@ -278,6 +310,19 @@ display:
           10, 270,
           790, 270,
           Color(45, 55, 72)
+        );
+
+
+        // ----------------------------------------------------
+        // NUMER STRONY
+        // ----------------------------------------------------
+
+        it.print(
+          770, 75,
+          id(font_mala),
+          Color(120, 130, 145),
+          TextAlign::TOP_RIGHT,
+          "STRONA 1/2"
         );
 
 
@@ -447,21 +492,40 @@ display:
           "Wilgotność: 55%"
         );
 
+
+        // ====================================================
+        // INFORMACJA WIFI NA DOLE
+        // ====================================================
+
+        if (id(wifi_ssid).has_state()) {
+
+          it.printf(
+            770, 420,
+            id(font_mala),
+            Color(100, 110, 125),
+            TextAlign::TOP_RIGHT,
+            "Sieć: %s",
+            id(wifi_ssid).state.c_str()
+          );
+
+        }
+
       }
 
 
       // ======================================================
-      // STRONA 2 (DRUGI KAFEL)
+      // STRONA 2
       // ======================================================
 
-      else if (id(aktualna_strona) == 1) {
+      else {
+
 
         it.print(
-          770, 25,
-          id(font_srednia),
-          Color(90, 200, 250),
+          770, 75,
+          id(font_mala),
+          Color(120, 130, 145),
           TextAlign::TOP_RIGHT,
-          "STRONA 2/3"
+          "STRONA 2/2"
         );
 
 
@@ -490,67 +554,32 @@ display:
           "przyciski i sensory"
         );
 
-      }
 
+        // POWRÓT
 
-      // ======================================================
-      // STRONA 3 (DASHBOARD POGODOWY Z IKONAMI)
-      // ======================================================
-
-      else {
-
-        it.print(
-          770, 25,
-          id(font_srednia),
-          Color(237, 137, 54),
-          TextAlign::TOP_RIGHT,
-          "STRONA 3/3 (POGODA)"
+        it.rectangle(
+          250, 320,
+          300, 70,
+          Color(66, 153, 225)
         );
 
         it.print(
-          40, 90,
+          400, 340,
           id(font_srednia),
-          Color(90, 200, 250),
-          TextAlign::TOP_LEFT,
-          "POGODA ONLINE - WEJHEROWO"
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "POWRÓT"
         );
-
-        it.rectangle(30, 130, 740, 310, Color(30, 41, 59));
-
-        if (id(p_dane_ok)) {
-          
-          char temp_buf[32];
-          sprintf(temp_buf, "%.1f °C", id(p_temp));
-          it.print(70, 160, id(font_duza), Color(255, 255, 255), TextAlign::TOP_LEFT, temp_buf);
-
-          char hum_buf[32];
-          sprintf(hum_buf, "Wilgotność: %.0f %%", id(p_wilg));
-          it.print(70, 230, id(font_srednia), Color(160, 174, 192), TextAlign::TOP_LEFT, hum_buf);
-
-          char press_buf[32];
-          sprintf(press_buf, "Ciśnienie: %.0f hPa", id(p_cisnienie));
-          it.print(70, 270, id(font_srednia), Color(160, 174, 192), TextAlign::TOP_LEFT, press_buf);
-
-          char wind_buf[32];
-          sprintf(wind_buf, "Wiatr: %.1f m/s", id(p_wiatr));
-          it.print(70, 310, id(font_srednia), Color(160, 174, 192), TextAlign::TOP_LEFT, wind_buf);
-
-          // Słońce (ikona wektorowa)
-          it.filled_circle(620, 220, 45, Color(255, 204, 0));
-          it.print(620, 310, id(font_srednia), Color(255, 255, 255), TextAlign::TOP_CENTER, "Słonecznie");
-
-        } else {
-          it.print(400, 250, id(font_srednia), Color(229, 62, 62), TextAlign::TOP_CENTER, "Pobieranie danych pogodowych z Wi-Fi...");
-        }
 
       }
 
 
 # ============================================================
-# GT911 - DOTYK (Obsługa 3 stron)
+# GT911 - PANEL DOTYKOWY
 # ============================================================
 
 touchscreen:
+
   - platform: gt911
 
     id: panel_dotykowy
@@ -571,10 +600,12 @@ touchscreen:
       mirror_y: false
 
     on_touch:
+
       - lambda: |-
 
           int x = touch.x;
           int y = touch.y;
+
 
           ESP_LOGI(
             "TOUCH",
@@ -585,22 +616,29 @@ touchscreen:
 
 
           // ==================================================
-          // GÓRNY PASEK - CYKLICZNA ZMIANA STRON (0 -> 1 -> 2 -> 0)
+          // GÓRNY PASEK - ZMIANA STRONY
           // ==================================================
 
           if (y >= 0 && y <= 70) {
 
             if (id(aktualna_strona) == 0) {
+
               id(aktualna_strona) = 1;
-              ESP_LOGI("TOUCH", "Przełączono na STRONĘ 2");
-            } 
-            else if (id(aktualna_strona) == 1) {
-              id(aktualna_strona) = 2;
-              ESP_LOGI("TOUCH", "Przełączono na STRONĘ 3 (Pogoda)");
-            } 
-            else {
+
+              ESP_LOGI(
+                "TOUCH",
+                "Przełączono na STRONĘ 2"
+              );
+
+            } else {
+
               id(aktualna_strona) = 0;
-              ESP_LOGI("TOUCH", "Przełączono na STRONĘ 1 (Główna)");
+
+              ESP_LOGI(
+                "TOUCH",
+                "Przełączono na STRONĘ 1"
+              );
+
             }
 
             return;
@@ -608,37 +646,80 @@ touchscreen:
 
 
           // ==================================================
-          // STRONA 1 (GŁÓWNA)
+          // STRONA 1
           // ==================================================
 
           if (id(aktualna_strona) == 0) {
 
+
+            // ------------------------------------------------
+            // ROLETY
+            // ------------------------------------------------
+
             if (y >= 170 && y <= 220) {
 
+
               // OTWÓRZ
+
               if (x >= 30 && x <= 130) {
-                ESP_LOGI("TOUCH", "Naciśnięto: OTWÓRZ OKNA");
-                id(akcja_otworz_roleta)->execute();
+
+                ESP_LOGI(
+                  "TOUCH",
+                  "Naciśnięto: OTWÓRZ OKNA"
+                );
+
               }
+
+
               // STOP
+
               else if (x >= 140 && x <= 240) {
-                ESP_LOGI("TOUCH", "Naciśnięto: STOP ROLETY");
-                id(akcja_stop_roleta)->execute();
+
+                ESP_LOGI(
+                  "TOUCH",
+                  "Naciśnięto: STOP ROLETY"
+                );
+
               }
+
+
               // ZAMKNIJ
+
               else if (x >= 250 && x <= 350) {
-                ESP_LOGI("TOUCH", "Naciśnięto: ZAMKNIJ OKNA");
-                id(akcja_zamknij_roleta)->execute();
+
+                ESP_LOGI(
+                  "TOUCH",
+                  "Naciśnięto: ZAMKNIJ OKNA"
+                );
+
               }
+
+
+              // ------------------------------------------------
               // KLIMATYZACJA -
+              // ------------------------------------------------
+
               else if (x >= 430 && x <= 490) {
-                ESP_LOGI("TOUCH", "Naciśnięto: TEMP -");
-                id(akcja_klima_down)->execute();
+
+                ESP_LOGI(
+                  "TOUCH",
+                  "Naciśnięto: TEMP -"
+                );
+
               }
+
+
+              // ------------------------------------------------
               // KLIMATYZACJA +
+              // ------------------------------------------------
+
               else if (x >= 580 && x <= 640) {
-                ESP_LOGI("TOUCH", "Naciśnięto: TEMP +");
-                id(akcja_klima_up)->execute();
+
+                ESP_LOGI(
+                  "TOUCH",
+                  "Naciśnięto: TEMP +"
+                );
+
               }
 
             }
@@ -650,15 +731,22 @@ touchscreen:
           // STRONA 2
           // ==================================================
 
-          else if (id(aktualna_strona) == 1) {
-            // Miejsce na akcje z drugiego kafla w przyszłości
-          }
-
-
-          // ==================================================
-          // STRONA 3 (POGODA)
-          // ==================================================
-
           else {
-            // Ewentualne kliknięcia na stronie pogody
+
+            if (
+              y >= 320 &&
+              y <= 390 &&
+              x >= 250 &&
+              x <= 550
+            ) {
+
+              id(aktualna_strona) = 0;
+
+              ESP_LOGI(
+                "TOUCH",
+                "Powrót do strony głównej"
+              );
+
+            }
+
           }
