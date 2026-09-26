@@ -8,8 +8,6 @@ esp32:
   framework:
     type: esp-idf
 
-builder: esp-idf
-
 wifi:
   ssid: skrapi 2,4GHZ
   password: RejtanA77
