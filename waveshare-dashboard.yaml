@@ -32,6 +32,53 @@ captive_portal:
 
 
 # ============================================================
+# KLIENT HTTP (Dodany do komunikacji sieciowej)
+# ============================================================
+
+http_request:
+  id: klient_http
+  useragent: "ESPHome Waveshare"
+  timeout: 5s
+
+
+# ============================================================
+# SKRYPTY AKCJI HTTP (Dodane do wywoływania z dotyku)
+# ============================================================
+
+script:
+  - id: akcja_otworz_roleta
+    then:
+      - http_request.post:
+          url: "https://openapi.tuyaeu.com/v1.0/token"
+          json:
+            anuluj: false
+
+  - id: akcja_stop_roleta
+    then:
+      - http_request.post:
+          url: "https://openapi.tuyaeu.com/v1.0/token"
+          json: {}
+
+  - id: akcja_zamknij_roleta
+    then:
+      - http_request.post:
+          url: "https://openapi.tuyaeu.com/v1.0/token"
+          json: {}
+
+  - id: akcja_klima_down
+    then:
+      - http_request.post:
+          url: "https://openapi.tuyaeu.com/v1.0/token"
+          json: {}
+
+  - id: akcja_klima_up
+    then:
+      - http_request.post:
+          url: "https://openapi.tuyaeu.com/v1.0/token"
+          json: {}
+
+
+# ============================================================
 # ZMIENNA - AKTUALNA STRONA
 # ============================================================
 
@@ -518,6 +565,7 @@ touchscreen:
                   "TOUCH",
                   "Naciśnięto: OTWÓRZ OKNA"
                 );
+                id(akcja_otworz_roleta)->execute();
 
               }
 
@@ -530,6 +578,7 @@ touchscreen:
                   "TOUCH",
                   "Naciśnięto: STOP ROLETY"
                 );
+                id(akcja_stop_roleta)->execute();
 
               }
 
@@ -542,6 +591,7 @@ touchscreen:
                   "TOUCH",
                   "Naciśnięto: ZAMKNIJ OKNA"
                 );
+                id(akcja_zamknij_roleta)->execute();
 
               }
 
@@ -554,6 +604,7 @@ touchscreen:
                   "TOUCH",
                   "Naciśnięto: TEMP -"
                 );
+                id(akcja_klima_down)->execute();
 
               }
 
@@ -566,6 +617,7 @@ touchscreen:
                   "TOUCH",
                   "Naciśnięto: TEMP +"
                 );
+                id(akcja_klima_up)->execute();
 
               }
 
