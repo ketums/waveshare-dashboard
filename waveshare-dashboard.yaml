@@ -382,10 +382,10 @@ touchscreen:
     # IRQ dotyku jest bezpośrednio na GPIO4
     interrupt_pin: GPIO4
 
-    # Poprawiony pin resetu przez ekspander CH422G
+    # RESET GT911 jest przez CH422G IO1
     reset_pin:
       ch422g: ch422g_hub
-      pin: 1
+      number: 1
 
     transform:
       swap_xy: false
