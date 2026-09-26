@@ -172,7 +172,7 @@ display:
 
 
       // ------------------------------------------------------
-      // LEWA GÓRA - ROLEty
+      // LEWA GÓRA - ROLETY
       // ------------------------------------------------------
 
       it.print(
@@ -377,13 +377,15 @@ touchscreen:
 
     i2c_id: bus_a
 
+    address: 0x5D
+
     # IRQ dotyku jest bezpośrednio na GPIO4
     interrupt_pin: GPIO4
 
-    # RESET GT911 jest przez CH422G IO1
+    # Poprawiony pin resetu przez ekspander CH422G
     reset_pin:
       ch422g: ch422g_hub
-      number: 1
+      pin: 1
 
     transform:
       swap_xy: false
