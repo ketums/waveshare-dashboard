@@ -16,15 +16,13 @@ logger:
   level: DEBUG
 
 api:
-  encryption:
-    key: "GENEROWANY_KLUCZ_API"
 
 ota:
   - platform: esphome
 
 wifi:
-  ssid: "TWOJE_SSID"
-  password: "TWOJE_HASLO"
+  ssid: "skrapi 2,4GHZ"
+  password: "RejtanA77"
 
   ap:
     ssid: "ESP32-S3 Fallback Hotspot"
@@ -52,7 +50,7 @@ http_request:
   timeout: 10s
 
 # ============================================================
-# CH422G - UKŁAD ROZSZERZENIA GPIO NA PŁYCIE WAVESHARE
+# CH422G
 # ============================================================
 
 ch422g:
@@ -60,8 +58,6 @@ ch422g:
 
 # ============================================================
 # I2C
-# GPIO8 = SDA
-# GPIO9 = SCL
 # ============================================================
 
 i2c:
@@ -88,7 +84,7 @@ globals:
     initial_value: '0'
 
 # ============================================================
-# CZUJNIKI POGODOWE
+# CZUJNIKI
 # ============================================================
 
 sensor:
@@ -108,12 +104,8 @@ sensor:
       then:
         - lambda: |-
             if (!isnan(x)) {
-              id(weather_condition_code) = (int) x;
+              id(weather_condition_code) = (int)x;
             }
-
-# ============================================================
-# WI-FI
-# ============================================================
 
   - platform: wifi_signal
     name: "Siła WiFi"
@@ -122,9 +114,14 @@ sensor:
     unit_of_measurement: "dBm"
     accuracy_decimals: 0
 
+# ============================================================
+# INFORMACJE O WI-FI
+# ============================================================
+
 text_sensor:
 
   - platform: wifi_info
+
     ip_address:
       name: "Adres IP panelu"
       id: wifi_ip
@@ -134,7 +131,7 @@ text_sensor:
       id: wifi_ssid
 
 # ============================================================
-# POBIERANIE POGODY Z OPEN-METEO
+# POGODA - OPEN-METEO
 # WEJHEROWO
 # ============================================================
 
@@ -167,8 +164,8 @@ interval:
                   });
 
 # ============================================================
-# CZCIONKI
-# ROBOTO Z POLSKIMI ZNAKAMI
+# CZCIONKA ROBOTO
+# POLSKIE ZNAKI
 # ============================================================
 
 font:
@@ -189,7 +186,7 @@ font:
     glyphs: " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ĄĆĘŁŃÓŚŹŻąćęłńóśźż°"
 
 # ============================================================
-# WYŚWIETLACZ WAVESHARE
+# WYŚWIETLACZ WAVESHARE ESP32-S3 TOUCH LCD 4.3
 # 800 x 480
 # ============================================================
 
@@ -223,7 +220,7 @@ display:
       it.fill(Color(11, 15, 25));
 
       // ======================================================
-      // GŁÓWNA KARTA
+      // KARTA 3D
       // ======================================================
 
       it.filled_rectangle(
@@ -362,7 +359,7 @@ display:
       );
 
       // ======================================================
-      // WI-FI
+      // SIŁA WI-FI
       // ======================================================
 
       if (id(wifi_signal_db).has_state()) {
