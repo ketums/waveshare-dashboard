@@ -74,15 +74,17 @@ interval:
           url: "https://api.open-meteo.com/v1/forecast?latitude=54.6067&longitude=18.2458&current=temperature_2m,relative_humidity_2m,surface_pressure,wind_speed_10m"
           on_response:
             then:
-              - lambda: |-
-                  JsonDocument doc;
-                  auto error = deserializeJson(doc, body);
-                  if (!error) {
-                    id(p_temp) = doc["current"]["temperature_2m"];
-                    id(p_wilg) = doc["current"]["relative_humidity_2m"];
-                    id(p_cisnienie) = doc["current"]["surface_pressure"];
-                    id(p_wiatr) = doc["current"]["wind_speed_10m"];
-                    id(p_dane_ok) = true;
+              - lambda: |- (int status, std::string body)
+                  if (status == 200) {
+                    JsonDocument doc;
+                    auto error = deserializeJson(doc, body);
+                    if (!error) {
+                      id(p_temp) = doc["current"]["temperature_2m"];
+                      id(p_wilg) = doc["current"]["relative_humidity_2m"];
+                      id(p_cisnienie) = doc["current"]["surface_pressure"];
+                      id(p_wiatr) = doc["current"]["wind_speed_10m"];
+                      id(p_dane_ok) = true;
+                    }
                   }
 
 
