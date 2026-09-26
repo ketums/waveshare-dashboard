@@ -75,7 +75,7 @@ time:
 
 
 # ============================================================
-# CZCIONKI (z obsługą polskich znaków)
+# CZCIONKI
 # ============================================================
 
 font:
@@ -119,7 +119,7 @@ sensor:
 
 
 # ============================================================
-# WYŚWIETLACZ 800x480 (OBSŁUGA STRON)
+# WYŚWIETLACZ 800x480 (OBSŁUGA DWÓCH STRON)
 # ============================================================
 
 display:
@@ -133,20 +133,16 @@ display:
 
     lambda: |-
 
-      // ------------------------------------------------------
-      // TŁO WSPÓLNE
-      // ------------------------------------------------------
+      // Tło wspólne
       it.fill(Color(15, 18, 24));
 
-      // ------------------------------------------------------
-      // GÓRNY PANEL (WSPÓLNY)
-      // ------------------------------------------------------
+      // Górny panel wspólny
       it.filled_rectangle(0, 0, 800, 75, Color(25, 30, 40));
 
       if (id(aktualna_strona) == 0) {
         it.print(20, 20, id(font_title), Color(255, 255, 255), "SMART HOME (STRONA 1/2)");
       } else {
-        it.print(20, 20, id(font_title), Color(100, 200, 255), "DRUGI EKRAN (STRONA 2/2)");
+        it.print(20, 20, id(font_title), Color(100, 200, 255), "DRUGI KAFEL / STRONA 2/2");
       }
 
       // Zegar
@@ -159,11 +155,9 @@ display:
 
 
       // ======================================================
-      // RENDEROWANIE ZAWARTOŚCI ZALEŻNIE OD STRONY
+      // ZAWARTOŚĆ STRONY 0 (GŁÓWNA)
       // ======================================================
       if (id(aktualna_strona) == 0) {
-        
-        // --- STRONA 0: GŁÓWNA ---
 
         // Linie podziału
         it.filled_rectangle(399, 75, 401, 480, Color(70, 75, 85));
@@ -217,13 +211,16 @@ display:
 
       } else {
 
-        // --- STRONA 1: DRUGI EKRAN ---
-        it.print(400, 150, id(font_title), Color(255, 255, 255), TextAlign::TOP_CENTER, "DRUGI KAFELEK / EKRAN");
-        it.print(400, 220, id(font_medium), Color(200, 200, 200), TextAlign::TOP_CENTER, "Tutaj możesz dodać inne urządzenia lub opcje");
+        // ======================================================
+        // ZAWARTOŚĆ STRONY 1 (DRUGI KAFEL / EKRAN)
+        // ======================================================
+        it.print(400, 150, id(font_title), Color(255, 255, 255), TextAlign::TOP_CENTER, "DRUGI KAFEL / STRONA 2");
+        it.print(400, 220, id(font_medium), Color(200, 200, 200), TextAlign::TOP_CENTER, "Tutaj możesz umieścić kolejne przyciski lub sensory");
         
-        // Przycisk powrotu na stronę główną
-        it.filled_rectangle(300, 320, 500, 390, Color(40, 50, 70));
-        it.print(400, 335, id(font_medium), Color(255, 255, 255), TextAlign::TOP_CENTER, "POWRÓT DO STRONY 1");
+        // Przycisk wizualny powrotu
+        it.filled_rectangle(250, 320, 550, 390, Color(40, 50, 70));
+        it.print(400, 338, id(font_medium), Color(255, 255, 255), TextAlign::TOP_CENTER, "WRÓĆ DO STRONY GŁÓWNEJ");
+
       }
 
 
@@ -257,12 +254,12 @@ touchscreen:
 
 
 # ============================================================
-# PRZYCISKI DOTYKOWE (STEROWANIE STRONAMI I URZĄDZENIAMI)
+# PRZYCISKI DOTYKOWE (BINARY SENSORS)
 # ============================================================
 
 binary_sensor:
 
-  # Przycisk zmiany strony (kliknięcie w górny pasek nagłówka)
+  # Przycisk zmiany strony (kliknięcie w górny pasek nagłówka od Y: 0 do 75)
   - platform: touchscreen
     name: "Zmień Stronę"
     id: zmiana_strony
@@ -277,11 +274,10 @@ binary_sensor:
           } else {
             id(aktualna_strona) = 0;
           }
-          // Wymuś natychmiastowe odświeżenie ekranu
           id(ekran).schedule_update();
 
 
-  # --- PRZYCISKI DLA STRONY 0 ---
+  # Przyciski dla strony głównej
   - platform: touchscreen
     name: "Roleta Góra"
     id: roleta_gora
