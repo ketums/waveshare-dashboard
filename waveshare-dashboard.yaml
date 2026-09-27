@@ -62,7 +62,6 @@ text_sensor:
     ip_address:
       id: wifi_ip
       name: "Adres IP panelu"
-
     ssid:
       id: wifi_ssid
       name: "Sieć WiFi panelu"
@@ -93,7 +92,7 @@ display:
     model: ESP32-S3-TOUCH-LCD-4.3
     id: ekran_waveshare
     rotation: 0
-    update_interval: 500ms
+    update_interval: 1s
 
     reset_pin:
       ch422g: ch422g_hub
@@ -102,29 +101,29 @@ display:
     lambda: |-
       auto time_now = id(czas_sntp).now();
 
-      // ==========================================================
+      // =====================================================
       // STRONA 3 - POGODA
-      // ==========================================================
+      // =====================================================
 
       if (id(aktualna_strona) == 2) {
 
-        it.fill(Color(8, 16, 29));
+        it.fill(Color(13, 20, 36));
 
         it.rectangle(
-          10, 10, 780, 460,
-          Color(27, 42, 66)
+          15, 15, 770, 450,
+          Color(41, 58, 92)
         );
 
         it.print(
-          30, 25,
+          40, 35,
           id(font_srednia),
           Color(148, 163, 184),
           TextAlign::TOP_LEFT,
-          "WEJHEROWO • STACJA POGODY"
+          "Wejherowo - Stacja Pogody"
         );
 
         it.print(
-          30, 70,
+          40, 80,
           id(font_duza),
           Color(255, 255, 255),
           TextAlign::TOP_LEFT,
@@ -132,17 +131,17 @@ display:
         );
 
         it.print(
-          30, 125,
+          40, 135,
           id(font_srednia),
           Color(56, 189, 248),
           TextAlign::TOP_LEFT,
-          "Dynamiczna strefa opadów"
+          "Dynamiczna strefa opadow"
         );
 
         if (time_now.is_valid()) {
 
           it.strftime(
-            760, 25,
+            760, 35,
             id(font_duza),
             Color(255, 255, 255),
             TextAlign::RIGHT,
@@ -150,18 +149,25 @@ display:
             time_now
           );
 
+          it.strftime(
+            760, 90,
+            id(font_mala),
+            Color(148, 163, 184),
+            TextAlign::RIGHT,
+            "%A, %d %B %Y",
+            time_now
+          );
+
         } else {
 
           it.print(
-            760, 25,
+            760, 35,
             id(font_duza),
             Color(255, 255, 255),
             TextAlign::RIGHT,
             "--:--"
           );
         }
-
-        // SŁOŃCE
 
         uint32_t ms = millis();
 
@@ -170,7 +176,7 @@ display:
           (2.0 * 3.14159265 / 8000.0);
 
         int cx = 520;
-        int cy = 245;
+        int cy = 250;
 
         for (int i = 0; i < 10; i++) {
 
@@ -179,20 +185,16 @@ display:
             i * (2.0 * 3.14159265 / 10.0);
 
           int x1 =
-            cx +
-            32.0 * cosf(a);
+            cx + 32.0 * cosf(a);
 
           int y1 =
-            cy +
-            32.0 * sinf(a);
+            cy + 32.0 * sinf(a);
 
           int x2 =
-            cx +
-            50.0 * cosf(a);
+            cx + 50.0 * cosf(a);
 
           int y2 =
-            cy +
-            50.0 * sinf(a);
+            cy + 50.0 * sinf(a);
 
           it.line(
             x1,
@@ -216,8 +218,6 @@ display:
           18,
           Color(255, 235, 100)
         );
-
-        // CHMURA
 
         int cloud_x = 540;
         int cloud_y = 265;
@@ -258,17 +258,13 @@ display:
           Color(160, 185, 215)
         );
 
-        // DESZCZ
-
         for (int i = 0; i < 85; i++) {
 
           int drop_x =
-            70 +
-            (i * 13 + i * 7) % 680;
+            70 + (i * 13 + i * 7) % 680;
 
           int speed =
-            18 +
-            (i % 7) * 5;
+            18 + (i % 7) * 5;
 
           int drop_y =
             (ms * speed / 28 + i * 27)
@@ -293,119 +289,62 @@ display:
         return;
       }
 
-      // ==========================================================
-      // STRONA 1 - DASHBOARD
-      // ==========================================================
+      // =====================================================
+      // TLO GLOWNEGO DASHBOARDU
+      // =====================================================
 
-      it.fill(
-        Color(7, 17, 30)
-      );
-
-      // RAMKA
+      it.fill(Color(18, 24, 38));
 
       it.rectangle(
-        8, 8, 784, 464,
-        Color(24, 47, 72)
+        10, 10, 780, 460,
+        Color(45, 55, 72)
       );
 
-      // ==========================================================
-      // GÓRNY PASEK
-      // ==========================================================
-
-      it.filled_rectangle(
-        14, 14, 772, 58,
-        Color(9, 25, 42)
+      it.line(
+        10, 70,
+        790, 70,
+        Color(45, 55, 72)
       );
+
+      // =====================================================
+      // NAGLOWEK
+      // =====================================================
 
       it.print(
-        28, 22,
-        id(font_duza),
-        Color(245, 247, 250),
+        25, 20,
+        id(font_srednia),
+        Color(200, 210, 225),
         TextAlign::TOP_LEFT,
         "DASHBOARD"
       );
 
-      // ==========================================================
-      // IKONA WIFI
-      // ==========================================================
+      if (id(wifi_ssid).has_state()) {
 
-      it.line(
-        310, 34,
-        318, 27,
-        Color(40, 230, 125)
-      );
+        it.print(
+          285, 18,
+          id(font_srednia),
+          Color(72, 187, 120),
+          TextAlign::TOP_LEFT,
+          "WIFI OK"
+        );
 
-      it.line(
-        318, 27,
-        330, 24,
-        Color(40, 230, 125)
-      );
+      } else {
 
-      it.line(
-        330, 24,
-        342, 27,
-        Color(40, 230, 125)
-      );
-
-      it.line(
-        342, 27,
-        350, 34,
-        Color(40, 230, 125)
-      );
-
-      it.line(
-        316, 41,
-        323, 35,
-        Color(40, 230, 125)
-      );
-
-      it.line(
-        323, 35,
-        330, 33,
-        Color(40, 230, 125)
-      );
-
-      it.line(
-        330, 33,
-        337, 35,
-        Color(40, 230, 125)
-      );
-
-      it.line(
-        337, 35,
-        344, 41,
-        Color(40, 230, 125)
-      );
-
-      it.filled_circle(
-        330, 47, 4,
-        Color(40, 230, 125)
-      );
-
-      it.print(
-        355, 25,
-        id(font_srednia),
-        Color(40, 230, 125),
-        TextAlign::TOP_LEFT,
-        "WIFI OK"
-      );
-
-      // SEPARATOR
-
-      it.line(
-        475, 24,
-        475, 58,
-        Color(50, 78, 105)
-      );
-
-      // SIŁA WIFI
+        it.print(
+          285, 18,
+          id(font_srednia),
+          Color(229, 62, 62),
+          TextAlign::TOP_LEFT,
+          "WIFI OFF"
+        );
+      }
 
       if (!isnan(id(wifi_sila).state)) {
 
         it.printf(
-          495, 26,
-          id(font_srednia),
-          Color(170, 190, 210),
+          390, 20,
+          id(font_mala),
+          Color(180, 190, 205),
           TextAlign::TOP_LEFT,
           "%0.0f dBm",
           id(wifi_sila).state
@@ -414,22 +353,20 @@ display:
       } else {
 
         it.print(
-          495, 26,
-          id(font_srednia),
-          Color(170, 190, 210),
+          390, 20,
+          id(font_mala),
+          Color(180, 190, 205),
           TextAlign::TOP_LEFT,
           "-- dBm"
         );
       }
 
-      // IP
-
       if (id(wifi_ip).has_state()) {
 
         it.printf(
-          775, 27,
-          id(font_srednia),
-          Color(30, 180, 255),
+          770, 20,
+          id(font_mala),
+          Color(90, 200, 250),
           TextAlign::TOP_RIGHT,
           "%s",
           id(wifi_ip).state.c_str()
@@ -438,502 +375,404 @@ display:
       } else {
 
         it.print(
-          775, 27,
-          id(font_srednia),
-          Color(120, 140, 160),
+          770, 20,
+          id(font_mala),
+          Color(180, 190, 205),
           TextAlign::TOP_RIGHT,
           "brak IP"
         );
       }
 
-      // ==========================================================
-      // KAFEL - ROLETY
-      // ==========================================================
+      // =====================================================
+      // STRONA 1
+      // =====================================================
 
-      it.filled_rectangle(
-        14, 80, 378, 180,
-        Color(8, 25, 41)
-      );
-
-      it.rectangle(
-        14, 80, 378, 180,
-        Color(24, 50, 76)
-      );
-
-      // Ikona rolety
-
-      it.rectangle(
-        38, 103, 78, 70,
-        Color(255, 160, 35)
-      );
-
-      it.line(
-        42, 117,
-        112, 117,
-        Color(255, 160, 35)
-      );
-
-      it.line(
-        42, 130,
-        112, 130,
-        Color(255, 160, 35)
-      );
-
-      it.line(
-        42, 143,
-        112, 143,
-        Color(255, 160, 35)
-      );
-
-      it.line(
-        77, 151,
-        77, 168,
-        Color(255, 160, 35)
-      );
-
-      it.print(
-        130, 98,
-        id(font_srednia),
-        Color(255, 160, 35),
-        TextAlign::TOP_LEFT,
-        "ROLETY OKIENNE"
-      );
-
-      it.print(
-        130, 128,
-        id(font_mala),
-        Color(145, 165, 190),
-        TextAlign::TOP_LEFT,
-        "okno 1 & okno 2"
-      );
-
-      // OTWÓRZ
-
-      it.filled_rectangle(
-        28, 190, 100, 48,
-        Color(20, 120, 220)
-      );
-
-      it.print(
-        78, 204,
-        id(font_mala),
-        Color(255, 255, 255),
-        TextAlign::TOP_CENTER,
-        "OTWÓRZ"
-      );
-
-      // STOP
-
-      it.filled_rectangle(
-        143, 190, 100, 48,
-        Color(225, 45, 55)
-      );
-
-      it.print(
-        193, 204,
-        id(font_mala),
-        Color(255, 255, 255),
-        TextAlign::TOP_CENTER,
-        "STOP"
-      );
-
-      // ZAMKNIJ
-
-      it.filled_rectangle(
-        258, 190, 100, 48,
-        Color(20, 120, 220)
-      );
-
-      it.print(
-        308, 204,
-        id(font_mala),
-        Color(255, 255, 255),
-        TextAlign::TOP_CENTER,
-        "ZAMKNIJ"
-      );
-
-      // ==========================================================
-      // KAFEL - KLIMATYZACJA
-      // ==========================================================
-
-      it.filled_rectangle(
-        408, 80, 378, 180,
-        Color(8, 25, 41)
-      );
-
-      it.rectangle(
-        408, 80, 378, 180,
-        Color(24, 50, 76)
-      );
-
-      // Śnieżynka
-
-      it.line(
-        455, 105,
-        455, 158,
-        Color(45, 190, 255)
-      );
-
-      it.line(
-        432, 118,
-        478, 145,
-        Color(45, 190, 255)
-      );
-
-      it.line(
-        478, 118,
-        432, 145,
-        Color(45, 190, 255)
-      );
-
-      it.line(
-        447, 110,
-        455, 118,
-        Color(45, 190, 255)
-      );
-
-      it.line(
-        463, 110,
-        455, 118,
-        Color(45, 190, 255)
-      );
-
-      it.print(
-        495, 98,
-        id(font_srednia),
-        Color(45, 190, 255),
-        TextAlign::TOP_LEFT,
-        "KLIMATYZACJA"
-      );
-
-      it.print(
-        495, 128,
-        id(font_mala),
-        Color(145, 165, 190),
-        TextAlign::TOP_LEFT,
-        "ROTENSO"
-      );
-
-      // MINUS
-
-      it.filled_rectangle(
-        425, 190, 58, 48,
-        Color(20, 120, 220)
-      );
-
-      it.print(
-        454, 196,
-        id(font_duza),
-        Color(255, 255, 255),
-        TextAlign::TOP_CENTER,
-        "-"
-      );
-
-      // TEMPERATURA
-
-      it.print(
-        595, 187,
-        id(font_duza),
-        Color(250, 250, 252),
-        TextAlign::TOP_CENTER,
-        "22°C"
-      );
-
-      // PLUS
-
-      it.filled_rectangle(
-        700, 190, 58, 48,
-        Color(225, 45, 55)
-      );
-
-      it.print(
-        729, 196,
-        id(font_duza),
-        Color(255, 255, 255),
-        TextAlign::TOP_CENTER,
-        "+"
-      );
-
-      // ==========================================================
-      // KAFEL - CZUJNIK ZIGBEE
-      // ==========================================================
-
-      it.filled_rectangle(
-        14, 272, 378, 190,
-        Color(8, 25, 41)
-      );
-
-      it.rectangle(
-        14, 272, 378, 190,
-        Color(24, 50, 76)
-      );
-
-      // Termometr
-
-      it.line(
-        57, 305,
-        57, 375,
-        Color(35, 225, 140)
-      );
-
-      it.filled_circle(
-        57, 375, 16,
-        Color(35, 225, 140)
-      );
-
-      it.filled_rectangle(
-        51, 320, 12, 55,
-        Color(35, 225, 140)
-      );
-
-      it.print(
-        88, 294,
-        id(font_srednia),
-        Color(35, 225, 140),
-        TextAlign::TOP_LEFT,
-        "CZUJNIK ZIGBEE"
-      );
-
-      it.print(
-        92, 342,
-        id(font_duza),
-        Color(250, 250, 252),
-        TextAlign::TOP_LEFT,
-        "21.5 °C"
-      );
-
-      // Kropla
-
-      it.line(
-        57, 405,
-        43, 430,
-        Color(35, 180, 255)
-      );
-
-      it.line(
-        57, 405,
-        71, 430,
-        Color(35, 180, 255)
-      );
-
-      it.filled_circle(
-        57, 430, 14,
-        Color(35, 180, 255)
-      );
-
-      it.print(
-        88, 410,
-        id(font_srednia),
-        Color(145, 165, 190),
-        TextAlign::TOP_LEFT,
-        "Wilgotność: 55%"
-      );
-
-      // ==========================================================
-      // KAFEL - OGRZEWANIE
-      // ==========================================================
-
-      it.filled_rectangle(
-        408, 272, 378, 190,
-        Color(8, 25, 41)
-      );
-
-      it.rectangle(
-        408, 272, 378, 190,
-        Color(24, 50, 76)
-      );
-
-      // Fale ciepła
-
-      for (int i = 0; i < 3; i++) {
-
-        int xx = 440 + i * 15;
+      if (id(aktualna_strona) == 0) {
 
         it.line(
-          xx, 310,
-          xx - 6, 325,
-          Color(255, 160, 35)
+          400, 70,
+          400, 470,
+          Color(45, 55, 72)
         );
 
         it.line(
-          xx - 6, 325,
-          xx, 340,
-          Color(255, 160, 35)
+          10, 270,
+          790, 270,
+          Color(45, 55, 72)
         );
 
-        it.line(
-          xx, 340,
-          xx - 6, 355,
-          Color(255, 160, 35)
+        it.print(
+          770, 75,
+          id(font_mala),
+          Color(120, 130, 145),
+          TextAlign::TOP_RIGHT,
+          "STRONA 1/3"
         );
-      }
 
-      it.print(
-        495, 294,
-        id(font_srednia),
-        Color(255, 160, 35),
-        TextAlign::TOP_LEFT,
-        "OGRZEWANIE"
-      );
+        // ===================================================
+        // ROLETY
+        // ===================================================
 
-      it.print(
-        495, 326,
-        id(font_srednia),
-        Color(145, 165, 190),
-        TextAlign::TOP_LEFT,
-        "TERMOSTAT"
-      );
+        it.print(
+          30, 90,
+          id(font_srednia),
+          Color(237, 137, 54),
+          TextAlign::TOP_LEFT,
+          "ROLETY OKIENNE"
+        );
 
-      // ==========================================================
-      // GŁOWICA TERMOSTATYCZNA
-      // ==========================================================
+        it.print(
+          30, 130,
+          id(font_mala),
+          Color(160, 174, 192),
+          TextAlign::TOP_LEFT,
+          "okno 1 & okno 2"
+        );
 
-      // Podstawa
+        it.rectangle(
+          30, 170,
+          100, 50,
+          Color(66, 153, 225)
+        );
 
-      it.filled_rectangle(
-        665, 421, 86, 12,
-        Color(155, 160, 165)
-      );
+        it.print(
+          80, 185,
+          id(font_mala),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "OTWORZ"
+        );
 
-      // Ząbki
+        it.rectangle(
+          140, 170,
+          100, 50,
+          Color(229, 62, 62)
+        );
 
-      for (int i = 0; i < 11; i++) {
+        it.print(
+          190, 185,
+          id(font_mala),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "STOP"
+        );
+
+        it.rectangle(
+          250, 170,
+          100, 50,
+          Color(66, 153, 225)
+        );
+
+        it.print(
+          300, 185,
+          id(font_mala),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "ZAMKNIJ"
+        );
+
+        // ===================================================
+        // KLIMATYZACJA
+        // ===================================================
+
+        it.print(
+          430, 90,
+          id(font_srednia),
+          Color(90, 200, 250),
+          TextAlign::TOP_LEFT,
+          "KLIMATYZACJA"
+        );
+
+        it.print(
+          430, 120,
+          id(font_mala),
+          Color(160, 174, 192),
+          TextAlign::TOP_LEFT,
+          "ROTENSO"
+        );
+
+        it.rectangle(
+          430, 170,
+          60, 50,
+          Color(66, 153, 225)
+        );
+
+        it.print(
+          460, 177,
+          id(font_duza),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "-"
+        );
+
+        it.print(
+          535, 175,
+          id(font_duza),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "22°C"
+        );
+
+        it.rectangle(
+          580, 170,
+          60, 50,
+          Color(229, 62, 62)
+        );
+
+        it.print(
+          610, 177,
+          id(font_duza),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "+"
+        );
+
+        // ===================================================
+        // CZUJNIK ZIGBEE
+        // ===================================================
+
+        it.print(
+          30, 290,
+          id(font_srednia),
+          Color(72, 187, 120),
+          TextAlign::TOP_LEFT,
+          "CZUJNIK ZIGBEE"
+        );
+
+        it.print(
+          30, 340,
+          id(font_duza),
+          Color(255, 255, 255),
+          TextAlign::TOP_LEFT,
+          "21.5 °C"
+        );
+
+        it.print(
+          30, 400,
+          id(font_srednia),
+          Color(160, 174, 192),
+          TextAlign::TOP_LEFT,
+          "Wilgotnosc: 55%"
+        );
+
+        // ===================================================
+        // OGRZEWANIE
+        // ===================================================
+
+        it.rectangle(
+          420, 285,
+          360, 175,
+          Color(45, 55, 72)
+        );
+
+        it.print(
+          440, 295,
+          id(font_srednia),
+          Color(255, 170, 60),
+          TextAlign::TOP_LEFT,
+          "OGRZEWANIE"
+        );
+
+        it.print(
+          440, 325,
+          id(font_mala),
+          Color(160, 174, 192),
+          TextAlign::TOP_LEFT,
+          "TERMOSTAT"
+        );
+
+        // ===================================================
+        // GLOWICA TERMOSTATYCZNA
+        // ===================================================
+
+        // metalowa podstawa
 
         it.filled_rectangle(
-          665 + i * 8,
-          430,
-          5,
-          8,
-          Color(120, 126, 132)
+          560, 405,
+          120, 15,
+          Color(170, 175, 180)
         );
+
+        // zabki podstawy
+
+        for (int i = 0; i < 12; i++) {
+
+          it.filled_rectangle(
+            562 + i * 9,
+            420,
+            6,
+            8,
+            Color(125, 130, 135)
+          );
+        }
+
+        // dolny pierscien
+
+        it.filled_rectangle(
+          555, 395,
+          130, 22,
+          Color(205, 208, 210)
+        );
+
+        // bialy korpus
+
+        it.filled_rectangle(
+          565, 335,
+          110, 70,
+          Color(240, 242, 244)
+        );
+
+        // zaokraglenie korpusu
+
+        it.filled_circle(
+          565, 370,
+          35,
+          Color(240, 242, 244)
+        );
+
+        it.filled_circle(
+          675, 370,
+          35,
+          Color(240, 242, 244)
+        );
+
+        // przednia powierzchnia
+
+        it.filled_rectangle(
+          565, 355,
+          110, 35,
+          Color(240, 242, 244)
+        );
+
+        // delikatny cien dolu
+
+        it.filled_rectangle(
+          570, 390,
+          100, 12,
+          Color(220, 223, 225)
+        );
+
+        // ===================================================
+        // METALOWE POKRETLO
+        // ===================================================
+
+        it.filled_rectangle(
+          580, 315,
+          80, 25,
+          Color(150, 154, 158)
+        );
+
+        it.filled_circle(
+          620, 315,
+          40,
+          Color(160, 164, 168)
+        );
+
+        it.filled_rectangle(
+          585, 300,
+          70, 22,
+          Color(180, 184, 188)
+        );
+
+        it.filled_circle(
+          620, 300,
+          35,
+          Color(170, 174, 178)
+        );
+
+        // nacięcia pokretla
+
+        for (int i = 0; i < 7; i++) {
+
+          it.line(
+            590 + i * 10,
+            290,
+            590 + i * 10,
+            315,
+            Color(105, 110, 115)
+          );
+        }
+
+        // gorna krawedz
+
+        it.filled_rectangle(
+          595, 285,
+          50, 8,
+          Color(195, 198, 200)
+        );
+
+        // ===================================================
+        // WYSWIETLACZ
+        // ===================================================
+
+        it.print(
+          620, 350,
+          id(font_srednia),
+          Color(185, 190, 195),
+          TextAlign::TOP_CENTER,
+          "26°"
+        );
+
+        // ===================================================
+        // STATUS
+        // ===================================================
+
+        it.print(
+          440, 400,
+          id(font_mala),
+          Color(160, 174, 192),
+          TextAlign::TOP_LEFT,
+          "STATUS:"
+        );
+
+        it.print(
+          505, 400,
+          id(font_mala),
+          Color(100, 220, 130),
+          TextAlign::TOP_LEFT,
+          "GRZEJE"
+        );
+
       }
 
-      // Dolny pierścień
+      // =====================================================
+      // STRONA 2
+      // =====================================================
 
-      it.filled_rectangle(
-        660, 407, 96, 22,
-        Color(185, 188, 190)
-      );
+      else if (id(aktualna_strona) == 1) {
 
-      it.filled_rectangle(
-        665, 411, 86, 12,
-        Color(215, 218, 220)
-      );
+        it.print(
+          770, 75,
+          id(font_mala),
+          Color(120, 130, 145),
+          TextAlign::TOP_RIGHT,
+          "STRONA 2/3"
+        );
 
-      // Biały korpus
+        it.print(
+          400, 150,
+          id(font_duza),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "DRUGI KAFEL"
+        );
 
-      it.filled_rectangle(
-        668, 345, 80, 67,
-        Color(238, 240, 242)
-      );
+        it.print(
+          400, 220,
+          id(font_srednia),
+          Color(160, 174, 192),
+          TextAlign::TOP_CENTER,
+          "Miejsce na kolejne"
+        );
 
-      it.filled_circle(
-        668, 378, 33,
-        Color(238, 240, 242)
-      );
-
-      it.filled_circle(
-        748, 378, 33,
-        Color(238, 240, 242)
-      );
-
-      it.filled_rectangle(
-        668, 360, 80, 38,
-        Color(238, 240, 242)
-      );
-
-      // Cieniowanie
-
-      it.filled_rectangle(
-        673, 396, 70, 12,
-        Color(220, 223, 225)
-      );
-
-      // ==========================================================
-      // METALOWE POKRĘTŁO
-      // ==========================================================
-
-      it.filled_rectangle(
-        675, 329, 66, 20,
-        Color(150, 153, 155)
-      );
-
-      it.filled_circle(
-        708, 329, 33,
-        Color(160, 163, 165)
-      );
-
-      it.filled_rectangle(
-        680, 316, 56, 20,
-        Color(175, 178, 180)
-      );
-
-      it.filled_circle(
-        708, 316, 28,
-        Color(165, 168, 170)
-      );
-
-      // Nacięcia
-
-      for (int i = 0; i < 6; i++) {
-
-        it.line(
-          688 + i * 8,
-          307,
-          688 + i * 8,
-          329,
-          Color(105, 108, 110)
+        it.print(
+          400, 250,
+          id(font_srednia),
+          Color(160, 174, 192),
+          TextAlign::TOP_CENTER,
+          "przyciski i sensory"
         );
       }
-
-      it.filled_rectangle(
-        690, 302, 36, 7,
-        Color(195, 198, 200)
-      );
-
-      // Wyświetlacz
-
-      it.print(
-        708, 361,
-        id(font_srednia),
-        Color(255, 255, 255),
-        TextAlign::TOP_CENTER,
-        "26°"
-      );
-
-      // ==========================================================
-      // STATUS
-      // ==========================================================
-
-      it.print(
-        430, 415,
-        id(font_mala),
-        Color(145, 165, 190),
-        TextAlign::TOP_LEFT,
-        "STATUS:"
-      );
-
-      it.print(
-        495, 415,
-        id(font_mala),
-        Color(35, 225, 140),
-        TextAlign::TOP_LEFT,
-        "GRZEJE"
-      );
-
-      // Numer strony
-
-      it.print(
-        770, 84,
-        id(font_mala),
-        Color(130, 155, 180),
-        TextAlign::TOP_RIGHT,
-        "STRONA 1/3"
-      );
-
-    # ============================================================
-    # KONIEC GŁÓWNEJ LAMBDA DISPLAY
-    # ============================================================
 
 touchscreen:
   - platform: gt911
@@ -963,9 +802,9 @@ touchscreen:
             y
           );
 
-          // ======================================================
-          // STRONA 3 - POWRÓT DO STRONY 1
-          // ======================================================
+          // ===================================================
+          // STRONA 3
+          // ===================================================
 
           if (id(aktualna_strona) == 2) {
 
@@ -973,15 +812,15 @@ touchscreen:
 
             ESP_LOGI(
               "TOUCH",
-              "Powrót ze strony 3 na stronę 1"
+              "Powrot ze strony 3 na strone 1"
             );
 
             return;
           }
 
-          // ======================================================
-          // GÓRNY PASEK - ZMIANA STRONY
-          // ======================================================
+          // ===================================================
+          // GORNY PASEK
+          // ===================================================
 
           if (y >= 0 && y <= 70) {
 
@@ -990,69 +829,84 @@ touchscreen:
 
             ESP_LOGI(
               "TOUCH",
-              "Przełączono stronę na indeks: %d",
+              "Przelaczono strone na indeks: %d",
               id(aktualna_strona)
             );
 
             return;
           }
 
-          // ======================================================
+          // ===================================================
           // STRONA 1
-          // ======================================================
+          // ===================================================
 
           if (id(aktualna_strona) == 0) {
 
-            // ----------------------------------------------------
             // ROLETY
-            // ----------------------------------------------------
 
-            if (y >= 190 && y <= 238) {
+            if (y >= 170 && y <= 220) {
 
-              if (x >= 28 && x <= 128) {
+              if (x >= 30 && x <= 130) {
 
                 ESP_LOGI(
                   "TOUCH",
-                  "OTWÓRZ OKNA"
+                  "Nacisnieto: OTWORZ OKNA"
                 );
 
-              } else if (x >= 143 && x <= 243) {
+              } else if (x >= 140 && x <= 240) {
 
                 ESP_LOGI(
                   "TOUCH",
-                  "STOP ROLETY"
+                  "Nacisnieto: STOP ROLETY"
                 );
 
-              } else if (x >= 258 && x <= 358) {
+              } else if (x >= 250 && x <= 350) {
 
                 ESP_LOGI(
                   "TOUCH",
-                  "ZAMKNIJ OKNA"
+                  "Nacisnieto: ZAMKNIJ OKNA"
+                );
+
+              } else if (x >= 430 && x <= 490) {
+
+                ESP_LOGI(
+                  "TOUCH",
+                  "Nacisnieto: TEMP -"
+                );
+
+              } else if (x >= 580 && x <= 640) {
+
+                ESP_LOGI(
+                  "TOUCH",
+                  "Nacisnieto: TEMP +"
                 );
               }
             }
 
-            // ----------------------------------------------------
-            // KLIMATYZACJA -
-            // ----------------------------------------------------
+            // OGRZEWANIE
 
             if (
-              x >= 425 &&
-              x <= 483 &&
-              y >= 190 &&
-              y <= 238
+              x >= 420 &&
+              x <= 780 &&
+              y >= 285 &&
+              y <= 460
             ) {
 
               ESP_LOGI(
                 "TOUCH",
-                "KLIMATYZACJA TEMP -"
+                "Nacisnieto: OGRZEWANIE"
               );
             }
+          }
 
-            // ----------------------------------------------------
-            // KLIMATYZACJA +
-            // ----------------------------------------------------
+          // ===================================================
+          // STRONA 2
+          // ===================================================
 
-            if (
-              x >= 700 &&
-              x <= 758 &
+          else if (id(aktualna_strona) == 1) {
+
+            ESP_LOGI(
+              "TOUCH",
+              "Dotyk na stronie 2"
+            );
+          }
