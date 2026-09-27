@@ -93,14 +93,12 @@ font:
     glyphs: "0123456789:"
 
 image:
-  - platform: file
-    file: "weather_partly_cloudy.png"
+  - file: "weather_partly_cloudy.png"
     id: ikona_pogoda_duza
     type: RGB565
     transparency: alpha_channel
 
-  - platform: file
-    file: "weather_partly_cloudy_small.png"
+  - file: "weather_partly_cloudy_small.png"
     id: ikona_pogoda_mala
     type: RGB565
     transparency: alpha_channel
@@ -120,6 +118,7 @@ display:
       auto time_now = id(czas_sntp).now();
 
       if (id(aktualna_strona) == 2) {
+
         it.fill(Color(10, 18, 32));
 
         it.rectangle(
@@ -250,6 +249,7 @@ display:
         );
 
         if (time_now.is_valid()) {
+
           it.strftime(
             765,
             350,
@@ -259,7 +259,9 @@ display:
             "%H:%M",
             time_now
           );
+
         } else {
+
           it.print(
             765,
             350,
@@ -310,6 +312,7 @@ display:
       );
 
       if (id(wifi_ssid).has_state()) {
+
         it.print(
           285,
           18,
@@ -318,7 +321,9 @@ display:
           TextAlign::TOP_LEFT,
           "WIFI OK"
         );
+
       } else {
+
         it.print(
           285,
           18,
@@ -330,6 +335,7 @@ display:
       }
 
       if (!isnan(id(wifi_sila).state)) {
+
         it.printf(
           390,
           20,
@@ -339,7 +345,9 @@ display:
           "%0.0f dBm",
           id(wifi_sila).state
         );
+
       } else {
+
         it.print(
           390,
           20,
@@ -351,6 +359,7 @@ display:
       }
 
       if (id(wifi_ip).has_state()) {
+
         it.printf(
           770,
           20,
@@ -360,7 +369,9 @@ display:
           "%s",
           id(wifi_ip).state.c_str()
         );
+
       } else {
+
         it.print(
           770,
           20,
@@ -372,6 +383,7 @@ display:
       }
 
       if (id(aktualna_strona) == 0) {
+
         it.line(
           400,
           70,
@@ -646,6 +658,7 @@ display:
       }
 
       else if (id(aktualna_strona) == 1) {
+
         it.print(
           770,
           75,
