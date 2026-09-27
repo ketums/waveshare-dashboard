@@ -36,7 +36,6 @@ globals:
     restore_value: no
     initial_value: '0'
 
-  # Dane pogodowe
   - id: pogoda_temp
     type: float
     restore_value: no
@@ -94,7 +93,6 @@ i2c:
 
 http_request:
   timeout: 10s
-  max_response_buffer_size: 2048
 
 sensor:
   - platform: wifi_signal
@@ -134,16 +132,13 @@ font:
     size: 16
     glyphs: " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ĄĆĘŁŃÓŚŹŻąćęłńóśźż°"
 
-# =========================================================
-# POBIERANIE POGODY Z OPEN-METEO
-# =========================================================
-
 interval:
   - interval: 10min
     then:
       - http_request.get:
           url: "https://api.open-meteo.com/v1/forecast?latitude=54.605&longitude=18.235&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,showers,snowfall,weather_code,wind_speed_10m,is_day&timezone=Europe%2FWarsaw"
           capture_response: true
+          max_response_buffer_size: 2048
 
           on_response:
             then:
@@ -151,6 +146,7 @@ interval:
                   condition:
                     lambda: |-
                       return response->status_code == 200;
+
                   then:
                     - lambda: |-
                         json::parse_json(body, [](JsonObject root) -> bool {
@@ -201,7 +197,7 @@ interval:
 
                           ESP_LOGI(
                             "POGODA",
-                            "Temp %.1f C | Wilg %.0f%% | Wiatr %.1f km/h | Kod %d",
+                            "Temp %.1f C | Wilgotnosc %.0f%% | Wiatr %.1f km/h | Kod %d",
                             id(pogoda_temp),
                             id(pogoda_wilgotnosc),
                             id(pogoda_wiatr),
@@ -214,15 +210,12 @@ interval:
                   else:
                     - lambda: |-
                         id(pogoda_online) = false;
+
                         ESP_LOGW(
                           "POGODA",
                           "Blad HTTP: %d",
                           response->status_code
                         );
-
-# =========================================================
-# WYŚWIETLACZ
-# =========================================================
 
 display:
   - platform: mipi_rgb
@@ -239,15 +232,15 @@ display:
 
       auto time_now = id(czas_sntp).now();
 
-      # ===================================================
-      # STRONA 3 - AKTUALNA POGODA
-      # ===================================================
+      // =====================================================
+      // STRONA 3 - AKTUALNA POGODA
+      // =====================================================
 
       if (id(aktualna_strona) == 2) {
 
         it.fill(Color(8, 16, 30));
 
-        # Górny pasek
+        // Gorny pasek
         it.rectangle(
           0, 0, 800, 65,
           Color(15, 30, 52)
@@ -262,39 +255,37 @@ display:
         );
 
         if (id(pogoda_online)) {
+
           it.print(
             775, 18,
             id(font_mala),
             Color(80, 220, 130),
             TextAlign::TOP_RIGHT,
-            "● ONLINE"
+            "ONLINE"
           );
+
         } else {
+
           it.print(
             775, 18,
             id(font_mala),
             Color(240, 100, 100),
             TextAlign::TOP_RIGHT,
-            "● BRAK DANYCH"
+            "BRAK DANYCH"
           );
         }
-
-        # -------------------------------------------------
-        # ANIMACJA
-        # -------------------------------------------------
 
         uint32_t ms = millis();
 
         int kod = id(pogoda_kod);
 
-        # ================================================
-        # SŁOŃCE / BEZCHMURNIE
-        # Kody 0-1
-        # ================================================
+        // =====================================================
+        // BEZCHMURNIE
+        // =====================================================
 
         if (kod == 0 || kod == 1) {
 
-          int cx = 245;
+          int cx = 235;
           int cy = 235;
 
           float angle =
@@ -337,10 +328,9 @@ display:
           );
         }
 
-        # ================================================
-        # CHMURY
-        # Kody 2-3
-        # ================================================
+        // =====================================================
+        // CZESCIOWE / DUZE ZACHMURZENIE
+        // =====================================================
 
         else if (kod == 2 || kod == 3) {
 
@@ -348,7 +338,7 @@ display:
             (ms / 35) % 70;
 
           int cx =
-            210 + move;
+            185 + move;
 
           int cy = 235;
 
@@ -375,25 +365,25 @@ display:
             Color(145, 170, 200)
           );
 
-          # małe promienie światła
           if (kod == 2) {
+
             it.line(
-              120, 165,
-              160, 180,
+              100, 165,
+              140, 180,
               Color(255, 205, 80)
             );
 
             it.line(
-              285, 165,
-              325, 180,
+              280, 165,
+              320, 180,
               Color(255, 205, 80)
             );
           }
         }
 
-        # ================================================
-        # MGŁA
-        # ================================================
+        // =====================================================
+        // MGŁA
+        // =====================================================
 
         else if (kod == 45 || kod == 48) {
 
@@ -406,7 +396,7 @@ display:
               150 + i * 30;
 
             it.line(
-              80 + shift,
+              50 + shift,
               y,
               360 + shift,
               y,
@@ -415,19 +405,18 @@ display:
           }
         }
 
-        # ================================================
-        # DESZCZ
-        # ================================================
+        // =====================================================
+        // DESZCZ
+        // =====================================================
 
         else if (
           (kod >= 51 && kod <= 67) ||
           (kod >= 80 && kod <= 82)
         ) {
 
-          int cx = 230;
+          int cx = 225;
           int cy = 180;
 
-          # chmura
           it.filled_circle(
             cx - 70, cy + 20, 38,
             Color(90, 115, 145)
@@ -451,12 +440,11 @@ display:
             Color(125, 150, 180)
           );
 
-          # animowane krople
           for (int i = 0; i < 28; i++) {
 
             int x =
-              125 +
-              ((i * 37) % 220);
+              105 +
+              ((i * 37) % 250);
 
             int speed =
               3 + (i % 5);
@@ -475,9 +463,9 @@ display:
           }
         }
 
-        # ================================================
-        # ŚNIEG
-        # ================================================
+        // =====================================================
+        // SNEG
+        // =====================================================
 
         else if (
           (kod >= 71 && kod <= 77) ||
@@ -485,7 +473,7 @@ display:
           kod == 86
         ) {
 
-          int cx = 230;
+          int cx = 225;
           int cy = 180;
 
           it.filled_circle(
@@ -511,11 +499,10 @@ display:
             Color(160, 180, 200)
           );
 
-          # płatki śniegu
           for (int i = 0; i < 25; i++) {
 
             int x =
-              110 +
+              100 +
               ((i * 47) % 250);
 
             int y =
@@ -531,13 +518,13 @@ display:
           }
         }
 
-        # ================================================
-        # BURZA
-        # ================================================
+        // =====================================================
+        // BURZA
+        // =====================================================
 
         else if (kod >= 95) {
 
-          int cx = 230;
+          int cx = 225;
           int cy = 175;
 
           it.filled_circle(
@@ -563,11 +550,10 @@ display:
             Color(80, 90, 110)
           );
 
-          # deszcz
           for (int i = 0; i < 18; i++) {
 
             int x =
-              120 +
+              115 +
               ((i * 43) % 230);
 
             int y =
@@ -583,46 +569,44 @@ display:
             );
           }
 
-          # błyskawica
           int flash =
             (ms / 250) % 4;
 
           if (flash == 0 || flash == 1) {
 
             it.line(
-              230, 245,
-              205, 300,
+              225, 245,
+              200, 300,
               Color(255, 240, 80)
             );
 
             it.line(
-              205, 300,
-              235, 300,
+              200, 300,
+              230, 300,
               Color(255, 240, 80)
             );
 
             it.line(
-              235, 300,
-              215, 350,
+              230, 300,
+              210, 350,
               Color(255, 240, 80)
             );
           }
         }
 
-        # ================================================
-        # INFORMACJE PO PRAWEJ
-        # ================================================
+        // =====================================================
+        // INFORMACJE POGODOWE
+        // =====================================================
 
         it.rectangle(
-          430, 90, 345, 325,
+          420, 90, 360, 325,
           Color(25, 40, 62)
         );
 
-        # Temperatura
         if (id(pogoda_online)) {
 
           it.printf(
-            455, 110,
+            445, 110,
             id(font_duza),
             Color(255, 255, 255),
             TextAlign::TOP_LEFT,
@@ -631,7 +615,7 @@ display:
           );
 
           it.printf(
-            455, 165,
+            445, 165,
             id(font_mala),
             Color(170, 190, 215),
             TextAlign::TOP_LEFT,
@@ -640,16 +624,16 @@ display:
           );
 
           it.printf(
-            455, 215,
+            445, 215,
             id(font_srednia),
             Color(90, 200, 250),
             TextAlign::TOP_LEFT,
-            "Wilgotność %.0f%%",
+            "Wilgotnosc %.0f%%",
             id(pogoda_wilgotnosc)
           );
 
           it.printf(
-            455, 260,
+            445, 260,
             id(font_srednia),
             Color(170, 205, 235),
             TextAlign::TOP_LEFT,
@@ -658,7 +642,7 @@ display:
           );
 
           it.printf(
-            455, 305,
+            445, 305,
             id(font_mala),
             Color(160, 180, 205),
             TextAlign::TOP_LEFT,
@@ -666,103 +650,112 @@ display:
             id(pogoda_opad)
           );
 
-          # opis pogody
           if (kod == 0) {
+
             it.print(
-              455, 350,
+              445, 350,
               id(font_mala),
               Color(255, 210, 70),
               TextAlign::TOP_LEFT,
               "Bezchmurnie"
             );
-          }
-          else if (kod == 1) {
+
+          } else if (kod == 1) {
+
             it.print(
-              455, 350,
+              445, 350,
               id(font_mala),
               Color(255, 210, 70),
               TextAlign::TOP_LEFT,
               "Przewaznie bezchmurnie"
             );
-          }
-          else if (kod == 2) {
+
+          } else if (kod == 2) {
+
             it.print(
-              455, 350,
+              445, 350,
               id(font_mala),
               Color(190, 205, 225),
               TextAlign::TOP_LEFT,
               "Czesciowe zachmurzenie"
             );
-          }
-          else if (kod == 3) {
+
+          } else if (kod == 3) {
+
             it.print(
-              455, 350,
+              445, 350,
               id(font_mala),
               Color(170, 185, 205),
               TextAlign::TOP_LEFT,
               "Pochmurno"
             );
-          }
-          else if (
+
+          } else if (
             kod == 45 ||
             kod == 48
           ) {
+
             it.print(
-              455, 350,
+              445, 350,
               id(font_mala),
               Color(180, 190, 200),
               TextAlign::TOP_LEFT,
               "Mgla"
             );
-          }
-          else if (
+
+          } else if (
             kod >= 51 &&
             kod <= 67
           ) {
+
             it.print(
-              455, 350,
+              445, 350,
               id(font_mala),
               Color(80, 185, 245),
               TextAlign::TOP_LEFT,
               "Deszcz"
             );
-          }
-          else if (
+
+          } else if (
             kod >= 71 &&
             kod <= 77
           ) {
+
             it.print(
-              455, 350,
+              445, 350,
               id(font_mala),
               Color(235, 245, 255),
               TextAlign::TOP_LEFT,
               "Snieg"
             );
-          }
-          else if (
+
+          } else if (
             kod >= 80 &&
             kod <= 82
           ) {
+
             it.print(
-              455, 350,
+              445, 350,
               id(font_mala),
               Color(80, 185, 245),
               TextAlign::TOP_LEFT,
               "Przelotny deszcz"
             );
-          }
-          else if (kod >= 95) {
+
+          } else if (kod >= 95) {
+
             it.print(
-              455, 350,
+              445, 350,
               id(font_mala),
               Color(255, 220, 70),
               TextAlign::TOP_LEFT,
               "Burza"
             );
-          }
-          else {
+
+          } else {
+
             it.print(
-              455, 350,
+              445, 350,
               id(font_mala),
               Color(180, 195, 215),
               TextAlign::TOP_LEFT,
@@ -789,7 +782,6 @@ display:
           );
         }
 
-        # godzina
         if (time_now.is_valid()) {
 
           it.strftime(
@@ -805,9 +797,9 @@ display:
         return;
       }
 
-      # ===================================================
-      # POZOSTAŁE STRONY
-      # ===================================================
+      // =====================================================
+      // WSPOLNY WYGLAD STRONY 1 I 2
+      // =====================================================
 
       it.fill(Color(18, 24, 38));
 
@@ -889,4 +881,33 @@ display:
         it.print(
           770, 20,
           id(font_mala),
-   
+          Color(180, 190, 205),
+          TextAlign::TOP_RIGHT,
+          "brak IP"
+        );
+      }
+
+      // =====================================================
+      // STRONA 1
+      // =====================================================
+
+      if (id(aktualna_strona) == 0) {
+
+        it.line(
+          400, 70,
+          400, 470,
+          Color(45, 55, 72)
+        );
+
+        it.line(
+          10, 270,
+          790, 270,
+          Color(45, 55, 72)
+        );
+
+        it.print(
+          770, 75,
+          id(font_mala),
+          Color(120, 130, 145),
+          TextAlign::TOP_RIGHT,
+          "STRONA 1/3"
