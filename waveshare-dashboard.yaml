@@ -124,7 +124,7 @@ font:
     glyphs: " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ĄĆĘŁŃÓŚŹŻąćęłńóśźż°"
 
 # ============================================================
-# POGODA - OPEN METEO
+# POGODA Z INTERNETU - OPEN METEO
 # ============================================================
 
 interval:
@@ -167,15 +167,6 @@ interval:
 
                           id(pogoda_online) = true;
 
-                          ESP_LOGI(
-                            "POGODA",
-                            "Temperatura %.1f C, wilgotnosc %.0f%%, wiatr %.1f km/h, kod %d",
-                            id(pogoda_temp),
-                            id(pogoda_wilgotnosc),
-                            id(pogoda_wiatr),
-                            id(pogoda_kod)
-                          );
-
                           return true;
                         });
 
@@ -183,14 +174,8 @@ interval:
                     - lambda: |-
                         id(pogoda_online) = false;
 
-                        ESP_LOGW(
-                          "POGODA",
-                          "HTTP error: %d",
-                          response->status_code
-                        );
-
 # ============================================================
-# WYŚWIETLACZ WAVESHARE
+# WYŚWIETLACZ
 # ============================================================
 
 display:
@@ -207,6 +192,7 @@ display:
     lambda: |-
 
       auto time_now = id(czas_sntp).now();
+      uint32_t ms = millis();
 
       # ======================================================
       # STRONA 3 - POGODA
@@ -250,12 +236,11 @@ display:
           );
         }
 
-        uint32_t ms = millis();
         int kod = id(pogoda_kod);
 
-        # ====================================================
+        # ------------------------------------------------------
         # SŁOŃCE
-        # ====================================================
+        # ------------------------------------------------------
 
         if (kod == 0 || kod == 1) {
 
@@ -307,17 +292,17 @@ display:
             Color(255, 225, 90)
           );
 
-        # ====================================================
+        # ------------------------------------------------------
         # CHMURY
-        # ====================================================
+        # ------------------------------------------------------
 
         } else if (kod == 2 || kod == 3) {
 
           int move =
-            (ms / 40) % 70;
+            (ms / 40) % 80;
 
           int cx =
-            160 + move;
+            150 + move;
 
           int cy = 215;
 
@@ -350,9 +335,9 @@ display:
             Color(140, 165, 195)
           );
 
-        # ====================================================
+        # ------------------------------------------------------
         # MGŁA
-        # ====================================================
+        # ------------------------------------------------------
 
         } else if (kod == 45 || kod == 48) {
 
@@ -373,9 +358,9 @@ display:
             );
           }
 
-        # ====================================================
+        # ------------------------------------------------------
         # DESZCZ
-        # ====================================================
+        # ------------------------------------------------------
 
         } else if (
           (kod >= 51 && kod <= 67) ||
@@ -431,9 +416,9 @@ display:
             );
           }
 
-        # ====================================================
+        # ------------------------------------------------------
         # ŚNIEG
-        # ====================================================
+        # ------------------------------------------------------
 
         } else if (
           (kod >= 71 && kod <= 77) ||
@@ -489,9 +474,9 @@ display:
             );
           }
 
-        # ====================================================
+        # ------------------------------------------------------
         # BURZA
-        # ====================================================
+        # ------------------------------------------------------
 
         } else if (kod >= 95) {
 
@@ -565,10 +550,6 @@ display:
             );
           }
 
-        # ====================================================
-        # BRAK KODU POGODY
-        # ====================================================
-
         } else {
 
           it.filled_circle(
@@ -588,19 +569,23 @@ display:
           );
         }
 
-        # ====================================================
-        # INFORMACJE POGODOWE
-        # ====================================================
+        # ======================================================
+        # PRAWA CZĘŚĆ - INFORMACJE
+        # ======================================================
 
         it.rectangle(
-          420, 90, 360, 325,
+          420,
+          90,
+          360,
+          325,
           Color(25, 40, 62)
         );
 
         if (id(pogoda_online)) {
 
           it.printf(
-            445, 110,
+            445,
+            110,
             id(font_duza),
             Color(255, 255, 255),
             TextAlign::TOP_LEFT,
@@ -609,7 +594,8 @@ display:
           );
 
           it.printf(
-            445, 165,
+            445,
+            165,
             id(font_mala),
             Color(170, 190, 215),
             TextAlign::TOP_LEFT,
@@ -618,7 +604,8 @@ display:
           );
 
           it.printf(
-            445, 215,
+            445,
+            215,
             id(font_srednia),
             Color(90, 200, 250),
             TextAlign::TOP_LEFT,
@@ -627,7 +614,8 @@ display:
           );
 
           it.printf(
-            445, 260,
+            445,
+            260,
             id(font_srednia),
             Color(170, 205, 235),
             TextAlign::TOP_LEFT,
@@ -636,7 +624,8 @@ display:
           );
 
           it.printf(
-            445, 305,
+            445,
+            305,
             id(font_mala),
             Color(160, 180, 205),
             TextAlign::TOP_LEFT,
@@ -647,27 +636,52 @@ display:
           if (kod == 0) {
 
             it.print(
-              445, 350,
+              445,
+              350,
               id(font_mala),
               Color(255, 210, 70),
               TextAlign::TOP_LEFT,
               "Bezchmurnie"
             );
 
-          } else if (kod <= 3) {
+          } else if (kod == 1) {
 
             it.print(
-              445, 350,
+              445,
+              350,
+              id(font_mala),
+              Color(255, 210, 70),
+              TextAlign::TOP_LEFT,
+              "Przewaznie bezchmurnie"
+            );
+
+          } else if (kod == 2) {
+
+            it.print(
+              445,
+              350,
               id(font_mala),
               Color(190, 205, 225),
               TextAlign::TOP_LEFT,
-              "Zachmurzenie"
+              "Czesciowe zachmurzenie"
+            );
+
+          } else if (kod == 3) {
+
+            it.print(
+              445,
+              350,
+              id(font_mala),
+              Color(170, 185, 205),
+              TextAlign::TOP_LEFT,
+              "Pochmurno"
             );
 
           } else if (kod == 45 || kod == 48) {
 
             it.print(
-              445, 350,
+              445,
+              350,
               id(font_mala),
               Color(180, 190, 200),
               TextAlign::TOP_LEFT,
@@ -680,7 +694,8 @@ display:
           ) {
 
             it.print(
-              445, 350,
+              445,
+              350,
               id(font_mala),
               Color(80, 185, 245),
               TextAlign::TOP_LEFT,
@@ -694,7 +709,8 @@ display:
           ) {
 
             it.print(
-              445, 350,
+              445,
+              350,
               id(font_mala),
               Color(235, 245, 255),
               TextAlign::TOP_LEFT,
@@ -704,7 +720,8 @@ display:
           } else if (kod >= 95) {
 
             it.print(
-              445, 350,
+              445,
+              350,
               id(font_mala),
               Color(255, 220, 70),
               TextAlign::TOP_LEFT,
@@ -714,7 +731,8 @@ display:
           } else {
 
             it.print(
-              445, 350,
+              445,
+              350,
               id(font_mala),
               Color(180, 195, 215),
               TextAlign::TOP_LEFT,
@@ -725,7 +743,8 @@ display:
         } else {
 
           it.print(
-            600, 180,
+            600,
+            180,
             id(font_srednia),
             Color(180, 195, 215),
             TextAlign::CENTER,
@@ -733,7 +752,8 @@ display:
           );
 
           it.print(
-            600, 215,
+            600,
+            215,
             id(font_mala),
             Color(130, 150, 175),
             TextAlign::CENTER,
@@ -744,7 +764,8 @@ display:
         if (time_now.is_valid()) {
 
           it.strftime(
-            775, 435,
+            775,
+            435,
             id(font_mala),
             Color(130, 150, 175),
             TextAlign::BOTTOM_RIGHT,
@@ -757,123 +778,119 @@ display:
       }
 
       # ======================================================
-      # STRONA 1 I 2
-      # ======================================================
-
-      it.fill(Color(18, 24, 38));
-
-      it.rectangle(
-        10, 10, 780, 460,
-        Color(45, 55, 72)
-      );
-
-      it.line(
-        10, 70,
-        790, 70,
-        Color(45, 55, 72)
-      );
-
-      it.print(
-        25, 20,
-        id(font_srednia),
-        Color(200, 210, 225),
-        TextAlign::TOP_LEFT,
-        "DASHBOARD"
-      );
-
-      if (id(wifi_ssid).has_state()) {
-
-        it.print(
-          285, 18,
-          id(font_srednia),
-          Color(72, 187, 120),
-          TextAlign::TOP_LEFT,
-          "WIFI OK"
-        );
-
-      } else {
-
-        it.print(
-          285, 18,
-          id(font_srednia),
-          Color(229, 62, 62),
-          TextAlign::TOP_LEFT,
-          "WIFI OFF"
-        );
-      }
-
-      if (!isnan(id(wifi_sila).state)) {
-
-        it.printf(
-          390, 20,
-          id(font_mala),
-          Color(180, 190, 205),
-          TextAlign::TOP_LEFT,
-          "%0.0f dBm",
-          id(wifi_sila).state
-        );
-
-      } else {
-
-        it.print(
-          390, 20,
-          id(font_mala),
-          Color(180, 190, 205),
-          TextAlign::TOP_LEFT,
-          "-- dBm"
-        );
-      }
-
-      if (id(wifi_ip).has_state()) {
-
-        it.printf(
-          770, 20,
-          id(font_mala),
-          Color(90, 200, 250),
-          TextAlign::TOP_RIGHT,
-          "%s",
-          id(wifi_ip).state.c_str()
-        );
-
-      } else {
-
-        it.print(
-          770, 20,
-          id(font_mala),
-          Color(180, 190, 205),
-          TextAlign::TOP_RIGHT,
-          "brak IP"
-        );
-      }
-
-      # ======================================================
       # STRONA 1
       # ======================================================
 
       if (id(aktualna_strona) == 0) {
 
-        it.line(
-          400, 70,
-          400, 470,
+        it.fill(Color(18, 24, 38));
+
+        it.rectangle(
+          10,
+          10,
+          780,
+          460,
           Color(45, 55, 72)
         );
 
         it.line(
-          10, 270,
-          790, 270,
+          10,
+          70,
+          790,
+          70,
+          Color(45, 55, 72)
+        );
+
+        it.line(
+          400,
+          70,
+          400,
+          470,
+          Color(45, 55, 72)
+        );
+
+        it.line(
+          10,
+          270,
+          790,
+          270,
           Color(45, 55, 72)
         );
 
         it.print(
-          770, 75,
+          25,
+          20,
+          id(font_srednia),
+          Color(200, 210, 225),
+          TextAlign::TOP_LEFT,
+          "DASHBOARD"
+        );
+
+        it.print(
+          770,
+          75,
           id(font_mala),
           Color(120, 130, 145),
           TextAlign::TOP_RIGHT,
           "STRONA 1/3"
         );
 
+        if (id(wifi_ssid).has_state()) {
+
+          it.print(
+            285,
+            18,
+            id(font_srednia),
+            Color(72, 187, 120),
+            TextAlign::TOP_LEFT,
+            "WIFI OK"
+          );
+
+        } else {
+
+          it.print(
+            285,
+            18,
+            id(font_srednia),
+            Color(229, 62, 62),
+            TextAlign::TOP_LEFT,
+            "WIFI OFF"
+          );
+        }
+
+        if (!isnan(id(wifi_sila).state)) {
+
+          it.printf(
+            390,
+            20,
+            id(font_mala),
+            Color(180, 190, 205),
+            TextAlign::TOP_LEFT,
+            "%0.0f dBm",
+            id(wifi_sila).state
+          );
+        }
+
+        if (id(wifi_ip).has_state()) {
+
+          it.printf(
+            770,
+            20,
+            id(font_mala),
+            Color(90, 200, 250),
+            TextAlign::TOP_RIGHT,
+            "%s",
+            id(wifi_ip).state.c_str()
+          );
+        }
+
+        # ------------------------------------------------------
+        # ROLETY
+        # ------------------------------------------------------
+
         it.print(
-          30, 90,
+          30,
+          90,
           id(font_srednia),
           Color(237, 137, 54),
           TextAlign::TOP_LEFT,
@@ -881,7 +898,8 @@ display:
         );
 
         it.print(
-          30, 130,
+          30,
+          130,
           id(font_mala),
           Color(160, 174, 192),
           TextAlign::TOP_LEFT,
@@ -889,12 +907,16 @@ display:
         );
 
         it.rectangle(
-          30, 170, 100, 50,
+          30,
+          170,
+          100,
+          50,
           Color(66, 153, 225)
         );
 
         it.print(
-          80, 185,
+          80,
+          185,
           id(font_mala),
           Color(255, 255, 255),
           TextAlign::TOP_CENTER,
@@ -902,12 +924,16 @@ display:
         );
 
         it.rectangle(
-          140, 170, 100, 50,
+          140,
+          170,
+          100,
+          50,
           Color(229, 62, 62)
         );
 
         it.print(
-          190, 185,
+          190,
+          185,
           id(font_mala),
           Color(255, 255, 255),
           TextAlign::TOP_CENTER,
@@ -915,27 +941,22 @@ display:
         );
 
         it.rectangle(
-          250, 170, 100, 50,
+          250,
+          170,
+          100,
+          50,
           Color(66, 153, 225)
         );
 
         it.print(
-          300, 185,
+          300,
+          185,
           id(font_mala),
           Color(255, 255, 255),
           TextAlign::TOP_CENTER,
           "ZAMKNIJ"
         );
 
-        it.print(
-          430, 90,
-          id(font_srednia),
-          Color(90, 200, 250),
-          TextAlign::TOP_LEFT,
-          "KLIMATYZACJA"
-        );
-
-        it.print(
-          430, 120,
-          id(font_mala),
-      
+        # ------------------------------------------------------
+        # KLIMATYZACJA
+        # ---------------------------------------------------
