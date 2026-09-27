@@ -82,19 +82,11 @@ globals:
     restore_value: no
     initial_value: "2"
 
-  - id: klatka
-    type: int
-    restore_value: no
-    initial_value: "0"
-
 interval:
-  - interval: 500ms
+
+  - interval: 1s
     then:
-      - lambda: |-
-          id(klatka)++;
-          if (id(klatka) > 10000) {
-            id(klatka) = 0;
-          }
+      - component.update: ekran
 
   - interval: 10min
     then:
@@ -164,12 +156,13 @@ display:
   - platform: rpi_dpi_rgb
     id: ekran
 
-    update_interval: 500ms
+    # KLUCZOWE USTAWIENIA TWOJEGO EKRANU
+    update_interval: never
     auto_clear_enabled: true
 
     color_order: RGB
 
-    pclk_frequency: 16MHz
+    pclk_frequency: 14MHz
 
     dimensions:
       width: 800
@@ -187,16 +180,15 @@ display:
       ignore_strapping_warning: true
 
     pclk_pin: 7
-
     pclk_inverted: false
 
-    hsync_back_porch: 30
-    hsync_front_porch: 210
-    hsync_pulse_width: 30
+    hsync_back_porch: 10
+    hsync_front_porch: 20
+    hsync_pulse_width: 10
 
-    vsync_back_porch: 4
-    vsync_front_porch: 4
-    vsync_pulse_width: 4
+    vsync_back_porch: 10
+    vsync_front_porch: 10
+    vsync_pulse_width: 10
 
     reset_pin:
       ch422g: io_ex
@@ -258,18 +250,16 @@ display:
 
       if (!noc) {
 
-        int puls = (id(klatka) % 10);
-
         it.filled_circle(
           125,
-          125,
-          48 + puls,
+          120,
+          48,
           Color(255, 190, 40)
         );
 
         it.filled_circle(
           125,
-          125,
+          120,
           38,
           Color(255, 220, 60)
         );
@@ -297,7 +287,7 @@ display:
       }
 
       /*
-       * CHMURY
+       * CHMURA
        */
 
       it.filled_circle(
@@ -375,7 +365,7 @@ display:
       }
 
       /*
-       * GŁÓWNY PANEL
+       * LEWY PANEL
        */
 
       it.filled_rectangle(
@@ -385,10 +375,6 @@ display:
         205,
         Color(0, 0, 0)
       );
-
-      /*
-       * TEMPERATURA
-       */
 
       it.printf(
         40,
@@ -400,7 +386,7 @@ display:
       );
 
       /*
-       * OPIS POGODY
+       * OPIS
        */
 
       if (id(kod_pogody) == 0) {
@@ -474,7 +460,7 @@ display:
       }
 
       /*
-       * PRAWA STRONA
+       * PRAWY PANEL
        */
 
       it.filled_rectangle(
@@ -529,17 +515,16 @@ display:
       );
 
       /*
-       * DOLNY PASEK
+       * DOLNA LINIA
        */
 
       it.filled_rectangle(
         20,
         465,
         760,
-        1,
+        2,
         Color(120, 180, 220)
       );
-
 
 touchscreen:
 
