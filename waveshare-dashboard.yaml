@@ -32,7 +32,10 @@ captive_portal:
 
 
 # ============================================================
-# ZMIENNA - AKTUALNA STRONA (0, 1, 2)
+# ZMIENNA - AKTUALNA STRONA
+# 0 = strona główna
+# 1 = strona druga
+# 2 = pogoda
 # ============================================================
 
 globals:
@@ -52,8 +55,8 @@ ch422g:
 
 # ============================================================
 # I2C
-# GPIO8  = SDA
-# GPIO9  = SCL
+# GPIO8 = SDA
+# GPIO9 = SCL
 # ============================================================
 
 i2c:
@@ -65,7 +68,7 @@ i2c:
 
 
 # ============================================================
-# HTTP REQUEST (Dla danych pogodowych Open-Meteo)
+# HTTP REQUEST
 # ============================================================
 
 http_request:
@@ -93,6 +96,7 @@ sensor:
 text_sensor:
 
   - platform: wifi_info
+
     ip_address:
       id: wifi_ip
       name: "Adres IP panelu"
@@ -115,7 +119,9 @@ time:
 # ============================================================
 # CZCIONKI
 # ============================================================
+
 font:
+
   - file: "gfonts://Roboto"
     id: font_duza
     size: 42
@@ -130,7 +136,6 @@ font:
     id: font_mala
     size: 16
     glyphs: " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ĄĆĘŁŃÓŚŹŻąćęłńóśźż°"
-
 
 
 # ============================================================
@@ -160,19 +165,21 @@ display:
       // Pobranie aktualnego czasu
       auto time_now = id(czas_sntp).now();
 
+
       // ======================================================
-      // STRONA 3 - KOLOROWY PEŁNY EKRAN POGODOWY
+      // STRONA 3 - POGODA
       // ======================================================
 
       if (id(aktualna_strona) == 2) {
 
-        // Bogate, ciemnogranatowe tło
         it.fill(Color(13, 20, 36));
 
-        // Dekoruzyjna kolorowa ramka wokół ekranu
-        it.rectangle(15, 15, 770, 450, Color(41, 58, 92));
+        it.rectangle(
+          15, 15,
+          770, 450,
+          Color(41, 58, 92)
+        );
 
-        // Lokacja / Nagłówek
         it.print(
           40, 35,
           id(font_srednia),
@@ -181,7 +188,6 @@ display:
           "Wejherowo • Stacja Pogody"
         );
 
-        // Aktualna temperatura w wyrazistym kolorze
         it.print(
           40, 80,
           id(font_duza),
@@ -190,7 +196,6 @@ display:
           "18.5 °C"
         );
 
-        // Stan pogody z kolorowym akcentem
         it.print(
           40, 135,
           id(font_srednia),
@@ -199,8 +204,11 @@ display:
           "Dynamiczna strefa opadów"
         );
 
-        // Duży zegar i data w prawym górnym rogu
+
+        // ZEGAR
+
         if (time_now.is_valid()) {
+
           it.strftime(
             760, 35,
             id(font_duza),
@@ -209,6 +217,7 @@ display:
             "%H:%M",
             time_now
           );
+
           it.strftime(
             760, 90,
             id(font_mala),
@@ -217,7 +226,9 @@ display:
             "%A, %d %B %Y",
             time_now
           );
+
         } else {
+
           it.print(
             760, 35,
             id(font_duza),
@@ -225,89 +236,269 @@ display:
             TextAlign::RIGHT,
             "--:--"
           );
+
         }
 
+
         // ====================================================
-        // BARDZO KOLOROWA ANIMACJA POGODOWA (SŁOŃCE + CHMURA + DESZCZ)
+        // ANIMACJA POGODOWA
         // ====================================================
+
         uint32_t ms = millis();
-        float angle = (ms % 8000) * (2.0 * 3.14159265 / 8000.0);
+
+        float angle =
+          (ms % 8000) *
+          (2.0 * 3.14159265 / 8000.0);
 
         int cx = 520;
         int cy = 250;
 
-        // 1. Kolorowe, obracające się promienie słońca (żółto-pomarańczowe)
+
+        // PROMIENIE SŁOŃCA
+
         for (int i = 0; i < 10; i++) {
-          float a = angle + i * (2.0 * 3.14159265 / 10.0);
-          int x1 = cx + 32.0 * cosf(a);
-          int y1 = cy + 32.0 * sinf(a);
-          int x2 = cx + 50.0 * cosf(a);
-          int y2 = cy + 50.0 * sinf(a);
-          it.line(x1, y1, x2, y2, Color(255, 170, 0));
+
+          float a =
+            angle +
+            i * (2.0 * 3.14159265 / 10.0);
+
+          int x1 =
+            cx + 32.0 * cosf(a);
+
+          int y1 =
+            cy + 32.0 * sinf(a);
+
+          int x2 =
+            cx + 50.0 * cosf(a);
+
+          int y2 =
+            cy + 50.0 * sinf(a);
+
+          it.line(
+            x1,
+            y1,
+            x2,
+            y2,
+            Color(255, 170, 0)
+          );
         }
 
-        // 2. Żywa, złocista tarcza słońca
-        it.filled_circle(cx, cy, 26, Color(255, 204, 0));
-        it.filled_circle(cx - 4, cy - 4, 18, Color(255, 235, 100));
 
-        // 3. Wielowarstwowa, puszysta chmura z odcieniami bieli i szarości
+        // SŁOŃCE
+
+        it.filled_circle(
+          cx,
+          cy,
+          26,
+          Color(255, 204, 0)
+        );
+
+        it.filled_circle(
+          cx - 4,
+          cy - 4,
+          18,
+          Color(255, 235, 100)
+        );
+
+
+        // CHMURA
+
         int cloud_x = 540;
         int cloud_y = 265;
-        it.filled_circle(cloud_x - 65, cloud_y + 15, 36, Color(120, 140, 175));
-        it.filled_circle(cloud_x - 15, cloud_y - 5, 50, Color(160, 185, 215));
-        it.filled_circle(cloud_x + 45, cloud_y + 10, 42, Color(120, 140, 175));
-        it.filled_circle(cloud_x + 15, cloud_y + 15, 35, Color(200, 220, 240));
-        it.filled_rectangle(cloud_x - 70, cloud_y + 15, 130, 40, Color(160, 185, 215));
 
-        // 4. Kolorowe, dynamicznie padające krople deszczu (wielowarstwowe odcienie błękitu i cyjanu)
+        it.filled_circle(
+          cloud_x - 65,
+          cloud_y + 15,
+          36,
+          Color(120, 140, 175)
+        );
+
+        it.filled_circle(
+          cloud_x - 15,
+          cloud_y - 5,
+          50,
+          Color(160, 185, 215)
+        );
+
+        it.filled_circle(
+          cloud_x + 45,
+          cloud_y + 10,
+          42,
+          Color(120, 140, 175)
+        );
+
+        it.filled_circle(
+          cloud_x + 15,
+          cloud_y + 15,
+          35,
+          Color(200, 220, 240)
+        );
+
+        it.filled_rectangle(
+          cloud_x - 70,
+          cloud_y + 15,
+          130,
+          40,
+          Color(160, 185, 215)
+        );
+
+
+        // DESZCZ
+
         for (int i = 0; i < 85; i++) {
-          int drop_x = 70 + (i * 13 + (i * 7)) % 680;
-          int speed = 18 + (i % 7) * 5;
-          int drop_y = (ms * speed / 28 + i * 27) % 230 + 200;
-          
-          Color drop_color = (i % 3 == 0) ? Color(56, 189, 248) : ((i % 3 == 1) ? Color(125, 211, 252) : Color(30, 144, 255));
-          it.line(drop_x, drop_y, drop_x - 3, drop_y + 16, drop_color);
+
+          int drop_x =
+            70 + (i * 13 + (i * 7)) % 680;
+
+          int speed =
+            18 + (i % 7) * 5;
+
+          int drop_y =
+            (ms * speed / 28 + i * 27) % 230 + 200;
+
+          Color drop_color =
+            (i % 3 == 0)
+              ? Color(56, 189, 248)
+              : ((i % 3 == 1)
+                ? Color(125, 211, 252)
+                : Color(30, 144, 255));
+
+          it.line(
+            drop_x,
+            drop_y,
+            drop_x - 3,
+            drop_y + 16,
+            drop_color
+          );
         }
 
-        return; // Pomijamy rysowanie standardowego paska dla strony 3
+        return;
       }
 
 
       // ======================================================
-      // STANDARDOWY UKŁAD DLA STRON 1 ORAZ 2 (Z GÓRNYM PASKIEM)
+      // STANDARDOWY UKŁAD STRON 1 I 2
       // ======================================================
 
-      // TŁO
       it.fill(Color(18, 24, 38));
 
+
       // RAMKA
-      it.rectangle(10, 10, 780, 460, Color(45, 55, 72));
+
+      it.rectangle(
+        10,
+        10,
+        780,
+        460,
+        Color(45, 55, 72)
+      );
+
 
       // GÓRNY PASEK
-      it.line(10, 70, 790, 70, Color(45, 55, 72));
+
+      it.line(
+        10,
+        70,
+        790,
+        70,
+        Color(45, 55, 72)
+      );
+
 
       // TYTUŁ
-      it.print(25, 20, id(font_srednia), Color(200, 210, 225), TextAlign::TOP_LEFT, "DASHBOARD");
 
-      // STAN WIFI
+      it.print(
+        25,
+        20,
+        id(font_srednia),
+        Color(200, 210, 225),
+        TextAlign::TOP_LEFT,
+        "DASHBOARD"
+      );
+
+
+      // ======================================================
+      // WIFI
+      // ======================================================
+
       if (id(wifi_ssid).has_state()) {
-        it.print(285, 18, id(font_srednia), Color(72, 187, 120), TextAlign::TOP_LEFT, "WIFI OK");
+
+        it.print(
+          285,
+          18,
+          id(font_srednia),
+          Color(72, 187, 120),
+          TextAlign::TOP_LEFT,
+          "WIFI OK"
+        );
+
       } else {
-        it.print(285, 18, id(font_srednia), Color(229, 62, 62), TextAlign::TOP_LEFT, "WIFI OFF");
+
+        it.print(
+          285,
+          18,
+          id(font_srednia),
+          Color(229, 62, 62),
+          TextAlign::TOP_LEFT,
+          "WIFI OFF"
+        );
+
       }
 
-      // SIŁA SYGNAŁU WIFI
+
+      // SIŁA WIFI
+
       if (!isnan(id(wifi_sila).state)) {
-        it.printf(390, 20, id(font_mala), Color(180, 190, 205), TextAlign::TOP_LEFT, "%0.0f dBm", id(wifi_sila).state);
+
+        it.printf(
+          390,
+          20,
+          id(font_mala),
+          Color(180, 190, 205),
+          TextAlign::TOP_LEFT,
+          "%0.0f dBm",
+          id(wifi_sila).state
+        );
+
       } else {
-        it.print(390, 20, id(font_mala), Color(180, 190, 205), TextAlign::TOP_LEFT, "-- dBm");
+
+        it.print(
+          390,
+          20,
+          id(font_mala),
+          Color(180, 190, 205),
+          TextAlign::TOP_LEFT,
+          "-- dBm"
+        );
+
       }
+
 
       // ADRES IP
+
       if (id(wifi_ip).has_state()) {
-        it.printf(770, 20, id(font_mala), Color(90, 200, 250), TextAlign::TOP_RIGHT, "%s", id(wifi_ip).state.c_str());
+
+        it.printf(
+          770,
+          20,
+          id(font_mala),
+          Color(90, 200, 250),
+          TextAlign::TOP_RIGHT,
+          "%s",
+          id(wifi_ip).state.c_str()
+        );
+
       } else {
-        it.print(770, 20, id(font_mala), Color(180, 190, 205), TextAlign::TOP_RIGHT, "brak IP");
+
+        it.print(
+          770,
+          20,
+          id(font_mala),
+          Color(180, 190, 205),
+          TextAlign::TOP_RIGHT,
+          "brak IP"
+        );
+
       }
 
 
@@ -317,42 +508,348 @@ display:
 
       if (id(aktualna_strona) == 0) {
 
-        it.line(400, 70, 400, 470, Color(45, 55, 72));
-        it.line(10, 270, 790, 270, Color(45, 55, 72));
+        it.line(
+          400,
+          70,
+          400,
+          470,
+          Color(45, 55, 72)
+        );
 
-        it.print(770, 75, id(font_mala), Color(120, 130, 145), TextAlign::TOP_RIGHT, "STRONA 1/3");
-
-        // --- ROLETY ---
-        it.print(30, 90, id(font_srednia), Color(237, 137, 54), TextAlign::TOP_LEFT, "ROLETY OKIENNE");
-        it.print(30, 130, id(font_mala), Color(160, 174, 192), TextAlign::TOP_LEFT, "okno 1 & okno 2");
-
-        it.rectangle(30, 170, 100, 50, Color(66, 153, 225));
-        it.print(80, 185, id(font_mala), Color(255, 255, 255), TextAlign::TOP_CENTER, "OTWÓRZ");
-
-        it.rectangle(140, 170, 100, 50, Color(229, 62, 62));
-        it.print(190, 185, id(font_mala), Color(255, 255, 255), TextAlign::TOP_CENTER, "STOP");
-
-        it.rectangle(250, 170, 100, 50, Color(66, 153, 225));
-        it.print(300, 185, id(font_mala), Color(255, 255, 255), TextAlign::TOP_CENTER, "ZAMKNIJ");
+        it.line(
+          10,
+          270,
+          790,
+          270,
+          Color(45, 55, 72)
+        );
 
 
-        // --- KLIMATYZACJA ROTENSO ---
-        it.print(430, 90, id(font_srednia), Color(90, 200, 250), TextAlign::TOP_LEFT, "KLIMATYZACJA");
-        it.print(430, 120, id(font_mala), Color(160, 174, 192), TextAlign::TOP_LEFT, "ROTENSO");
-
-        it.rectangle(430, 170, 60, 50, Color(66, 153, 225));
-        it.print(460, 177, id(font_duza), Color(255, 255, 255), TextAlign::TOP_CENTER, "-");
-
-        it.print(535, 175, id(font_duza), Color(255, 255, 255), TextAlign::TOP_CENTER, "22°C");
-
-        it.rectangle(580, 170, 60, 50, Color(229, 62, 62));
-        it.print(610, 177, id(font_duza), Color(255, 255, 255), TextAlign::TOP_CENTER, "+");
+        it.print(
+          770,
+          75,
+          id(font_mala),
+          Color(120, 130, 145),
+          TextAlign::TOP_RIGHT,
+          "STRONA 1/3"
+        );
 
 
-        // --- CZUJNIK ZIGBEE ---
-        it.print(30, 290, id(font_srednia), Color(72, 187, 120), TextAlign::TOP_LEFT, "CZUJNIK ZIGBEE");
-        it.print(30, 340, id(font_duza), Color(255, 255, 255), TextAlign::TOP_LEFT, "21.5 °C");
-        it.print(30, 400, id(font_srednia), Color(160, 174, 192), TextAlign::TOP_LEFT, "Wilgotność: 55%");
+        // ====================================================
+        // ROLETY
+        // ====================================================
+
+        it.print(
+          30,
+          90,
+          id(font_srednia),
+          Color(237, 137, 54),
+          TextAlign::TOP_LEFT,
+          "ROLETY OKIENNE"
+        );
+
+        it.print(
+          30,
+          130,
+          id(font_mala),
+          Color(160, 174, 192),
+          TextAlign::TOP_LEFT,
+          "okno 1 & okno 2"
+        );
+
+
+        // OTWÓRZ
+
+        it.rectangle(
+          30,
+          170,
+          100,
+          50,
+          Color(66, 153, 225)
+        );
+
+        it.print(
+          80,
+          185,
+          id(font_mala),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "OTWÓRZ"
+        );
+
+
+        // STOP
+
+        it.rectangle(
+          140,
+          170,
+          100,
+          50,
+          Color(229, 62, 62)
+        );
+
+        it.print(
+          190,
+          185,
+          id(font_mala),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "STOP"
+        );
+
+
+        // ZAMKNIJ
+
+        it.rectangle(
+          250,
+          170,
+          100,
+          50,
+          Color(66, 153, 225)
+        );
+
+        it.print(
+          300,
+          185,
+          id(font_mala),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "ZAMKNIJ"
+        );
+
+
+        // ====================================================
+        // KLIMATYZACJA ROTENSO
+        // ====================================================
+
+        it.print(
+          430,
+          90,
+          id(font_srednia),
+          Color(90, 200, 250),
+          TextAlign::TOP_LEFT,
+          "KLIMATYZACJA"
+        );
+
+        it.print(
+          430,
+          120,
+          id(font_mala),
+          Color(160, 174, 192),
+          TextAlign::TOP_LEFT,
+          "ROTENSO"
+        );
+
+
+        // MINUS
+
+        it.rectangle(
+          430,
+          170,
+          60,
+          50,
+          Color(66, 153, 225)
+        );
+
+        it.print(
+          460,
+          177,
+          id(font_duza),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "-"
+        );
+
+
+        // TEMPERATURA
+
+        it.print(
+          535,
+          175,
+          id(font_duza),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "22°C"
+        );
+
+
+        // PLUS
+
+        it.rectangle(
+          580,
+          170,
+          60,
+          50,
+          Color(229, 62, 62)
+        );
+
+        it.print(
+          610,
+          177,
+          id(font_duza),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "+"
+        );
+
+
+        // ====================================================
+        // CZUJNIK ZIGBEE - LEWY DÓŁ
+        // ====================================================
+
+        it.print(
+          30,
+          290,
+          id(font_srednia),
+          Color(72, 187, 120),
+          TextAlign::TOP_LEFT,
+          "CZUJNIK ZIGBEE"
+        );
+
+        it.print(
+          30,
+          340,
+          id(font_duza),
+          Color(255, 255, 255),
+          TextAlign::TOP_LEFT,
+          "21.5 °C"
+        );
+
+        it.print(
+          30,
+          400,
+          id(font_srednia),
+          Color(160, 174, 192),
+          TextAlign::TOP_LEFT,
+          "Wilgotność: 55%"
+        );
+
+
+        // ====================================================
+        // OGRZEWANIE - PRAWY DÓŁ
+        // ====================================================
+
+        // Obrys kafelka
+
+        it.rectangle(
+          420,
+          285,
+          360,
+          175,
+          Color(45, 55, 72)
+        );
+
+
+        // Nagłówek
+
+        it.print(
+          440,
+          295,
+          id(font_srednia),
+          Color(255, 170, 60),
+          TextAlign::TOP_LEFT,
+          "OGRZEWANIE"
+        );
+
+
+        // Podpis
+
+        it.print(
+          440,
+          325,
+          id(font_mala),
+          Color(160, 174, 192),
+          TextAlign::TOP_LEFT,
+          "TERMOSTAT"
+        );
+
+
+        // ====================================================
+        // IKONA TERMOSTATU
+        // ====================================================
+
+        // Korpus termostatu
+
+        it.filled_rectangle(
+          555,
+          340,
+          120,
+          80,
+          Color(235, 238, 242)
+        );
+
+
+        // Zaokrąglenie optyczne - górna część
+
+        it.filled_circle(
+          615,
+          340,
+          40,
+          Color(235, 238, 242)
+        );
+
+
+        // Pokrętło
+
+        it.filled_circle(
+          615,
+          325,
+          18,
+          Color(155, 160, 165)
+        );
+
+        it.filled_circle(
+          615,
+          325,
+          10,
+          Color(205, 210, 215)
+        );
+
+
+        // Ekran termostatu
+
+        it.filled_rectangle(
+          570,
+          355,
+          90,
+          42,
+          Color(30, 35, 42)
+        );
+
+
+        // Temperatura na termostacie
+
+        it.print(
+          615,
+          357,
+          id(font_srednia),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "26°"
+        );
+
+
+        // ====================================================
+        // STATUS OGRZEWANIA
+        // ====================================================
+
+        it.print(
+          440,
+          400,
+          id(font_mala),
+          Color(160, 174, 192),
+          TextAlign::TOP_LEFT,
+          "STATUS:"
+        );
+
+        it.print(
+          505,
+          400,
+          id(font_mala),
+          Color(100, 220, 130),
+          TextAlign::TOP_LEFT,
+          "GRZEJE"
+        );
 
       }
 
@@ -363,11 +860,41 @@ display:
 
       else if (id(aktualna_strona) == 1) {
 
-        it.print(770, 75, id(font_mala), Color(120, 130, 145), TextAlign::TOP_RIGHT, "STRONA 2/3");
+        it.print(
+          770,
+          75,
+          id(font_mala),
+          Color(120, 130, 145),
+          TextAlign::TOP_RIGHT,
+          "STRONA 2/3"
+        );
 
-        it.print(400, 150, id(font_duza), Color(255, 255, 255), TextAlign::TOP_CENTER, "DRUGI KAFEL");
-        it.print(400, 220, id(font_srednia), Color(160, 174, 192), TextAlign::TOP_CENTER, "Miejsce na kolejne");
-        it.print(400, 250, id(font_srednia), Color(160, 174, 192), TextAlign::TOP_CENTER, "przyciski i sensory");
+        it.print(
+          400,
+          150,
+          id(font_duza),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "DRUGI KAFEL"
+        );
+
+        it.print(
+          400,
+          220,
+          id(font_srednia),
+          Color(160, 174, 192),
+          TextAlign::TOP_CENTER,
+          "Miejsce na kolejne"
+        );
+
+        it.print(
+          400,
+          250,
+          id(font_srednia),
+          Color(160, 174, 192),
+          TextAlign::TOP_CENTER,
+          "przyciski i sensory"
+        );
 
       }
 
@@ -402,64 +929,149 @@ touchscreen:
           int x = touch.x;
           int y = touch.y;
 
-          ESP_LOGI("TOUCH", "Dotyk X=%d Y=%d", x, y);
+          ESP_LOGI(
+            "TOUCH",
+            "Dotyk X=%d Y=%d",
+            x,
+            y
+          );
 
 
           // ==================================================
-          // OBSŁUGA STRONY 3 (PEŁNY EKRAN) - DOTKNIĘCIE WRACA DO STRONY 1
+          // STRONA 3
+          // Dotknięcie wraca do strony 1
           // ==================================================
 
           if (id(aktualna_strona) == 2) {
+
             id(aktualna_strona) = 0;
-            ESP_LOGI("TOUCH", "Powrót ze strony 3 na stronę 1");
+
+            ESP_LOGI(
+              "TOUCH",
+              "Powrót ze strony 3 na stronę 1"
+            );
+
             return;
           }
 
 
           // ==================================================
-          // GÓRNY PASEK (STRONY 1 i 2) - ZMIANA STRON
+          // GÓRNY PASEK
+          // ZMIANA STRON
           // ==================================================
 
           if (y >= 0 && y <= 70) {
-            id(aktualna_strona) = (id(aktualna_strona) + 1) % 3;
-            ESP_LOGI("TOUCH", "Przełączono stronę na indeks: %d", id(aktualna_strona));
+
+            id(aktualna_strona) =
+              (id(aktualna_strona) + 1) % 3;
+
+            ESP_LOGI(
+              "TOUCH",
+              "Przełączono stronę na indeks: %d",
+              id(aktualna_strona)
+            );
+
             return;
           }
 
 
           // ==================================================
-          // STRONA 1 (indeks 0) - AKCJE
+          // STRONA 1
           // ==================================================
 
           if (id(aktualna_strona) == 0) {
 
             if (y >= 170 && y <= 220) {
 
-              if (x >= 30 && x <= 130) {
-                ESP_LOGI("TOUCH", "Naciśnięto: OTWÓRZ OKNA");
+              // ROLETY - OTWÓRZ
+
+              if (
+                x >= 30 &&
+                x <= 130
+              ) {
+
+                ESP_LOGI(
+                  "TOUCH",
+                  "Naciśnięto: OTWÓRZ OKNA"
+                );
+
               }
-              else if (x >= 140 && x <= 240) {
-                ESP_LOGI("TOUCH", "Naciśnięto: STOP ROLETY");
+
+
+              // ROLETY - STOP
+
+              else if (
+                x >= 140 &&
+                x <= 240
+              ) {
+
+                ESP_LOGI(
+                  "TOUCH",
+                  "Naciśnięto: STOP ROLETY"
+                );
+
               }
-              else if (x >= 250 && x <= 350) {
-                ESP_LOGI("TOUCH", "Naciśnięto: ZAMKNIJ OKNA");
+
+
+              // ROLETY - ZAMKNIJ
+
+              else if (
+                x >= 250 &&
+                x <= 350
+              ) {
+
+                ESP_LOGI(
+                  "TOUCH",
+                  "Naciśnięto: ZAMKNIJ OKNA"
+                );
+
               }
-              else if (x >= 430 && x <= 490) {
-                ESP_LOGI("TOUCH", "Naciśnięto: TEMP -");
+
+
+              // KLIMATYZACJA -
+
+              else if (
+                x >= 430 &&
+                x <= 490
+              ) {
+
+                ESP_LOGI(
+                  "TOUCH",
+                  "Naciśnięto: TEMP -"
+                );
+
               }
-              else if (x >= 580 && x <= 640) {
-                ESP_LOGI("TOUCH", "Naciśnięto: TEMP +");
+
+
+              // KLIMATYZACJA +
+
+              else if (
+                x >= 580 &&
+                x <= 640
+              ) {
+
+                ESP_LOGI(
+                  "TOUCH",
+                  "Naciśnięto: TEMP +"
+                );
+
               }
 
             }
 
-          }
 
+            // ==================================================
+            // OGRZEWANIE
+            // ==================================================
 
-          // ==================================================
-          // STRONA 2 (indeks 1) - AKCJE
-          // ==================================================
+            if (
+              x >= 420 &&
+              x <= 780 &&
+              y >= 285 &&
+              y <= 460
+            ) {
 
-          else if (id(aktualna_strona) == 1) {
-            // Dodatkowe akcje dla strony 2 w przyszłości
-          }
+              ESP_LOGI(
+                "TOUCH",
+                "Naciśnięto: OGRZEWANIE"
+              );
