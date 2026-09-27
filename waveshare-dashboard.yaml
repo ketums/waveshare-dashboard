@@ -53,111 +53,71 @@ time:
 
 http_request:
   id: klient_http
-  useragent: "ESPHome Weather"
-  timeout: 10s
+  useragent: "ESPHome Waveshare"
+  timeout: 5s
 
 globals:
-  - id: temperatura
-    type: float
-    restore_value: no
-    initial_value: "0"
-
-  - id: wilgotnosc
-    type: float
-    restore_value: no
-    initial_value: "0"
-
-  - id: wiatr
-    type: float
-    restore_value: no
-    initial_value: "0"
-
-  - id: cisnienie
-    type: float
-    restore_value: no
-    initial_value: "0"
-
-  - id: kod_pogody
+  - id: aktualna_strona
     type: int
     restore_value: no
-    initial_value: "2"
+    initial_value: "0"
 
-interval:
-
-  - interval: 1s
-    then:
-      - component.update: ekran
-
-  - interval: 10min
-    then:
-      - http_request.get:
-          url: "https://api.open-meteo.com/v1/forecast?latitude=54.605&longitude=18.2356&current=temperature_2m,relative_humidity_2m,weather_code,pressure_msl,wind_speed_10m&timezone=Europe%2FWarsaw"
-          capture_response: true
-          max_response_buffer_size: 4096
-
-          on_response:
-            then:
-              - if:
-                  condition:
-                    lambda: |-
-                      return response->status_code == 200;
-                  then:
-                    - lambda: |-
-                        json::parse_json(body, [](JsonObject root) -> bool {
-
-                          JsonObject current = root["current"];
-
-                          if (current.isNull()) {
-                            return false;
-                          }
-
-                          id(temperatura) =
-                            current["temperature_2m"].as<float>();
-
-                          id(wilgotnosc) =
-                            current["relative_humidity_2m"].as<float>();
-
-                          id(wiatr) =
-                            current["wind_speed_10m"].as<float>();
-
-                          id(cisnienie) =
-                            current["pressure_msl"].as<float>();
-
-                          id(kod_pogody) =
-                            current["weather_code"].as<int>();
-
-                          return true;
-                        });
+  - id: temperatura_klimy
+    type: float
+    restore_value: no
+    initial_value: "22"
 
 font:
+  - file: "Roboto-Regular.ttf"
+    id: font_duza
+    size: 42
+    bpp: 4
 
-  - file: "gfonts://Roboto"
+  - file: "Roboto-Regular.ttf"
+    id: font_srednia
+    size: 22
+    bpp: 4
+
+  - file: "Roboto-Regular.ttf"
     id: font_mala
     size: 16
     bpp: 4
 
-  - file: "gfonts://Roboto"
-    id: font_srednia
-    size: 24
-    bpp: 4
+script:
 
-  - file: "gfonts://Roboto"
-    id: font_duza
-    size: 64
-    bpp: 4
+  - id: akcja_otworz_roleta
+    then:
+      - logger.log: "ROLETY - OTWÓRZ"
 
-  - file: "gfonts://Roboto"
-    id: font_zegar
-    size: 42
-    bpp: 4
+  - id: akcja_stop_roleta
+    then:
+      - logger.log: "ROLETY - STOP"
+
+  - id: akcja_zamknij_roleta
+    then:
+      - logger.log: "ROLETY - ZAMKNIJ"
+
+  - id: akcja_klima_down
+    then:
+      - lambda: |-
+          id(temperatura_klimy) -= 1.0;
+          if (id(temperatura_klimy) < 16.0) {
+            id(temperatura_klimy) = 16.0;
+          }
+
+  - id: akcja_klima_up
+    then:
+      - lambda: |-
+          id(temperatura_klimy) += 1.0;
+          if (id(temperatura_klimy) > 30.0) {
+            id(temperatura_klimy) = 30.0;
+          }
 
 display:
-
   - platform: rpi_dpi_rgb
     id: ekran
 
-    # KLUCZOWE USTAWIENIA TWOJEGO EKRANU
-    update_interval: never
+    update_interval: 500ms
     auto_clear_enabled: true
 
     color_order: RGB
@@ -199,7 +159,6 @@ display:
       number: 2
 
     data_pins:
-
       red:
         - 1
         - 2
@@ -226,126 +185,46 @@ display:
 
       auto now = id(czas).now();
 
-      bool noc = false;
-
-      if (now.is_valid()) {
-        if (now.hour >= 20 || now.hour < 6) {
-          noc = true;
-        }
-      }
-
       /*
        * TŁO
        */
 
-      if (noc) {
-        it.fill(Color(8, 15, 45));
-      } else {
-        it.fill(Color(55, 165, 220));
-      }
+      it.fill(Color(18, 24, 32));
 
       /*
-       * SŁOŃCE
-       */
-
-      if (!noc) {
-
-        it.filled_circle(
-          125,
-          120,
-          48,
-          Color(255, 190, 40)
-        );
-
-        it.filled_circle(
-          125,
-          120,
-          38,
-          Color(255, 220, 60)
-        );
-      }
-
-      /*
-       * KSIĘŻYC
-       */
-
-      if (noc) {
-
-        it.filled_circle(
-          125,
-          120,
-          42,
-          Color(235, 235, 210)
-        );
-
-        it.filled_circle(
-          143,
-          104,
-          42,
-          Color(8, 15, 45)
-        );
-      }
-
-      /*
-       * CHMURA
-       */
-
-      it.filled_circle(
-        210,
-        155,
-        28,
-        Color(240, 245, 250)
-      );
-
-      it.filled_circle(
-        245,
-        135,
-        38,
-        Color(250, 250, 255)
-      );
-
-      it.filled_circle(
-        285,
-        155,
-        28,
-        Color(240, 245, 250)
-      );
-
-      it.filled_rectangle(
-        210,
-        155,
-        75,
-        30,
-        Color(240, 245, 250)
-      );
-
-      /*
-       * NAGŁÓWEK
+       * GÓRNY PASEK
        */
 
       it.filled_rectangle(
-        20,
-        20,
-        330,
+        0,
+        0,
+        800,
         70,
-        Color(0, 0, 0)
+        Color(10, 15, 22)
       );
 
-      it.print(
-        40,
-        30,
-        id(font_srednia),
-        Color(255, 255, 255),
-        "WEJHEROWO"
-      );
+      if (id(aktualna_strona) == 0) {
 
-      it.print(
-        40,
-        62,
-        id(font_mala),
-        Color(200, 220, 240),
-        "POLSKA"
-      );
+        it.print(
+          400,
+          20,
+          id(font_srednia),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "STEROWANIE ROLETAMI"
+        );
+
+      } else {
+
+        it.print(
+          400,
+          20,
+          id(font_srednia),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "KLIMATYZACJA ROTENSO"
+        );
+      }
 
       /*
        * ZEGAR
@@ -355,9 +234,9 @@ display:
 
         it.strftime(
           775,
-          30,
-          id(font_zegar),
-          Color(255, 255, 255),
+          8,
+          id(font_mala),
+          Color(180, 200, 220),
           TextAlign::TOP_RIGHT,
           "%H:%M",
           now
@@ -365,166 +244,217 @@ display:
       }
 
       /*
-       * LEWY PANEL
+       * STRONA 1 - ROLETY
        */
 
-      it.filled_rectangle(
-        20,
-        250,
-        365,
-        205,
-        Color(0, 0, 0)
-      );
-
-      it.printf(
-        40,
-        265,
-        id(font_duza),
-        Color(255, 255, 255),
-        "%.1f C",
-        id(temperatura)
-      );
-
-      /*
-       * OPIS
-       */
-
-      if (id(kod_pogody) == 0) {
+      if (id(aktualna_strona) == 0) {
 
         it.print(
-          45,
-          345,
+          400,
+          95,
+          id(font_duza),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "ROLETY OKIENNE"
+        );
+
+        /*
+         * OTWÓRZ
+         */
+
+        it.filled_rectangle(
+          40,
+          180,
+          150,
+          70,
+          Color(35, 150, 80)
+        );
+
+        it.print(
+          115,
+          198,
           id(font_srednia),
           Color(255, 255, 255),
-          "Bezchmurnie"
+          TextAlign::TOP_CENTER,
+          "OTWÓRZ"
         );
 
-      } else if (
-        id(kod_pogody) == 1 ||
-        id(kod_pogody) == 2
-      ) {
+        /*
+         * STOP
+         */
+
+        it.filled_rectangle(
+          190,
+          180,
+          150,
+          70,
+          Color(180, 140, 30)
+        );
 
         it.print(
-          45,
-          345,
+          265,
+          198,
           id(font_srednia),
           Color(255, 255, 255),
-          "Czesciowe zachmurzenie"
+          TextAlign::TOP_CENTER,
+          "STOP"
         );
 
-      } else if (id(kod_pogody) == 3) {
+        /*
+         * ZAMKNIJ
+         */
+
+        it.filled_rectangle(
+          340,
+          180,
+          150,
+          70,
+          Color(180, 55, 55)
+        );
 
         it.print(
-          45,
-          345,
+          415,
+          198,
           id(font_srednia),
           Color(255, 255, 255),
-          "Pochmurno"
+          TextAlign::TOP_CENTER,
+          "ZAMKNIJ"
         );
 
-      } else if (
-        id(kod_pogody) >= 51 &&
-        id(kod_pogody) <= 67
-      ) {
+        /*
+         * INFORMACJA
+         */
 
         it.print(
-          45,
-          345,
-          id(font_srednia),
-          Color(170, 220, 255),
-          "Deszcz"
+          400,
+          310,
+          id(font_mala),
+          Color(170, 190, 210),
+          TextAlign::TOP_CENTER,
+          "Dotknij przycisku, aby sterowac roletami"
         );
 
-      } else if (
-        id(kod_pogody) >= 71 &&
-        id(kod_pogody) <= 77
-      ) {
-
         it.print(
-          45,
-          345,
-          id(font_srednia),
-          Color(255, 255, 255),
-          "Snieg"
-        );
-
-      } else if (id(kod_pogody) >= 95) {
-
-        it.print(
-          45,
-          345,
-          id(font_srednia),
-          Color(255, 220, 100),
-          "Burza"
+          400,
+          370,
+          id(font_mala),
+          Color(110, 140, 170),
+          TextAlign::TOP_CENTER,
+          "Dotknij gornego paska, aby przejsc do klimatyzacji"
         );
       }
 
       /*
-       * PRAWY PANEL
+       * STRONA 2 - KLIMATYZACJA
        */
 
-      it.filled_rectangle(
-        410,
-        250,
-        370,
-        205,
-        Color(0, 0, 0)
-      );
+      else {
 
-      it.print(
-        435,
-        270,
-        id(font_srednia),
-        Color(255, 255, 255),
-        "WARUNKI"
-      );
+        it.print(
+          400,
+          95,
+          id(font_duza),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "KLIMATYZACJA ROTENSO"
+        );
 
-      it.printf(
-        435,
-        315,
-        id(font_mala),
-        Color(180, 225, 255),
-        "Wilgotnosc: %.0f %%",
-        id(wilgotnosc)
-      );
+        /*
+         * MINUS
+         */
 
-      it.printf(
-        435,
-        345,
-        id(font_mala),
-        Color(180, 235, 255),
-        "Wiatr: %.0f km/h",
-        id(wiatr)
-      );
+        it.filled_rectangle(
+          500,
+          180,
+          130,
+          90,
+          Color(45, 85, 135)
+        );
 
-      it.printf(
-        435,
-        375,
-        id(font_mala),
-        Color(220, 210, 255),
-        "Cisnienie: %.0f hPa",
-        id(cisnienie)
-      );
+        it.print(
+          565,
+          195,
+          id(font_duza),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "-"
+        );
 
-      it.print(
-        435,
-        415,
-        id(font_mala),
-        Color(160, 180, 200),
-        "Open-Meteo"
-      );
+        /*
+         * TEMPERATURA
+         */
 
-      /*
-       * DOLNA LINIA
-       */
+        it.filled_rectangle(
+          630,
+          180,
+          130,
+          90,
+          Color(25, 35, 48)
+        );
 
-      it.filled_rectangle(
-        20,
-        465,
-        760,
-        2,
-        Color(120, 180, 220)
-      );
+        it.printf(
+          695,
+          205,
+          id(font_srednia),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "%.0f C",
+          id(temperatura_klimy)
+        );
+
+        /*
+         * PLUS
+         */
+
+        it.filled_rectangle(
+          760,
+          180,
+          40,
+          90,
+          Color(45, 135, 80)
+        );
+
+        it.print(
+          780,
+          195,
+          id(font_srednia),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "+"
+        );
+
+        /*
+         * DUŻY ŚRODKOWY ODCZYT
+         */
+
+        it.printf(
+          300,
+          185,
+          id(font_duza),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "%.0f C",
+          id(temperatura_klimy)
+        );
+
+        it.print(
+          300,
+          250,
+          id(font_mala),
+          Color(170, 195, 220),
+          TextAlign::TOP_CENTER,
+          "USTAWIONA TEMPERATURA"
+        );
+
+        it.print(
+          400,
+          350,
+          id(font_mala),
+          Color(110, 140, 170),
+          TextAlign::TOP_CENTER,
+          "Dotknij gornego paska, aby wrocic do rolet"
+        );
+      }
 
 touchscreen:
 
@@ -547,3 +477,85 @@ touchscreen:
       swap_xy: false
       mirror_x: false
       mirror_y: false
+
+    on_touch:
+      then:
+
+        - lambda: |-
+            int x = touch.x;
+            int y = touch.y;
+
+            /*
+             * GÓRNY PASEK
+             * przełączanie stron
+             */
+
+            if (y >= 0 && y <= 70) {
+
+              if (id(aktualna_strona) == 0) {
+                id(aktualna_strona) = 1;
+              } else {
+                id(aktualna_strona) = 0;
+              }
+
+              return;
+            }
+
+            /*
+             * STRONA 1 - ROLETY
+             */
+
+            if (id(aktualna_strona) == 0) {
+
+              if (
+                y >= 180 &&
+                y <= 250 &&
+                x >= 40 &&
+                x <= 170
+              ) {
+                id(akcja_otworz_roleta).execute();
+              }
+
+              else if (
+                y >= 180 &&
+                y <= 250 &&
+                x >= 190 &&
+                x <= 320
+              ) {
+                id(akcja_stop_roleta).execute();
+              }
+
+              else if (
+                y >= 180 &&
+                y <= 250 &&
+                x >= 340 &&
+                x <= 470
+              ) {
+                id(akcja_zamknij_roleta).execute();
+              }
+            }
+
+            /*
+             * STRONA 2 - KLIMATYZACJA
+             */
+
+            else {
+
+              if (
+                y >= 180 &&
+                y <= 270 &&
+                x >= 500 &&
+                x <= 630
+              ) {
+                id(akcja_klima_down).execute();
+              }
+
+              else if (
+                y >= 180 &&
+                y <= 270 &&
+                x >= 730 &&
+                x <= 800
+              ) {
+                id(akcja_klima_up).execute();
+              }
+            }
