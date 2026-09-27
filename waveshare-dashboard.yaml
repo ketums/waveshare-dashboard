@@ -34,7 +34,7 @@ web_server:
   port: 80
 
 # ============================================================
-# I2C
+# I2C - GT911
 # ============================================================
 
 i2c:
@@ -64,7 +64,7 @@ time:
       - 1.pool.ntp.org
 
 # ============================================================
-# INTERNET
+# HTTP
 # ============================================================
 
 http_request:
@@ -74,10 +74,7 @@ http_request:
   follow_redirects: true
 
 # ============================================================
-# STRONA
-# 0 = pierwsza
-# 1 = druga
-# 2 = TRZECIA - POGODA
+# ZMIENNE
 # ============================================================
 
 globals:
@@ -122,7 +119,6 @@ globals:
     restore_value: no
     initial_value: "0"
 
-  # Prognoza 5 dni
   - id: prognoza_1
     type: float
     restore_value: no
@@ -174,7 +170,7 @@ globals:
     initial_value: "0"
 
 # ============================================================
-# CZUJNIK WIFI
+# WIFI
 # ============================================================
 
 sensor:
@@ -185,10 +181,6 @@ sensor:
     update_interval: 10s
     unit_of_measurement: "dBm"
     accuracy_decimals: 0
-
-# ============================================================
-# INFORMACJE WIFI
-# ============================================================
 
 text_sensor:
 
@@ -203,15 +195,12 @@ text_sensor:
       id: nazwa_wifi
 
 # ============================================================
-# POBIERANIE POGODY
+# POGODA
 # ============================================================
 
 interval:
 
-  # ----------------------------------------------------------
   # ANIMACJA
-  # ----------------------------------------------------------
-
   - interval: 100ms
     then:
       - lambda: |-
@@ -221,10 +210,7 @@ interval:
             id(klatka) = 0;
           }
 
-  # ----------------------------------------------------------
   # POGODA CO 10 MINUT
-  # ----------------------------------------------------------
-
   - interval: 10min
     then:
 
@@ -249,10 +235,7 @@ interval:
                           JsonObject current = root["current"];
 
                           if (current.isNull()) {
-                            ESP_LOGW(
-                              "pogoda",
-                              "Brak sekcji current"
-                            );
+                            ESP_LOGW("pogoda", "Brak danych pogodowych");
                             return false;
                           }
 
@@ -286,46 +269,22 @@ interval:
 
                             if (maks.size() >= 5) {
 
-                              id(prognoza_1) =
-                                maks[0].as<float>();
-
-                              id(prognoza_2) =
-                                maks[1].as<float>();
-
-                              id(prognoza_3) =
-                                maks[2].as<float>();
-
-                              id(prognoza_4) =
-                                maks[3].as<float>();
-
-                              id(prognoza_5) =
-                                maks[4].as<float>();
+                              id(prognoza_1) = maks[0].as<float>();
+                              id(prognoza_2) = maks[1].as<float>();
+                              id(prognoza_3) = maks[2].as<float>();
+                              id(prognoza_4) = maks[3].as<float>();
+                              id(prognoza_5) = maks[4].as<float>();
                             }
 
                             if (kody.size() >= 5) {
 
-                              id(kod_1) =
-                                kody[0].as<int>();
-
-                              id(kod_2) =
-                                kody[1].as<int>();
-
-                              id(kod_3) =
-                                kody[2].as<int>();
-
-                              id(kod_4) =
-                                kody[3].as<int>();
-
-                              id(kod_5) =
-                                kody[4].as<int>();
+                              id(kod_1) = kody[0].as<int>();
+                              id(kod_2) = kody[1].as<int>();
+                              id(kod_3) = kody[2].as<int>();
+                              id(kod_4) = kody[3].as<int>();
+                              id(kod_5) = kody[4].as<int>();
                             }
                           }
-
-                          ESP_LOGI(
-                            "pogoda",
-                            "Temperatura: %.1f C",
-                            id(temperatura)
-                          );
 
                           return true;
                         });
@@ -333,26 +292,83 @@ interval:
                   else:
 
                     - logger.log:
-                        format: "Blad Open-Meteo HTTP: %d"
+                        format: "Open-Meteo HTTP error: %d"
                         args:
                           - response->status_code
 
 # ============================================================
-# WYŚWIETLACZ
-# WAVESHARE ESP32-S3 TOUCH LCD 4.3
+# CZCIONKI
+# ============================================================
+
+font:
+
+  - file: "Roboto-Regular.ttf"
+    id: font_mala
+    size: 16
+    bpp: 4
+
+  - file: "Roboto-Regular.ttf"
+    id: font_miasto
+    size: 28
+    bpp: 4
+
+  - file: "Roboto-Regular.ttf"
+    id: font_zegar
+    size: 58
+    bpp: 4
+
+  - file: "Roboto-Regular.ttf"
+    id: font_data
+    size: 20
+    bpp: 4
+
+  - file: "Roboto-Regular.ttf"
+    id: font_temperatura
+    size: 82
+    bpp: 4
+
+  - file: "Roboto-Regular.ttf"
+    id: font_stopnie
+    size: 38
+    bpp: 4
+
+  - file: "Roboto-Regular.ttf"
+    id: font_opis
+    size: 25
+    bpp: 4
+
+  - file: "Roboto-Regular.ttf"
+    id: font_info
+    size: 17
+    bpp: 4
+
+  - file: "Roboto-Regular.ttf"
+    id: font_dzien
+    size: 15
+    bpp: 4
+
+  - file: "Roboto-Regular.ttf"
+    id: font_prognoza
+    size: 23
+    bpp: 4
+
+  - file: "Roboto-Regular.ttf"
+    id: font_stopka
+    size: 14
+    bpp: 4
+
+# ============================================================
+# WYŚWIETLACZ WAVESHARE
 # 800 x 480
 # ============================================================
 
 display:
 
   - platform: rpi_dpi_rgb
-
     id: ekran
 
     update_interval: 100ms
-
     auto_clear_enabled: true
-
     color_order: RGB
 
     pclk_frequency: 14MHz
@@ -373,7 +389,6 @@ display:
       ignore_strapping_warning: true
 
     pclk_pin: 7
-
     pclk_inverted: false
 
     hsync_back_porch: 10
@@ -419,7 +434,7 @@ display:
     lambda: |-
 
       // =====================================================
-      // TRZECI KAFEL
+      // TRZECIA STRONA - POGODA
       // =====================================================
 
       if (id(aktualna_strona) == 2) {
@@ -432,8 +447,7 @@ display:
         bool noc = false;
 
         if (now.is_valid()) {
-          noc =
-            (now.hour >= 20 || now.hour < 6);
+          noc = (now.hour >= 20 || now.hour < 6);
         }
 
         // ===================================================
@@ -445,7 +459,7 @@ display:
 
         if (noc) {
 
-          gora = Color(5, 12, 38);
+          gora = Color(4, 10, 35);
           dol = Color(35, 55, 100);
 
         } else {
@@ -453,8 +467,6 @@ display:
           gora = Color(30, 105, 180);
           dol = Color(165, 215, 240);
         }
-
-        // gradient
 
         for (int y = 0; y < 350; y += 10) {
 
@@ -584,21 +596,19 @@ display:
         if (pokaz_chmury) {
 
           int ruch =
-            (f / 4) % 950;
+            (f / 4) % 900;
 
           for (int i = 0; i < 4; i++) {
 
             int x =
-              i * 220 -
-              ruch;
+              i * 220 - ruch;
 
             while (x < -100) {
               x += 900;
             }
 
             int y =
-              145 +
-              (i % 2) * 35;
+              145 + (i % 2) * 35;
 
             Color chmura =
               noc
@@ -754,7 +764,7 @@ display:
         }
 
         // ===================================================
-        // INFORMACJE NA GÓRZE
+        // GÓRNY PANEL
         // ===================================================
 
         it.filled_rectangle(
@@ -803,7 +813,7 @@ display:
             id(font_data),
             Color(225, 235, 245),
             TextAlign::TOP_RIGHT,
-            "%A, %d %B",
+            "%d.%m.%Y",
             now
           );
         }
@@ -838,27 +848,42 @@ display:
         );
 
         // ===================================================
-        // OPIS
+        // OPIS POGODY
         // ===================================================
 
         const char *opis =
           "Warunki pogodowe";
 
         if (kod == 0) {
+
           opis = "Bezchmurnie";
+
         } else if (kod == 1) {
+
           opis = "Glownie slonecznie";
+
         } else if (kod == 2) {
+
           opis = "Czesciowe zachmurzenie";
+
         } else if (kod == 3) {
+
           opis = "Pochmurno";
+
         } else if (kod == 45 || kod == 48) {
+
           opis = "Mgla";
+
         } else if (deszcz) {
+
           opis = "Deszcz";
+
         } else if (snieg) {
+
           opis = "Snieg";
+
         } else if (burza) {
+
           opis = "Burza";
         }
 
@@ -930,10 +955,6 @@ display:
           Color(0, 0, 0)
         );
 
-        // ---------------------------------------------------
-        // DZIEŃ 1
-        // ---------------------------------------------------
-
         it.print(
           35,
           335,
@@ -951,4 +972,24 @@ display:
           id(prognoza_1)
         );
 
-        // --------------------------
+        it.print(
+          185,
+          335,
+          id(font_dzien),
+          Color(255, 255, 255),
+          "JUTRO"
+        );
+
+        it.printf(
+          185,
+          370,
+          id(font_prognoza),
+          Color(255, 220, 100),
+          "%.0f C",
+          id(prognoza_2)
+        );
+
+        it.print(
+          335,
+          335,
+          id(f
