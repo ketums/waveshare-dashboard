@@ -1,10 +1,11 @@
 esphome:
   name: waveshare-dashboard
-  friendly_name: Dashboard Smart Life
+  friendly_name: Waveshare 4.3 Dashboard
 
 esp32:
   board: esp32-s3-devkitc-1
   variant: esp32s3
+  flash_size: 8MB
   framework:
     type: esp-idf
 
@@ -25,452 +26,563 @@ wifi:
   password: "RejtanA77"
 
   ap:
-    ssid: "Waveshare-Dashboard"
-    password: "12345678"
+    ssid: "ESPTest"
+    password: "Password123"
 
 captive_portal:
 
-web_server:
-  port: 80
 
-i2c:
-  id: bus_i2c
-  sda: GPIO8
-  scl: GPIO9
-  frequency: 400kHz
-  scan: true
+# ============================================================
+# CH422G
+# ============================================================
 
 ch422g:
-  - id: io_ex
+  - id: ch422g_hub
+
+
+# ============================================================
+# I2C
+# GPIO8 = SDA
+# GPIO9 = SCL
+# ============================================================
+
+i2c:
+  - id: bus_a
+    sda: GPIO8
+    scl: GPIO9
+    frequency: 400kHz
+    scan: true
+
+
+# ============================================================
+# CZAS
+# ============================================================
 
 time:
   - platform: sntp
-    id: czas
+    id: zegar
     timezone: Europe/Warsaw
-    servers:
-      - 0.pool.ntp.org
-      - 1.pool.ntp.org
 
-http_request:
-  id: klient_http
-  useragent: "ESPHome Waveshare"
-  timeout: 5s
 
-globals:
-  - id: aktualna_strona
-    type: int
-    restore_value: no
-    initial_value: "0"
-
-  - id: temperatura_klimy
-    type: float
-    restore_value: no
-    initial_value: "22"
+# ============================================================
+# CZCIONKI
+# Plik Roboto-Regular.ttf musi być w katalogu YAML
+# ============================================================
 
 font:
   - file: "Roboto-Regular.ttf"
-    id: font_duza
+    id: font_small
+    size: 18
+
+  - file: "Roboto-Regular.ttf"
+    id: font_medium
+    size: 25
+
+  - file: "Roboto-Regular.ttf"
+    id: font_large
     size: 42
-    bpp: 4
 
   - file: "Roboto-Regular.ttf"
-    id: font_srednia
-    size: 22
-    bpp: 4
+    id: font_title
+    size: 30
 
-  - file: "Roboto-Regular.ttf"
-    id: font_mala
-    size: 16
-    bpp: 4
 
-script:
+# ============================================================
+# WIFI - SIŁA SYGNAŁU
+# ============================================================
 
-  - id: akcja_otworz_roleta
-    then:
-      - logger.log: "ROLETY - OTWÓRZ"
+sensor:
 
-  - id: akcja_stop_roleta
-    then:
-      - logger.log: "ROLETY - STOP"
+  - platform: wifi_signal
+    name: "Siła WiFi"
+    id: wifi_signal_db
+    update_interval: 10s
+    unit_of_measurement: "dBm"
+    accuracy_decimals: 0
 
-  - id: akcja_zamknij_roleta
-    then:
-      - logger.log: "ROLETY - ZAMKNIJ"
 
-  - id: akcja_klima_down
-    then:
-      - lambda: |-
-          id(temperatura_klimy) -= 1.0;
-          if (id(temperatura_klimy) < 16.0) {
-            id(temperatura_klimy) = 16.0;
-          }
+# ============================================================
+# CZAS PRACY
+# ============================================================
 
-  - id: akcja_klima_up
-    then:
-      - lambda: |-
-          id(temperatura_klimy) += 1.0;
-          if (id(temperatura_klimy) > 30.0) {
-            id(temperatura_klimy) = 30.0;
-          }
+  - platform: uptime
+    name: "Czas pracy panelu"
+    id: uptime_panel
+    update_interval: 10s
+    unit_of_measurement: "s"
+
+
+# ============================================================
+# INFORMACJE WIFI / IP
+# ============================================================
+
+text_sensor:
+
+  - platform: wifi_info
+    ip_address:
+      name: "Adres IP panelu"
+      id: adres_ip
+
+    ssid:
+      name: "Sieć WiFi"
+      id: nazwa_wifi
+
+
+# ============================================================
+# WYŚWIETLACZ
+# STABILNY RGB_PANEL 800x480
+# ============================================================
 
 display:
-  - platform: rpi_dpi_rgb
+  - platform: rgb_panel
     id: ekran
 
-    update_interval: 500ms
-    auto_clear_enabled: true
+    width: 800
+    height: 480
 
-    color_order: RGB
+    hsync_pin: 45
+    vsync_pin: 4
+    de_pin: 5
+    pclk_pin: 7
 
     pclk_frequency: 14MHz
 
-    dimensions:
-      width: 800
-      height: 480
-
-    de_pin:
-      number: 5
-
-    hsync_pin:
-      number: 46
-      ignore_strapping_warning: true
-
-    vsync_pin:
-      number: 3
-      ignore_strapping_warning: true
-
-    pclk_pin: 7
-    pclk_inverted: false
-
-    hsync_back_porch: 10
-    hsync_front_porch: 20
-    hsync_pulse_width: 10
-
-    vsync_back_porch: 10
-    vsync_front_porch: 10
-    vsync_pulse_width: 10
-
-    reset_pin:
-      ch422g: io_ex
-      number: 3
-
-    enable_pin:
-      ch422g: io_ex
-      number: 2
-
     data_pins:
-      red:
-        - 1
-        - 2
-        - 42
-        - 41
-        - 40
+      - 42
+      - 41
+      - 40
+      - 39
+      - 48
+      - 47
+      - 21
+      - 14
+      - 13
+      - 12
+      - 11
+      - 10
+      - 9
+      - 46
+      - 3
+      - 8
 
-      green:
-        - 39
-        - 0
-        - 45
-        - 48
-        - 47
-        - 21
+    color_order: RGB
 
-      blue:
-        - 14
-        - 38
-        - 18
-        - 17
-        - 10
+    update_interval: 1s
 
     lambda: |-
 
-      auto now = id(czas).now();
+      // ======================================================
+      // TŁO
+      // ======================================================
 
-      /*
-       * TŁO
-       */
+      it.fill(Color(15, 18, 24));
 
-      it.fill(Color(18, 24, 32));
 
-      /*
-       * GÓRNY PASEK
-       */
+      // ======================================================
+      // GÓRNY PASEK
+      // ======================================================
 
       it.filled_rectangle(
-        0,
-        0,
-        800,
-        70,
-        Color(10, 15, 22)
+        0, 0,
+        800, 70,
+        Color(25, 30, 40)
       );
 
-      if (id(aktualna_strona) == 0) {
+      it.print(
+        20, 17,
+        id(font_title),
+        Color(255, 255, 255),
+        "SMART HOME"
+      );
 
-        it.print(
-          400,
-          20,
-          id(font_srednia),
+
+      // ======================================================
+      // ZEGAR
+      // ======================================================
+
+      auto now = id(zegar).now();
+
+      if (now.is_valid()) {
+
+        it.printf(
+          780, 12,
+          id(font_large),
           Color(255, 255, 255),
-          TextAlign::TOP_CENTER,
-          "STEROWANIE ROLETAMI"
+          TextAlign::TOP_RIGHT,
+          "%02d:%02d",
+          now.hour,
+          now.minute
         );
 
       } else {
 
         it.print(
-          400,
-          20,
-          id(font_srednia),
+          780, 18,
+          id(font_medium),
           Color(255, 255, 255),
-          TextAlign::TOP_CENTER,
-          "KLIMATYZACJA ROTENSO"
-        );
-      }
-
-      /*
-       * ZEGAR
-       */
-
-      if (now.is_valid()) {
-
-        it.strftime(
-          775,
-          8,
-          id(font_mala),
-          Color(180, 200, 220),
           TextAlign::TOP_RIGHT,
-          "%H:%M",
-          now
+          "--:--"
         );
+
       }
 
-      /*
-       * STRONA 1 - ROLETY
-       */
 
-      if (id(aktualna_strona) == 0) {
+      // ======================================================
+      // PODZIAŁ GŁÓWNEGO EKRANU
+      // ======================================================
 
-        it.print(
-          400,
-          95,
-          id(font_duza),
-          Color(255, 255, 255),
-          TextAlign::TOP_CENTER,
-          "ROLETY OKIENNE"
-        );
+      it.filled_rectangle(
+        399, 70,
+        401, 420,
+        Color(70, 75, 85)
+      );
 
-        /*
-         * OTWÓRZ
-         */
+      it.filled_rectangle(
+        0, 285,
+        800, 287,
+        Color(70, 75, 85)
+      );
 
-        it.filled_rectangle(
-          40,
-          180,
-          150,
-          70,
-          Color(35, 150, 80)
-        );
 
-        it.print(
-          115,
-          198,
-          id(font_srednia),
-          Color(255, 255, 255),
-          TextAlign::TOP_CENTER,
-          "OTWÓRZ"
-        );
+      // ======================================================
+      // ROLETY OKIENNE
+      // ======================================================
 
-        /*
-         * STOP
-         */
+      it.print(
+        200, 88,
+        id(font_medium),
+        Color(255, 255, 255),
+        TextAlign::TOP_CENTER,
+        "ROLETY OKIENNE"
+      );
 
-        it.filled_rectangle(
-          190,
-          180,
-          150,
-          70,
-          Color(180, 140, 30)
-        );
 
-        it.print(
-          265,
-          198,
-          id(font_srednia),
-          Color(255, 255, 255),
-          TextAlign::TOP_CENTER,
-          "STOP"
-        );
+      // GÓRA
 
-        /*
-         * ZAMKNIJ
-         */
+      it.filled_rectangle(
+        25, 140,
+        130, 205,
+        Color(40, 45, 55)
+      );
 
-        it.filled_rectangle(
-          340,
-          180,
-          150,
-          70,
-          Color(180, 55, 55)
-        );
+      it.print(
+        77, 157,
+        id(font_medium),
+        Color(255, 255, 255),
+        TextAlign::TOP_CENTER,
+        "GÓRA"
+      );
 
-        it.print(
-          415,
-          198,
-          id(font_srednia),
-          Color(255, 255, 255),
-          TextAlign::TOP_CENTER,
-          "ZAMKNIJ"
-        );
 
-        /*
-         * INFORMACJA
-         */
+      // STOP
 
-        it.print(
-          400,
-          310,
-          id(font_mala),
-          Color(170, 190, 210),
-          TextAlign::TOP_CENTER,
-          "Dotknij przycisku, aby sterowac roletami"
-        );
+      it.filled_rectangle(
+        145, 140,
+        250, 205,
+        Color(40, 45, 55)
+      );
 
-        it.print(
-          400,
-          370,
-          id(font_mala),
-          Color(110, 140, 170),
-          TextAlign::TOP_CENTER,
-          "Dotknij gornego paska, aby przejsc do klimatyzacji"
-        );
-      }
+      it.print(
+        197, 157,
+        id(font_medium),
+        Color(255, 255, 255),
+        TextAlign::TOP_CENTER,
+        "STOP"
+      );
 
-      /*
-       * STRONA 2 - KLIMATYZACJA
-       */
 
-      else {
+      // DÓŁ
 
-        it.print(
-          400,
-          95,
-          id(font_duza),
-          Color(255, 255, 255),
-          TextAlign::TOP_CENTER,
-          "KLIMATYZACJA ROTENSO"
-        );
+      it.filled_rectangle(
+        265, 140,
+        370, 205,
+        Color(40, 45, 55)
+      );
 
-        /*
-         * MINUS
-         */
+      it.print(
+        317, 157,
+        id(font_medium),
+        Color(255, 255, 255),
+        TextAlign::TOP_CENTER,
+        "DÓŁ"
+      );
 
-        it.filled_rectangle(
-          500,
-          180,
-          130,
-          90,
-          Color(45, 85, 135)
-        );
 
-        it.print(
-          565,
-          195,
-          id(font_duza),
-          Color(255, 255, 255),
-          TextAlign::TOP_CENTER,
-          "-"
-        );
+      it.print(
+        200, 225,
+        id(font_small),
+        Color(150, 160, 175),
+        TextAlign::TOP_CENTER,
+        "STEROWANIE ROLETAMI"
+      );
 
-        /*
-         * TEMPERATURA
-         */
 
-        it.filled_rectangle(
-          630,
-          180,
-          130,
-          90,
-          Color(25, 35, 48)
-        );
+      // ======================================================
+      // KLIMATYZACJA
+      // ======================================================
+
+      it.print(
+        600, 88,
+        id(font_medium),
+        Color(255, 255, 255),
+        TextAlign::TOP_CENTER,
+        "ROTENSO"
+      );
+
+      it.print(
+        600, 120,
+        id(font_title),
+        Color(100, 200, 255),
+        TextAlign::TOP_CENTER,
+        "KLIMATYZACJA"
+      );
+
+
+      // ON / OFF
+
+      it.filled_rectangle(
+        440, 155,
+        560, 215,
+        Color(40, 45, 55)
+      );
+
+      it.print(
+        500, 172,
+        id(font_small),
+        Color(255, 255, 255),
+        TextAlign::TOP_CENTER,
+        "ON / OFF"
+      );
+
+
+      // TRYB
+
+      it.filled_rectangle(
+        580, 155,
+        760, 215,
+        Color(40, 45, 55)
+      );
+
+      it.print(
+        670, 172,
+        id(font_small),
+        Color(255, 255, 255),
+        TextAlign::TOP_CENTER,
+        "TRYB"
+      );
+
+
+      it.print(
+        600, 235,
+        id(font_small),
+        Color(150, 160, 175),
+        TextAlign::TOP_CENTER,
+        "STATUS: GOTOWA"
+      );
+
+
+      // ======================================================
+      // CZUJNIK ZIGBEE
+      // ======================================================
+
+      it.print(
+        200, 310,
+        id(font_medium),
+        Color(255, 255, 255),
+        TextAlign::TOP_CENTER,
+        "CZUJNIK ZIGBEE"
+      );
+
+
+      it.print(
+        120, 360,
+        id(font_large),
+        Color(255, 180, 80),
+        TextAlign::TOP_CENTER,
+        "21.5°C"
+      );
+
+
+      it.print(
+        300, 370,
+        id(font_medium),
+        Color(100, 200, 255),
+        TextAlign::TOP_CENTER,
+        "55% RH"
+      );
+
+
+      // ======================================================
+      // STATUS SYSTEMU
+      // ======================================================
+
+      it.print(
+        600, 310,
+        id(font_medium),
+        Color(255, 255, 255),
+        TextAlign::TOP_CENTER,
+        "STATUS SYSTEMU"
+      );
+
+
+      it.print(
+        600, 355,
+        id(font_medium),
+        Color(100, 255, 130),
+        TextAlign::TOP_CENTER,
+        "ESP32 ONLINE"
+      );
+
+
+      // ======================================================
+      // DOLNY PASEK STATUSU
+      // ======================================================
+
+      it.filled_rectangle(
+        0, 420,
+        800, 60,
+        Color(22, 27, 36)
+      );
+
+
+      // WiFi
+
+      it.print(
+        15, 428,
+        id(font_small),
+        Color(180, 190, 200),
+        TextAlign::TOP_LEFT,
+        "WiFi:"
+      );
+
+
+      if (!isnan(id(wifi_signal_db).state)) {
 
         it.printf(
-          695,
-          205,
-          id(font_srednia),
-          Color(255, 255, 255),
-          TextAlign::TOP_CENTER,
-          "%.0f C",
-          id(temperatura_klimy)
+          70, 428,
+          id(font_small),
+          Color(100, 200, 255),
+          TextAlign::TOP_LEFT,
+          "%.0f dBm",
+          id(wifi_signal_db).state
         );
 
-        /*
-         * PLUS
-         */
-
-        it.filled_rectangle(
-          760,
-          180,
-          40,
-          90,
-          Color(45, 135, 80)
-        );
+      } else {
 
         it.print(
-          780,
-          195,
-          id(font_srednia),
-          Color(255, 255, 255),
-          TextAlign::TOP_CENTER,
-          "+"
+          70, 428,
+          id(font_small),
+          Color(255, 120, 120),
+          TextAlign::TOP_LEFT,
+          "---"
         );
 
-        /*
-         * DUŻY ŚRODKOWY ODCZYT
-         */
+      }
+
+
+      // IP
+
+      it.print(
+        175, 428,
+        id(font_small),
+        Color(180, 190, 200),
+        TextAlign::TOP_LEFT,
+        "IP:"
+      );
+
+
+      if (id(adres_ip).has_state()) {
+
+        it.print(
+          210, 428,
+          id(font_small),
+          Color(255, 255, 255),
+          TextAlign::TOP_LEFT,
+          id(adres_ip).state.c_str()
+        );
+
+      } else {
+
+        it.print(
+          210, 428,
+          id(font_small),
+          Color(255, 120, 120),
+          TextAlign::TOP_LEFT,
+          "---"
+        );
+
+      }
+
+
+      // POŁĄCZENIE
+
+      if (WiFi.isConnected()) {
+
+        it.print(
+          430, 428,
+          id(font_small),
+          Color(100, 255, 130),
+          TextAlign::TOP_LEFT,
+          "POŁĄCZONO"
+        );
+
+      } else {
+
+        it.print(
+          430, 428,
+          id(font_small),
+          Color(255, 100, 100),
+          TextAlign::TOP_LEFT,
+          "BRAK WIFI"
+        );
+
+      }
+
+
+      // UPTIME
+
+      if (!isnan(id(uptime_panel).state)) {
+
+        uint32_t sekundy =
+          (uint32_t) id(uptime_panel).state;
+
+        uint32_t godziny =
+          sekundy / 3600;
+
+        uint32_t minuty =
+          (sekundy % 3600) / 60;
 
         it.printf(
-          300,
-          185,
-          id(font_duza),
-          Color(255, 255, 255),
-          TextAlign::TOP_CENTER,
-          "%.0f C",
-          id(temperatura_klimy)
+          780, 428,
+          id(font_small),
+          Color(160, 170, 180),
+          TextAlign::TOP_RIGHT,
+          "%uh %02um",
+          godziny,
+          minuty
         );
 
-        it.print(
-          300,
-          250,
-          id(font_mala),
-          Color(170, 195, 220),
-          TextAlign::TOP_CENTER,
-          "USTAWIONA TEMPERATURA"
-        );
-
-        it.print(
-          400,
-          350,
-          id(font_mala),
-          Color(110, 140, 170),
-          TextAlign::TOP_CENTER,
-          "Dotknij gornego paska, aby wrocic do rolet"
-        );
       }
+
+
+# ============================================================
+# GT911 - DOTYK
+# ============================================================
 
 touchscreen:
-
   - platform: gt911
 
-    id: my_touch
+    id: dotyk
 
-    i2c_id: bus_i2c
+    display: ekran
+
+    i2c_id: bus_a
 
     address: 0x5D
 
-    interrupt_pin:
-      number: GPIO4
-
+    # RESET GT911 przez CH422G IO1
     reset_pin:
-      ch422g: io_ex
+      ch422g: ch422g_hub
       number: 1
 
     transform:
@@ -478,84 +590,102 @@ touchscreen:
       mirror_x: false
       mirror_y: false
 
+    update_interval: 50ms
+
     on_touch:
-      then:
+      - lambda: |-
+          ESP_LOGI(
+            "touch",
+            "Dotyk: X=%d Y=%d",
+            touch.x,
+            touch.y
+          );
 
-        - lambda: |-
-            int x = touch.x;
-            int y = touch.y;
 
-            /*
-             * GÓRNY PASEK
-             * przełączanie stron
-             */
+# ============================================================
+# PRZYCISKI DOTYKOWE - ROLETY
+# ============================================================
 
-            if (y >= 0 && y <= 70) {
+binary_sensor:
 
-              if (id(aktualna_strona) == 0) {
-                id(aktualna_strona) = 1;
-              } else {
-                id(aktualna_strona) = 0;
-              }
+  - platform: touchscreen
+    name: "Roleta Góra"
+    id: roleta_gora
 
-              return;
-            }
+    x_min: 25
+    x_max: 130
+    y_min: 140
+    y_max: 205
 
-            /*
-             * STRONA 1 - ROLETY
-             */
+    on_press:
+      - logger.log:
+          format: "Naciśnięto ROLETY GÓRA"
+          level: INFO
 
-            if (id(aktualna_strona) == 0) {
 
-              if (
-                y >= 180 &&
-                y <= 250 &&
-                x >= 40 &&
-                x <= 170
-              ) {
-                id(akcja_otworz_roleta).execute();
-              }
+  - platform: touchscreen
+    name: "Roleta Stop"
+    id: roleta_stop
 
-              else if (
-                y >= 180 &&
-                y <= 250 &&
-                x >= 190 &&
-                x <= 320
-              ) {
-                id(akcja_stop_roleta).execute();
-              }
+    x_min: 145
+    x_max: 250
+    y_min: 140
+    y_max: 205
 
-              else if (
-                y >= 180 &&
-                y <= 250 &&
-                x >= 340 &&
-                x <= 470
-              ) {
-                id(akcja_zamknij_roleta).execute();
-              }
-            }
+    on_press:
+      - logger.log:
+          format: "Naciśnięto ROLETY STOP"
+          level: INFO
 
-            /*
-             * STRONA 2 - KLIMATYZACJA
-             */
 
-            else {
+  - platform: touchscreen
+    name: "Roleta Dół"
+    id: roleta_dol
 
-              if (
-                y >= 180 &&
-                y <= 270 &&
-                x >= 500 &&
-                x <= 630
-              ) {
-                id(akcja_klima_down).execute();
-              }
+    x_min: 265
+    x_max: 370
+    y_min: 140
+    y_max: 205
 
-              else if (
-                y >= 180 &&
-                y <= 270 &&
-                x >= 730 &&
-                x <= 800
-              ) {
-                id(akcja_klima_up).execute();
-              }
-            }
+    on_press:
+      - logger.log:
+          format: "Naciśnięto ROLETY DÓŁ"
+          level: INFO
+
+
+# ============================================================
+# PRZYCISK KLIMATYZACJI
+# ============================================================
+
+  - platform: touchscreen
+    name: "Klimatyzacja"
+    id: klimatyzacja
+
+    x_min: 440
+    x_max: 560
+    y_min: 155
+    y_max: 215
+
+    on_press:
+      - logger.log:
+          format: "Naciśnięto KLIMATYZACJA"
+          level: INFO
+
+
+# ============================================================
+# TRYB KLIMATYZACJI
+# ============================================================
+
+  - platform: touchscreen
+    name: "Tryb klimatyzacji"
+    id: tryb_klimatyzacji
+
+    x_min: 580
+    x_max: 760
+    y_min: 155
+    y_max: 215
+
+    on_press:
+      - logger.log:
+          format: "Naciśnięto TRYB KLIMATYZACJI"
+          level: INFO
