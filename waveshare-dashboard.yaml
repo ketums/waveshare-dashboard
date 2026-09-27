@@ -62,6 +62,7 @@ text_sensor:
     ip_address:
       id: wifi_ip
       name: "Adres IP panelu"
+
     ssid:
       id: wifi_ssid
       name: "Sieć WiFi panelu"
@@ -92,7 +93,7 @@ display:
     model: ESP32-S3-TOUCH-LCD-4.3
     id: ekran_waveshare
     rotation: 0
-    update_interval: 1s
+    update_interval: 500ms
 
     reset_pin:
       ch422g: ch422g_hub
@@ -101,28 +102,29 @@ display:
     lambda: |-
       auto time_now = id(czas_sntp).now();
 
-      // =========================================================
+      // ==========================================================
       // STRONA 3 - POGODA
-      // =========================================================
+      // ==========================================================
+
       if (id(aktualna_strona) == 2) {
 
-        it.fill(Color(13, 20, 36));
+        it.fill(Color(8, 16, 29));
 
         it.rectangle(
-          15, 15, 770, 450,
-          Color(41, 58, 92)
+          10, 10, 780, 460,
+          Color(27, 42, 66)
         );
 
         it.print(
-          40, 35,
+          30, 25,
           id(font_srednia),
           Color(148, 163, 184),
           TextAlign::TOP_LEFT,
-          "Wejherowo • Stacja Pogody"
+          "WEJHEROWO • STACJA POGODY"
         );
 
         it.print(
-          40, 80,
+          30, 70,
           id(font_duza),
           Color(255, 255, 255),
           TextAlign::TOP_LEFT,
@@ -130,7 +132,7 @@ display:
         );
 
         it.print(
-          40, 135,
+          30, 125,
           id(font_srednia),
           Color(56, 189, 248),
           TextAlign::TOP_LEFT,
@@ -140,7 +142,7 @@ display:
         if (time_now.is_valid()) {
 
           it.strftime(
-            760, 35,
+            760, 25,
             id(font_duza),
             Color(255, 255, 255),
             TextAlign::RIGHT,
@@ -148,29 +150,16 @@ display:
             time_now
           );
 
-          it.strftime(
-            760, 90,
-            id(font_mala),
-            Color(148, 163, 184),
-            TextAlign::RIGHT,
-            "%A, %d %B %Y",
-            time_now
-          );
-
         } else {
 
           it.print(
-            760, 35,
+            760, 25,
             id(font_duza),
             Color(255, 255, 255),
             TextAlign::RIGHT,
             "--:--"
           );
         }
-
-        // ---------------------------------------------------------
-        // ANIMACJA SŁOŃCA
-        // ---------------------------------------------------------
 
         uint32_t ms = millis();
 
@@ -179,7 +168,7 @@ display:
           (2.0 * 3.14159265 / 8000.0);
 
         int cx = 520;
-        int cy = 250;
+        int cy = 245;
 
         for (int i = 0; i < 10; i++) {
 
@@ -226,10 +215,6 @@ display:
           Color(255, 235, 100)
         );
 
-        // ---------------------------------------------------------
-        // CHMURA
-        // ---------------------------------------------------------
-
         int cloud_x = 540;
         int cloud_y = 265;
 
@@ -269,15 +254,11 @@ display:
           Color(160, 185, 215)
         );
 
-        // ---------------------------------------------------------
-        // ANIMOWANY DESZCZ
-        // ---------------------------------------------------------
-
         for (int i = 0; i < 85; i++) {
 
           int drop_x =
             70 +
-            (i * 13 + (i * 7)) % 680;
+            (i * 13 + i * 7) % 680;
 
           int speed =
             18 +
@@ -306,67 +287,74 @@ display:
         return;
       }
 
-      // =========================================================
-      // GŁÓWNY DASHBOARD
-      // =========================================================
+      // ==========================================================
+      // STRONA 1 - GŁÓWNY DASHBOARD
+      // ==========================================================
 
       it.fill(
-        Color(18, 24, 38)
+        Color(7, 17, 30)
       );
 
+      // Główna ramka
       it.rectangle(
-        10, 10, 780, 460,
-        Color(45, 55, 72)
+        8, 8, 784, 464,
+        Color(24, 47, 72)
       );
 
-      it.line(
-        10, 70, 790, 70,
-        Color(45, 55, 72)
+      // ==========================================================
+      // GÓRNY PASEK
+      // ==========================================================
+
+      it.filled_rectangle(
+        14, 14, 772, 58,
+        Color(9, 25, 42)
       );
 
       it.print(
-        25, 20,
-        id(font_srednia),
-        Color(200, 210, 225),
+        28, 22,
+        id(font_duza),
+        Color(245, 247, 250),
         TextAlign::TOP_LEFT,
         "DASHBOARD"
       );
 
-      // =========================================================
-      // WIFI
-      // =========================================================
+      // Ikona WiFi
+      it.arc(
+        330, 41, 24, 210, 330,
+        Color(40, 230, 125)
+      );
 
-      if (id(wifi_ssid).has_state()) {
+      it.arc(
+        330, 41, 16, 215, 325,
+        Color(40, 230, 125)
+      );
 
-        it.print(
-          285, 18,
-          id(font_srednia),
-          Color(72, 187, 120),
-          TextAlign::TOP_LEFT,
-          "WIFI OK"
-        );
+      it.filled_circle(
+        330, 42, 4,
+        Color(40, 230, 125)
+      );
 
-      } else {
+      it.print(
+        355, 25,
+        id(font_srednia),
+        Color(40, 230, 125),
+        TextAlign::TOP_LEFT,
+        "WIFI OK"
+      );
 
-        it.print(
-          285, 18,
-          id(font_srednia),
-          Color(229, 62, 62),
-          TextAlign::TOP_LEFT,
-          "WIFI OFF"
-        );
-      }
+      // Separator
+      it.line(
+        475, 24, 475, 58,
+        Color(50, 78, 105)
+      );
 
-      // =========================================================
-      // SIŁA WIFI
-      // =========================================================
-
+      // dBm
       if (!isnan(id(wifi_sila).state)) {
 
         it.printf(
-          390, 20,
-          id(font_mala),
-          Color(180, 190, 205),
+          495, 26,
+          id(font_srednia),
+          Color(170, 190, 210),
           TextAlign::TOP_LEFT,
           "%0.0f dBm",
           id(wifi_sila).state
@@ -375,24 +363,21 @@ display:
       } else {
 
         it.print(
-          390, 20,
-          id(font_mala),
-          Color(180, 190, 205),
+          495, 26,
+          id(font_srednia),
+          Color(170, 190, 210),
           TextAlign::TOP_LEFT,
           "-- dBm"
         );
       }
 
-      // =========================================================
       // IP
-      // =========================================================
-
       if (id(wifi_ip).has_state()) {
 
         it.printf(
-          770, 20,
-          id(font_mala),
-          Color(90, 200, 250),
+          775, 27,
+          id(font_srednia),
+          Color(30, 180, 255),
           TextAlign::TOP_RIGHT,
           "%s",
           id(wifi_ip).state.c_str()
@@ -401,294 +386,471 @@ display:
       } else {
 
         it.print(
-          770, 20,
-          id(font_mala),
-          Color(180, 190, 205),
+          775, 27,
+          id(font_srednia),
+          Color(120, 140, 160),
           TextAlign::TOP_RIGHT,
           "brak IP"
         );
       }
 
-      // =========================================================
-      // STRONA 1
-      // =========================================================
+      // ==========================================================
+      // KAFEL 1 - ROLETY
+      // ==========================================================
 
-      if (id(aktualna_strona) == 0) {
+      it.filled_rectangle(
+        14, 80, 378, 180,
+        Color(8, 25, 41)
+      );
+
+      it.rectangle(
+        14, 80, 378, 180,
+        Color(24, 50, 76)
+      );
+
+      // Ikona rolety
+      it.rectangle(
+        38, 103, 78, 70,
+        Color(255, 160, 35)
+      );
+
+      it.line(
+        42, 117, 112, 117,
+        Color(255, 160, 35)
+      );
+
+      it.line(
+        42, 130, 112, 130,
+        Color(255, 160, 35)
+      );
+
+      it.line(
+        42, 143, 112, 143,
+        Color(255, 160, 35)
+      );
+
+      it.line(
+        77, 151, 77, 168,
+        Color(255, 160, 35)
+      );
+
+      it.print(
+        130, 98,
+        id(font_srednia),
+        Color(255, 160, 35),
+        TextAlign::TOP_LEFT,
+        "ROLETY OKIENNE"
+      );
+
+      it.print(
+        130, 128,
+        id(font_mala),
+        Color(145, 165, 190),
+        TextAlign::TOP_LEFT,
+        "okno 1 & okno 2"
+      );
+
+      // Otwórz
+      it.filled_rectangle(
+        28, 190, 100, 48,
+        Color(20, 120, 220)
+      );
+
+      it.print(
+        78, 204,
+        id(font_mala),
+        Color(255, 255, 255),
+        TextAlign::TOP_CENTER,
+        "OTWÓRZ"
+      );
+
+      // Stop
+      it.filled_rectangle(
+        143, 190, 100, 48,
+        Color(225, 45, 55)
+      );
+
+      it.print(
+        193, 204,
+        id(font_mala),
+        Color(255, 255, 255),
+        TextAlign::TOP_CENTER,
+        "STOP"
+      );
+
+      // Zamknij
+      it.filled_rectangle(
+        258, 190, 100, 48,
+        Color(20, 120, 220)
+      );
+
+      it.print(
+        308, 204,
+        id(font_mala),
+        Color(255, 255, 255),
+        TextAlign::TOP_CENTER,
+        "ZAMKNIJ"
+      );
+
+      // ==========================================================
+      // KAFEL 2 - KLIMATYZACJA
+      // ==========================================================
+
+      it.filled_rectangle(
+        408, 80, 378, 180,
+        Color(8, 25, 41)
+      );
+
+      it.rectangle(
+        408, 80, 378, 180,
+        Color(24, 50, 76)
+      );
+
+      // Śnieżynka
+      it.line(
+        455, 105, 455, 158,
+        Color(45, 190, 255)
+      );
+
+      it.line(
+        432, 118, 478, 145,
+        Color(45, 190, 255)
+      );
+
+      it.line(
+        478, 118, 432, 145,
+        Color(45, 190, 255)
+      );
+
+      it.line(
+        447, 110, 455, 118,
+        Color(45, 190, 255)
+      );
+
+      it.line(
+        463, 110, 455, 118,
+        Color(45, 190, 255)
+      );
+
+      it.print(
+        495, 98,
+        id(font_srednia),
+        Color(45, 190, 255),
+        TextAlign::TOP_LEFT,
+        "KLIMATYZACJA"
+      );
+
+      it.print(
+        495, 128,
+        id(font_mala),
+        Color(145, 165, 190),
+        TextAlign::TOP_LEFT,
+        "ROTENSO"
+      );
+
+      // Minus
+      it.filled_rectangle(
+        425, 190, 58, 48,
+        Color(20, 120, 220)
+      );
+
+      it.print(
+        454, 196,
+        id(font_duza),
+        Color(255, 255, 255),
+        TextAlign::TOP_CENTER,
+        "-"
+      );
+
+      // Temperatura
+      it.print(
+        595, 187,
+        id(font_duza),
+        Color(250, 250, 252),
+        TextAlign::TOP_CENTER,
+        "22°C"
+      );
+
+      // Plus
+      it.filled_rectangle(
+        700, 190, 58, 48,
+        Color(225, 45, 55)
+      );
+
+      it.print(
+        729, 196,
+        id(font_duza),
+        Color(255, 255, 255),
+        TextAlign::TOP_CENTER,
+        "+"
+      );
+
+      // ==========================================================
+      // KAFEL 3 - ZIGBEE
+      // ==========================================================
+
+      it.filled_rectangle(
+        14, 272, 378, 190,
+        Color(8, 25, 41)
+      );
+
+      it.rectangle(
+        14, 272, 378, 190,
+        Color(24, 50, 76)
+      );
+
+      // Ikona termometru
+      it.line(
+        57, 305, 57, 375,
+        Color(35, 225, 140)
+      );
+
+      it.filled_circle(
+        57, 375, 16,
+        Color(35, 225, 140)
+      );
+
+      it.filled_rectangle(
+        51, 320, 12, 55,
+        Color(35, 225, 140)
+      );
+
+      it.print(
+        88, 294,
+        id(font_srednia),
+        Color(35, 225, 140),
+        TextAlign::TOP_LEFT,
+        "CZUJNIK ZIGBEE"
+      );
+
+      it.print(
+        92, 342,
+        id(font_duza),
+        Color(250, 250, 252),
+        TextAlign::TOP_LEFT,
+        "21.5 °C"
+      );
+
+      // Kropla
+      it.line(
+        57, 405, 43, 430,
+        Color(35, 180, 255)
+      );
+
+      it.line(
+        57, 405, 71, 430,
+        Color(35, 180, 255)
+      );
+
+      it.filled_circle(
+        57, 430, 14,
+        Color(35, 180, 255)
+      );
+
+      it.print(
+        88, 410,
+        id(font_srednia),
+        Color(145, 165, 190),
+        TextAlign::TOP_LEFT,
+        "Wilgotność: 55%"
+      );
+
+      // ==========================================================
+      // KAFEL 4 - OGRZEWANIE
+      // ==========================================================
+
+      it.filled_rectangle(
+        408, 272, 378, 190,
+        Color(8, 25, 41)
+      );
+
+      it.rectangle(
+        408, 272, 378, 190,
+        Color(24, 50, 76)
+      );
+
+      // Ikona ogrzewania - trzy fale
+      for (int i = 0; i < 3; i++) {
+
+        int xx = 440 + i * 15;
 
         it.line(
-          400, 70, 400, 470,
-          Color(45, 55, 72)
+          xx, 310,
+          xx - 6, 325,
+          Color(255, 160, 35)
         );
 
         it.line(
-          10, 270, 790, 270,
-          Color(45, 55, 72)
+          xx - 6, 325,
+          xx, 340,
+          Color(255, 160, 35)
         );
 
-        it.print(
-          770, 75,
-          id(font_mala),
-          Color(120, 130, 145),
-          TextAlign::TOP_RIGHT,
-          "STRONA 1/3"
-        );
-
-        // -------------------------------------------------------
-        // ROLETY
-        // -------------------------------------------------------
-
-        it.print(
-          30, 90,
-          id(font_srednia),
-          Color(237, 137, 54),
-          TextAlign::TOP_LEFT,
-          "ROLETY OKIENNE"
-        );
-
-        it.print(
-          30, 130,
-          id(font_mala),
-          Color(160, 174, 192),
-          TextAlign::TOP_LEFT,
-          "okno 1 & okno 2"
-        );
-
-        it.rectangle(
-          30, 170, 100, 50,
-          Color(66, 153, 225)
-        );
-
-        it.print(
-          80, 185,
-          id(font_mala),
-          Color(255, 255, 255),
-          TextAlign::TOP_CENTER,
-          "OTWÓRZ"
-        );
-
-        it.rectangle(
-          140, 170, 100, 50,
-          Color(229, 62, 62)
-        );
-
-        it.print(
-          190, 185,
-          id(font_mala),
-          Color(255, 255, 255),
-          TextAlign::TOP_CENTER,
-          "STOP"
-        );
-
-        it.rectangle(
-          250, 170, 100, 50,
-          Color(66, 153, 225)
-        );
-
-        it.print(
-          300, 185,
-          id(font_mala),
-          Color(255, 255, 255),
-          TextAlign::TOP_CENTER,
-          "ZAMKNIJ"
-        );
-
-        // -------------------------------------------------------
-        // KLIMATYZACJA
-        // -------------------------------------------------------
-
-        it.print(
-          430, 90,
-          id(font_srednia),
-          Color(90, 200, 250),
-          TextAlign::TOP_LEFT,
-          "KLIMATYZACJA"
-        );
-
-        it.print(
-          430, 120,
-          id(font_mala),
-          Color(160, 174, 192),
-          TextAlign::TOP_LEFT,
-          "ROTENSO"
-        );
-
-        it.rectangle(
-          430, 170, 60, 50,
-          Color(66, 153, 225)
-        );
-
-        it.print(
-          460, 177,
-          id(font_duza),
-          Color(255, 255, 255),
-          TextAlign::TOP_CENTER,
-          "-"
-        );
-
-        it.print(
-          535, 175,
-          id(font_duza),
-          Color(255, 255, 255),
-          TextAlign::TOP_CENTER,
-          "22°C"
-        );
-
-        it.rectangle(
-          580, 170, 60, 50,
-          Color(229, 62, 62)
-        );
-
-        it.print(
-          610, 177,
-          id(font_duza),
-          Color(255, 255, 255),
-          TextAlign::TOP_CENTER,
-          "+"
-        );
-
-        // -------------------------------------------------------
-        // CZUJNIK ZIGBEE
-        // -------------------------------------------------------
-
-        it.print(
-          30, 290,
-          id(font_srednia),
-          Color(72, 187, 120),
-          TextAlign::TOP_LEFT,
-          "CZUJNIK ZIGBEE"
-        );
-
-        it.print(
-          30, 340,
-          id(font_duza),
-          Color(255, 255, 255),
-          TextAlign::TOP_LEFT,
-          "21.5 °C"
-        );
-
-        it.print(
-          30, 400,
-          id(font_srednia),
-          Color(160, 174, 192),
-          TextAlign::TOP_LEFT,
-          "Wilgotność: 55%"
-        );
-
-        // -------------------------------------------------------
-        // OGRZEWANIE
-        // -------------------------------------------------------
-
-        it.rectangle(
-          420, 285, 360, 175,
-          Color(45, 55, 72)
-        );
-
-        it.print(
-          440, 295,
-          id(font_srednia),
-          Color(255, 170, 60),
-          TextAlign::TOP_LEFT,
-          "OGRZEWANIE"
-        );
-
-        it.print(
-          440, 325,
-          id(font_mala),
-          Color(160, 174, 192),
-          TextAlign::TOP_LEFT,
-          "TERMOSTAT"
-        );
-
-        // Ikona termostatu
-
-        it.filled_rectangle(
-          555, 340, 120, 80,
-          Color(235, 238, 242)
-        );
-
-        it.filled_circle(
-          615, 340, 40,
-          Color(235, 238, 242)
-        );
-
-        it.filled_circle(
-          615, 325, 18,
-          Color(155, 160, 165)
-        );
-
-        it.filled_circle(
-          615, 325, 10,
-          Color(205, 210, 215)
-        );
-
-        it.filled_rectangle(
-          570, 355, 90, 42,
-          Color(30, 35, 42)
-        );
-
-        it.print(
-          615, 357,
-          id(font_srednia),
-          Color(255, 255, 255),
-          TextAlign::TOP_CENTER,
-          "26°"
-        );
-
-        it.print(
-          440, 400,
-          id(font_mala),
-          Color(160, 174, 192),
-          TextAlign::TOP_LEFT,
-          "STATUS:"
-        );
-
-        it.print(
-          505, 400,
-          id(font_mala),
-          Color(100, 220, 130),
-          TextAlign::TOP_LEFT,
-          "GRZEJE"
+        it.line(
+          xx, 340,
+          xx - 6, 355,
+          Color(255, 160, 35)
         );
       }
 
-      // =========================================================
-      // STRONA 2
-      // =========================================================
+      it.print(
+        495, 294,
+        id(font_srednia),
+        Color(255, 160, 35),
+        TextAlign::TOP_LEFT,
+        "OGRZEWANIE"
+      );
 
-      else if (id(aktualna_strona) == 1) {
+      it.print(
+        495, 326,
+        id(font_srednia),
+        Color(145, 165, 190),
+        TextAlign::TOP_LEFT,
+        "TERMOSTAT"
+      );
 
-        it.print(
-          770, 75,
-          id(font_mala),
-          Color(120, 130, 145),
-          TextAlign::TOP_RIGHT,
-          "STRONA 2/3"
-        );
+      // ==========================================================
+      // GŁOWICA TERMOSTATYCZNA
+      // ==========================================================
 
-        it.print(
-          400, 150,
-          id(font_duza),
-          Color(255, 255, 255),
-          TextAlign::TOP_CENTER,
-          "DRUGI KAFEL"
-        );
+      // Podstawa
+      it.filled_rectangle(
+        665, 421, 86, 12,
+        Color(155, 160, 165)
+      );
 
-        it.print(
-          400, 220,
-          id(font_srednia),
-          Color(160, 174, 192),
-          TextAlign::TOP_CENTER,
-          "Miejsce na kolejne"
-        );
+      // Ząbki podstawy
+      for (int i = 0; i < 11; i++) {
 
-        it.print(
-          400, 250,
-          id(font_srednia),
-          Color(160, 174, 192),
-          TextAlign::TOP_CENTER,
-          "przyciski i sensory"
+        it.filled_rectangle(
+          665 + i * 8,
+          430,
+          5,
+          8,
+          Color(120, 126, 132)
         );
       }
+
+      // Dolny pierścień
+      it.filled_rectangle(
+        660, 407, 96, 22,
+        Color(185, 188, 190)
+      );
+
+      it.filled_rectangle(
+        665, 411, 86, 12,
+        Color(215, 218, 220)
+      );
+
+      // Biały korpus
+      it.filled_rectangle(
+        668, 345, 80, 67,
+        Color(238, 240, 242)
+      );
+
+      it.filled_circle(
+        668, 378, 33,
+        Color(238, 240, 242)
+      );
+
+      it.filled_circle(
+        748, 378, 33,
+        Color(238, 240, 242)
+      );
+
+      it.filled_rectangle(
+        668, 360, 80, 38,
+        Color(238, 240, 242)
+      );
+
+      // Dolne cieniowanie
+      it.filled_rectangle(
+        673, 396, 70, 12,
+        Color(220, 223, 225)
+      );
+
+      // ==========================================================
+      // METALOWE POKRĘTŁO
+      // ==========================================================
+
+      it.filled_rectangle(
+        675, 329, 66, 20,
+        Color(150, 153, 155)
+      );
+
+      it.filled_circle(
+        708, 329, 33,
+        Color(160, 163, 165)
+      );
+
+      it.filled_rectangle(
+        680, 316, 56, 20,
+        Color(175, 178, 180)
+      );
+
+      it.filled_circle(
+        708, 316, 28,
+        Color(165, 168, 170)
+      );
+
+      // Pionowe nacięcia metalowego pokrętła
+      for (int i = 0; i < 6; i++) {
+
+        it.line(
+          688 + i * 8,
+          307,
+          688 + i * 8,
+          329,
+          Color(105, 108, 110)
+        );
+      }
+
+      // Górna krawędź
+      it.filled_rectangle(
+        690, 302, 36, 7,
+        Color(195, 198, 200)
+      );
+
+      // ==========================================================
+      // WYŚWIETLACZ 26°
+      // ==========================================================
+
+      it.print(
+        708, 361,
+        id(font_srednia),
+        Color(255, 255, 255),
+        TextAlign::TOP_CENTER,
+        "26°"
+      );
+
+      // ==========================================================
+      // STATUS
+      // ==========================================================
+
+      it.print(
+        430, 415,
+        id(font_mala),
+        Color(145, 165, 190),
+        TextAlign::TOP_LEFT,
+        "STATUS:"
+      );
+
+      it.print(
+        495, 415,
+        id(font_mala),
+        Color(35, 225, 140),
+        TextAlign::TOP_LEFT,
+        "GRZEJE"
+      );
+
+      // Numer strony
+      it.print(
+        770, 84,
+        id(font_mala),
+        Color(130, 155, 180),
+        TextAlign::TOP_RIGHT,
+        "STRONA 1/3"
+      );
 
 touchscreen:
   - platform: gt911
@@ -719,7 +881,7 @@ touchscreen:
           );
 
           // =====================================================
-          // POWRÓT ZE STRONY POGODOWEJ
+          // STRONA 3 - POWRÓT
           // =====================================================
 
           if (id(aktualna_strona) == 2) {
@@ -735,7 +897,7 @@ touchscreen:
           }
 
           // =====================================================
-          // GÓRNY PASEK - ZMIANA STRONY
+          // GÓRNY PASEK - PRZEŁĄCZANIE STRON
           // =====================================================
 
           if (y >= 0 && y <= 70) {
@@ -753,76 +915,84 @@ touchscreen:
           }
 
           // =====================================================
-          // PRZYCISKI STRONY 1
+          // STRONA 1 - PRZYCISKI
           // =====================================================
 
           if (id(aktualna_strona) == 0) {
 
-            // ---------------------------------------------------
-            // ROLETY + KLIMATYZACJA
-            // ---------------------------------------------------
+            // ROLETY
 
-            if (y >= 170 && y <= 220) {
+            if (y >= 190 && y <= 238) {
 
-              if (x >= 30 && x <= 130) {
+              if (x >= 28 && x <= 128) {
 
                 ESP_LOGI(
                   "TOUCH",
-                  "Naciśnięto: OTWÓRZ OKNA"
+                  "OTWÓRZ OKNA"
                 );
 
               }
 
-              else if (x >= 140 && x <= 240) {
+              else if (x >= 143 && x <= 243) {
 
                 ESP_LOGI(
                   "TOUCH",
-                  "Naciśnięto: STOP ROLETY"
+                  "STOP ROLETY"
                 );
 
               }
 
-              else if (x >= 250 && x <= 350) {
+              else if (x >= 258 && x <= 358) {
 
                 ESP_LOGI(
                   "TOUCH",
-                  "Naciśnięto: ZAMKNIJ OKNA"
-                );
-
-              }
-
-              else if (x >= 430 && x <= 490) {
-
-                ESP_LOGI(
-                  "TOUCH",
-                  "Naciśnięto: TEMP -"
-                );
-
-              }
-
-              else if (x >= 580 && x <= 640) {
-
-                ESP_LOGI(
-                  "TOUCH",
-                  "Naciśnięto: TEMP +"
+                  "ZAMKNIJ OKNA"
                 );
               }
             }
 
-            // ---------------------------------------------------
-            // OGRZEWANIE
-            // ---------------------------------------------------
+            // KLIMATYZACJA -
 
             if (
-              x >= 420 &&
-              x <= 780 &&
-              y >= 285 &&
-              y <= 460
+              x >= 425 &&
+              x <= 483 &&
+              y >= 190 &&
+              y <= 238
             ) {
 
               ESP_LOGI(
                 "TOUCH",
-                "Naciśnięto: OGRZEWANIE"
+                "KLIMATYZACJA TEMP -"
+              );
+            }
+
+            // KLIMATYZACJA +
+
+            if (
+              x >= 700 &&
+              x <= 758 &&
+              y >= 190 &&
+              y <= 238
+            ) {
+
+              ESP_LOGI(
+                "TOUCH",
+                "KLIMATYZACJA TEMP +"
+              );
+            }
+
+            // OGRZEWANIE
+
+            if (
+              x >= 408 &&
+              x <= 786 &&
+              y >= 272 &&
+              y <= 462
+            ) {
+
+              ESP_LOGI(
+                "TOUCH",
+                "Naciśnięto OGRZEWANIE"
               );
             }
           }
@@ -833,9 +1003,10 @@ touchscreen:
 
           else if (id(aktualna_strona) == 1) {
 
-            // Dodatkowe akcje dla strony 2
-            // w przyszłości
-
+            ESP_LOGI(
+              "TOUCH",
+              "Dotyk na stronie 2"
+            );
           }
 
-      # KONIEC LAMBDA on_touch
+      # KONIEC LAMBDA
