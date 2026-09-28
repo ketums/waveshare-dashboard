@@ -67,6 +67,11 @@ globals:
     restore_value: no
     initial_value: '"Pobieranie danych..."'
 
+  - id: promien_frame
+    type: int
+    restore_value: no
+    initial_value: '0'
+
 ch422g:
   - id: ch422g_hub
 
@@ -93,6 +98,7 @@ text_sensor:
     ip_address:
       id: wifi_ip
       name: "Adres IP panelu"
+
     ssid:
       id: wifi_ssid
       name: "Sieć WiFi panelu"
@@ -138,6 +144,8 @@ script:
   - id: pobierz_pogode
     mode: restart
     then:
+      - logger.log: "Pobieram aktualna pogode z Open-Meteo..."
+
       - http_request.get:
           url: "https://api.open-meteo.com/v1/forecast?latitude=54.60167&longitude=18.23833&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&wind_speed_unit=kmh&timezone=Europe%2FWarsaw"
           capture_response: true
@@ -171,6 +179,10 @@ script:
                             return false;
                           }
 
+                          if (!current["weather_code"]) {
+                            return false;
+                          }
+
                           id(pogoda_temperatura) =
                             current["temperature_2m"].as<float>();
 
@@ -180,27 +192,37 @@ script:
                           id(pogoda_wiatr) =
                             current["wind_speed_10m"].as<float>();
 
-                          int kod = current["weather_code"].as<int>();
+                          int kod =
+                            current["weather_code"].as<int>();
 
                           if (kod == 0) {
                             id(pogoda_opis) = "Bezchmurnie";
-                          } else if (kod == 1 || kod == 2) {
+                          }
+                          else if (kod == 1 || kod == 2) {
                             id(pogoda_opis) = "Czesciowe zachmurzenie";
-                          } else if (kod == 3) {
+                          }
+                          else if (kod == 3) {
                             id(pogoda_opis) = "Pochmurno";
-                          } else if (kod == 45 || kod == 48) {
+                          }
+                          else if (kod == 45 || kod == 48) {
                             id(pogoda_opis) = "Mgla";
-                          } else if (kod >= 51 && kod <= 67) {
+                          }
+                          else if (kod >= 51 && kod <= 67) {
                             id(pogoda_opis) = "Deszcz";
-                          } else if (kod >= 71 && kod <= 77) {
+                          }
+                          else if (kod >= 71 && kod <= 77) {
                             id(pogoda_opis) = "Snieg";
-                          } else if (kod >= 80 && kod <= 82) {
+                          }
+                          else if (kod >= 80 && kod <= 82) {
                             id(pogoda_opis) = "Przelotny deszcz";
-                          } else if (kod >= 85 && kod <= 86) {
+                          }
+                          else if (kod >= 85 && kod <= 86) {
                             id(pogoda_opis) = "Przelotny snieg";
-                          } else if (kod >= 95) {
+                          }
+                          else if (kod >= 95) {
                             id(pogoda_opis) = "Burza";
-                          } else {
+                          }
+                          else {
                             id(pogoda_opis) = "Nieznana pogoda";
                           }
 
@@ -208,10 +230,11 @@ script:
 
                           ESP_LOGI(
                             "POGODA",
-                            "TEMP %.1f C | WILG %.0f %% | WIATR %.1f km/h",
+                            "TEMP %.1f C | WILG %.0f %% | WIATR %.1f km/h | KOD %d",
                             id(pogoda_temperatura),
                             id(pogoda_wilgotnosc),
-                            id(pogoda_wiatr)
+                            id(pogoda_wiatr),
+                            kod
                           );
 
                           return true;
@@ -220,6 +243,7 @@ script:
                   else:
                     - lambda: |-
                         id(pogoda_dane_ok) = false;
+
                         ESP_LOGE(
                           "POGODA",
                           "HTTP ERROR %d",
@@ -230,9 +254,21 @@ script:
             then:
               - lambda: |-
                   id(pogoda_dane_ok) = false;
-                  ESP_LOGE("POGODA", "Blad polaczenia");
+                  ESP_LOGE(
+                    "POGODA",
+                    "Blad polaczenia z Open-Meteo"
+                  );
 
 interval:
+  - interval: 150ms
+    then:
+      - lambda: |-
+          id(promien_frame)++;
+
+          if (id(promien_frame) >= 8) {
+            id(promien_frame) = 0;
+          }
+
   - interval: 10min
     then:
       - script.execute: pobierz_pogode
@@ -242,7 +278,7 @@ display:
     model: ESP32-S3-TOUCH-LCD-4.3
     id: ekran_waveshare
     rotation: 0
-    update_interval: 1s
+    update_interval: 150ms
 
     reset_pin:
       ch422g: ch422g_hub
@@ -256,17 +292,24 @@ display:
         it.fill(Color(10, 18, 32));
 
         it.rectangle(
-          10, 10, 780, 460,
+          10,
+          10,
+          780,
+          460,
           Color(34, 52, 82)
         );
 
         it.line(
-          10, 70, 790, 70,
+          10,
+          70,
+          790,
+          70,
           Color(45, 70, 105)
         );
 
         it.print(
-          30, 20,
+          30,
+          20,
           id(font_srednia),
           Color(70, 210, 245),
           TextAlign::TOP_LEFT,
@@ -274,7 +317,8 @@ display:
         );
 
         it.print(
-          770, 20,
+          770,
+          20,
           id(font_mala),
           Color(150, 165, 185),
           TextAlign::TOP_RIGHT,
@@ -282,7 +326,8 @@ display:
         );
 
         it.print(
-          35, 90,
+          35,
+          90,
           id(font_srednia),
           Color(90, 200, 250),
           TextAlign::TOP_LEFT,
@@ -292,7 +337,8 @@ display:
         if (id(pogoda_dane_ok)) {
 
           it.printf(
-            35, 125,
+            35,
+            125,
             id(font_duza),
             Color(255, 255, 255),
             TextAlign::TOP_LEFT,
@@ -301,7 +347,8 @@ display:
           );
 
           it.print(
-            35, 185,
+            35,
+            185,
             id(font_srednia),
             Color(120, 210, 250),
             TextAlign::TOP_LEFT,
@@ -309,7 +356,8 @@ display:
           );
 
           it.printf(
-            35, 215,
+            35,
+            215,
             id(font_duza),
             Color(255, 255, 255),
             TextAlign::TOP_LEFT,
@@ -318,7 +366,8 @@ display:
           );
 
           it.print(
-            35, 275,
+            35,
+            275,
             id(font_srednia),
             Color(120, 210, 250),
             TextAlign::TOP_LEFT,
@@ -326,7 +375,8 @@ display:
           );
 
           it.printf(
-            35, 305,
+            35,
+            305,
             id(font_srednia),
             Color(255, 255, 255),
             TextAlign::TOP_LEFT,
@@ -335,7 +385,8 @@ display:
           );
 
           it.print(
-            35, 350,
+            35,
+            350,
             id(font_mala),
             Color(155, 170, 190),
             TextAlign::TOP_LEFT,
@@ -345,7 +396,8 @@ display:
         } else {
 
           it.print(
-            35, 125,
+            35,
+            125,
             id(font_duza),
             Color(255, 255, 255),
             TextAlign::TOP_LEFT,
@@ -353,7 +405,8 @@ display:
           );
 
           it.print(
-            35, 185,
+            35,
+            185,
             id(font_srednia),
             Color(120, 210, 250),
             TextAlign::TOP_LEFT,
@@ -361,7 +414,8 @@ display:
           );
 
           it.print(
-            35, 215,
+            35,
+            215,
             id(font_duza),
             Color(255, 255, 255),
             TextAlign::TOP_LEFT,
@@ -369,7 +423,8 @@ display:
           );
 
           it.print(
-            35, 275,
+            35,
+            275,
             id(font_srednia),
             Color(120, 210, 250),
             TextAlign::TOP_LEFT,
@@ -377,7 +432,8 @@ display:
           );
 
           it.print(
-            35, 305,
+            35,
+            305,
             id(font_srednia),
             Color(255, 255, 255),
             TextAlign::TOP_LEFT,
@@ -385,7 +441,8 @@ display:
           );
 
           it.print(
-            35, 350,
+            35,
+            350,
             id(font_mala),
             Color(155, 170, 190),
             TextAlign::TOP_LEFT,
@@ -393,18 +450,247 @@ display:
           );
         }
 
+        /*
+         * GLOWNE PNG
+         */
         it.image(
-          475, 105,
+          475,
+          105,
           id(ikona_pogoda_duza)
         );
 
+        /*
+         * ANIMOWANE PROMIENIE
+         *
+         * Srodek slonca:
+         * X = 615
+         * Y = 170
+         */
+
+        int frame = id(promien_frame);
+
+        if (frame == 0) {
+
+          it.line(
+            615, 82,
+            615, 105,
+            Color(255, 215, 40)
+          );
+
+          it.line(
+            615, 235,
+            615, 258,
+            Color(255, 215, 40)
+          );
+
+          it.line(
+            527, 170,
+            550, 170,
+            Color(255, 215, 40)
+          );
+
+          it.line(
+            680, 170,
+            703, 170,
+            Color(255, 215, 40)
+          );
+
+        } else if (frame == 1) {
+
+          it.line(
+            552, 107,
+            568, 123,
+            Color(255, 215, 40)
+          );
+
+          it.line(
+            662, 217,
+            678, 233,
+            Color(255, 215, 40)
+          );
+
+          it.line(
+            552, 233,
+            568, 217,
+            Color(255, 215, 40)
+          );
+
+          it.line(
+            662, 123,
+            678, 107,
+            Color(255, 215, 40)
+          );
+
+        } else if (frame == 2) {
+
+          it.line(
+            535, 130,
+            558, 142,
+            Color(255, 215, 40)
+          );
+
+          it.line(
+            672, 198,
+            695, 210,
+            Color(255, 215, 40)
+          );
+
+          it.line(
+            535, 210,
+            558, 198,
+            Color(255, 215, 40)
+          );
+
+          it.line(
+            672, 142,
+            695, 130,
+            Color(255, 215, 40)
+          );
+
+        } else if (frame == 3) {
+
+          it.line(
+            548, 95,
+            560, 118,
+            Color(255, 215, 40)
+          );
+
+          it.line(
+            670, 222,
+            682, 245,
+            Color(255, 215, 40)
+          );
+
+          it.line(
+            540, 185,
+            563, 173,
+            Color(255, 215, 40)
+          );
+
+          it.line(
+            667, 167,
+            690, 155,
+            Color(255, 215, 40)
+          );
+
+        } else if (frame == 4) {
+
+          it.line(
+            615, 82,
+            615, 105,
+            Color(255, 215, 40)
+          );
+
+          it.line(
+            615, 235,
+            615, 258,
+            Color(255, 215, 40)
+          );
+
+          it.line(
+            527, 170,
+            550, 170,
+            Color(255, 215, 40)
+          );
+
+          it.line(
+            680, 170,
+            703, 170,
+            Color(255, 215, 40)
+          );
+
+        } else if (frame == 5) {
+
+          it.line(
+            552, 233,
+            568, 217,
+            Color(255, 215, 40)
+          );
+
+          it.line(
+            662, 123,
+            678, 107,
+            Color(255, 215, 40)
+          );
+
+          it.line(
+            552, 107,
+            568, 123,
+            Color(255, 215, 40)
+          );
+
+          it.line(
+            662, 217,
+            678, 233,
+            Color(255, 215, 40)
+          );
+
+        } else if (frame == 6) {
+
+          it.line(
+            535, 210,
+            558, 198,
+            Color(255, 215, 40)
+          );
+
+          it.line(
+            672, 142,
+            695, 130,
+            Color(255, 215, 40)
+          );
+
+          it.line(
+            535, 130,
+            558, 142,
+            Color(255, 215, 40)
+          );
+
+          it.line(
+            672, 198,
+            695, 210,
+            Color(255, 215, 40)
+          );
+
+        } else {
+
+          it.line(
+            548, 245,
+            560, 222,
+            Color(255, 215, 40)
+          );
+
+          it.line(
+            670, 118,
+            682, 95,
+            Color(255, 215, 40)
+          );
+
+          it.line(
+            540, 155,
+            563, 167,
+            Color(255, 215, 40)
+          );
+
+          it.line(
+            667, 173,
+            690, 185,
+            Color(255, 215, 40)
+          );
+        }
+
+        /*
+         * MALA IKONA NA DOLE
+         */
+
         it.image(
-          30, 390,
+          30,
+          390,
           id(ikona_pogoda_mala)
         );
 
         it.print(
-          125, 395,
+          125,
+          395,
           id(font_mala),
           Color(120, 190, 225),
           TextAlign::TOP_LEFT,
@@ -412,17 +698,23 @@ display:
         );
 
         it.print(
-          125, 418,
+          125,
+          418,
           id(font_mala),
           Color(155, 170, 190),
           TextAlign::TOP_LEFT,
           "zrodlo: Open-Meteo"
         );
 
+        /*
+         * ZEGAR
+         */
+
         if (time_now.is_valid()) {
 
           it.strftime(
-            765, 350,
+            765,
+            350,
             id(font_zegar),
             Color(255, 255, 255),
             TextAlign::TOP_RIGHT,
@@ -433,16 +725,18 @@ display:
         } else {
 
           it.print(
-            765, 350,
+            765,
+            350,
             id(font_zegar),
-            Color(255, 255, 255),
+            Color(255, 255, 255, 255),
             TextAlign::TOP_RIGHT,
             "--:--"
           );
         }
 
         it.print(
-          765, 425,
+          765,
+          425,
           id(font_mala),
           Color(120, 145, 175),
           TextAlign::TOP_RIGHT,
@@ -452,20 +746,31 @@ display:
         return;
       }
 
+      /*
+       * STRONA 1 / 2
+       */
+
       it.fill(Color(18, 24, 38));
 
       it.rectangle(
-        10, 10, 780, 460,
+        10,
+        10,
+        780,
+        460,
         Color(45, 55, 72)
       );
 
       it.line(
-        10, 70, 790, 70,
+        10,
+        70,
+        790,
+        70,
         Color(45, 55, 72)
       );
 
       it.print(
-        25, 20,
+        25,
+        20,
         id(font_srednia),
         Color(200, 210, 225),
         TextAlign::TOP_LEFT,
@@ -473,16 +778,21 @@ display:
       );
 
       if (id(wifi_ssid).has_state()) {
+
         it.print(
-          285, 18,
+          285,
+          18,
           id(font_srednia),
           Color(72, 187, 120),
           TextAlign::TOP_LEFT,
           "WIFI OK"
         );
+
       } else {
+
         it.print(
-          285, 18,
+          285,
+          18,
           id(font_srednia),
           Color(229, 62, 62),
           TextAlign::TOP_LEFT,
@@ -491,31 +801,58 @@ display:
       }
 
       if (!isnan(id(wifi_sila).state)) {
+
         it.printf(
-          390, 20,
+          390,
+          20,
           id(font_mala),
           Color(180, 190, 205),
           TextAlign::TOP_LEFT,
           "%0.0f dBm",
           id(wifi_sila).state
         );
+
+      } else {
+
+        it.print(
+          390,
+          20,
+          id(font_mala),
+          Color(180, 190, 205),
+          TextAlign::TOP_LEFT,
+          "-- dBm"
+        );
       }
 
       if (id(wifi_ip).has_state()) {
+
         it.printf(
-          770, 20,
+          770,
+          20,
           id(font_mala),
           Color(90, 200, 250),
           TextAlign::TOP_RIGHT,
           "%s",
           id(wifi_ip).state.c_str()
         );
+
+      } else {
+
+        it.print(
+          770,
+          20,
+          id(font_mala),
+          Color(180, 190, 205),
+          TextAlign::TOP_RIGHT,
+          "brak IP"
+        );
       }
 
       if (id(aktualna_strona) == 0) {
 
         it.print(
-          770, 75,
+          770,
+          75,
           id(font_mala),
           Color(120, 130, 145),
           TextAlign::TOP_RIGHT,
@@ -523,7 +860,8 @@ display:
         );
 
         it.print(
-          30, 90,
+          30,
+          90,
           id(font_srednia),
           Color(237, 137, 54),
           TextAlign::TOP_LEFT,
@@ -531,7 +869,8 @@ display:
         );
 
         it.print(
-          30, 130,
+          30,
+          130,
           id(font_mala),
           Color(160, 174, 192),
           TextAlign::TOP_LEFT,
@@ -539,12 +878,16 @@ display:
         );
 
         it.rectangle(
-          30, 170, 100, 50,
+          30,
+          170,
+          100,
+          50,
           Color(66, 153, 225)
         );
 
         it.print(
-          80, 185,
+          80,
+          185,
           id(font_mala),
           Color(255, 255, 255),
           TextAlign::TOP_CENTER,
@@ -552,12 +895,16 @@ display:
         );
 
         it.rectangle(
-          140, 170, 100, 50,
+          140,
+          170,
+          100,
+          50,
           Color(229, 62, 62)
         );
 
         it.print(
-          190, 185,
+          190,
+          185,
           id(font_mala),
           Color(255, 255, 255),
           TextAlign::TOP_CENTER,
@@ -565,12 +912,16 @@ display:
         );
 
         it.rectangle(
-          250, 170, 100, 50,
+          250,
+          170,
+          100,
+          50,
           Color(66, 153, 225)
         );
 
         it.print(
-          300, 185,
+          300,
+          185,
           id(font_mala),
           Color(255, 255, 255),
           TextAlign::TOP_CENTER,
@@ -578,7 +929,8 @@ display:
         );
 
         it.print(
-          430, 90,
+          430,
+          90,
           id(font_srednia),
           Color(90, 200, 250),
           TextAlign::TOP_LEFT,
@@ -586,7 +938,8 @@ display:
         );
 
         it.print(
-          430, 120,
+          430,
+          120,
           id(font_mala),
           Color(160, 174, 192),
           TextAlign::TOP_LEFT,
@@ -594,7 +947,8 @@ display:
         );
 
         it.print(
-          535, 175,
+          535,
+          175,
           id(font_duza),
           Color(255, 255, 255),
           TextAlign::TOP_CENTER,
@@ -602,7 +956,8 @@ display:
         );
 
         it.print(
-          30, 290,
+          30,
+          290,
           id(font_srednia),
           Color(72, 187, 120),
           TextAlign::TOP_LEFT,
@@ -610,7 +965,8 @@ display:
         );
 
         it.print(
-          30, 340,
+          30,
+          340,
           id(font_duza),
           Color(255, 255, 255),
           TextAlign::TOP_LEFT,
@@ -618,183 +974,7 @@ display:
         );
 
         it.print(
-          30, 400,
+          30,
+          400,
           id(font_srednia),
-          Color(160, 174, 192),
-          TextAlign::TOP_LEFT,
-          "Wilgotność: 55%"
-        );
-
-        it.rectangle(
-          420, 285, 360, 175,
-          Color(45, 55, 72)
-        );
-
-        it.print(
-          440, 295,
-          id(font_srednia),
-          Color(255, 170, 60),
-          TextAlign::TOP_LEFT,
-          "OGRZEWANIE"
-        );
-
-        it.print(
-          440, 325,
-          id(font_mala),
-          Color(160, 174, 192),
-          TextAlign::TOP_LEFT,
-          "TERMOSTAT"
-        );
-
-        it.filled_rectangle(
-          555, 340, 120, 80,
-          Color(235, 238, 242)
-        );
-
-        it.filled_circle(
-          615, 340, 40,
-          Color(235, 238, 242)
-        );
-
-        it.filled_circle(
-          615, 325, 18,
-          Color(155, 160, 165)
-        );
-
-        it.filled_circle(
-          615, 325, 10,
-          Color(205, 210, 215)
-        );
-
-        it.filled_rectangle(
-          570, 355, 90, 42,
-          Color(30, 35, 42)
-        );
-
-        it.print(
-          615, 357,
-          id(font_srednia),
-          Color(255, 255, 255),
-          TextAlign::TOP_CENTER,
-          "26°"
-        );
-
-        it.print(
-          440, 400,
-          id(font_mala),
-          Color(160, 174, 192),
-          TextAlign::TOP_LEFT,
-          "STATUS:"
-        );
-
-        it.print(
-          505, 400,
-          id(font_mala),
-          Color(100, 220, 130),
-          TextAlign::TOP_LEFT,
-          "GRZEJE"
-        );
-
-      } else if (id(aktualna_strona) == 1) {
-
-        it.print(
-          770, 75,
-          id(font_mala),
-          Color(120, 130, 145),
-          TextAlign::TOP_RIGHT,
-          "STRONA 2/3"
-        );
-
-        it.print(
-          400, 150,
-          id(font_duza),
-          Color(255, 255, 255),
-          TextAlign::TOP_CENTER,
-          "DRUGI KAFEL"
-        );
-
-        it.print(
-          400, 220,
-          id(font_srednia),
-          Color(160, 174, 192),
-          TextAlign::TOP_CENTER,
-          "Miejsce na kolejne"
-        );
-
-        it.print(
-          400, 250,
-          id(font_srednia),
-          Color(160, 174, 192),
-          TextAlign::TOP_CENTER,
-          "przyciski i sensory"
-        );
-      }
-
-touchscreen:
-  - platform: gt911
-    id: panel_dotykowy
-    i2c_id: bus_i2c
-    interrupt_pin: GPIO4
-
-    reset_pin:
-      ch422g: ch422g_hub
-      number: 1
-
-    transform:
-      swap_xy: false
-      mirror_x: false
-      mirror_y: false
-
-    on_touch:
-      - lambda: |-
-          int x = touch.x;
-          int y = touch.y;
-
-          ESP_LOGI(
-            "TOUCH",
-            "Dotyk X=%d Y=%d",
-            x,
-            y
-          );
-
-          if (id(aktualna_strona) == 2) {
-            id(aktualna_strona) = 0;
-            return;
-          }
-
-          if (y >= 0 && y <= 70) {
-            id(aktualna_strona) =
-              (id(aktualna_strona) + 1) % 3;
-            return;
-          }
-
-          if (id(aktualna_strona) == 0) {
-
-            if (y >= 170 && y <= 220) {
-
-              if (x >= 30 && x <= 130) {
-                ESP_LOGI("TOUCH", "OTWORZ OKNA");
-
-              } else if (x >= 140 && x <= 240) {
-                ESP_LOGI("TOUCH", "STOP ROLETY");
-
-              } else if (x >= 250 && x <= 350) {
-                ESP_LOGI("TOUCH", "ZAMKNIJ OKNA");
-
-              } else if (x >= 430 && x <= 490) {
-                ESP_LOGI("TOUCH", "TEMP -");
-
-              } else if (x >= 580 && x <= 640) {
-                ESP_LOGI("TOUCH", "TEMP +");
-              }
-            }
-
-            if (
-              x >= 420 &&
-              x <= 780 &&
-              y >= 285 &&
-              y <= 460
-            ) {
-              ESP_LOGI("TOUCH", "OGRZEWANIE");
-            }
-          }
+          Colo
