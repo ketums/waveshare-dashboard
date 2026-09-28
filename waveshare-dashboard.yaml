@@ -8,23 +8,29 @@ esphome:
       - delay: 10s
       - script.execute: pobierz_pogode
 
+
 esp32:
   board: esp32-s3-devkitc-1
   variant: esp32s3
   framework:
     type: esp-idf
 
+
 psram:
   mode: octal
   speed: 80MHz
 
+
 logger:
   level: DEBUG
 
+
 api:
+
 
 ota:
   - platform: esphome
+
 
 wifi:
   ssid: "skrapi 2,4GHZ"
@@ -34,102 +40,113 @@ wifi:
     ssid: "ESPTest"
     password: "Password123"
 
+
 captive_portal:
 
+
 globals:
+
   - id: aktualna_strona
     type: int
     restore_value: no
-    initial_value: '0'
+    initial_value: "0"
 
   - id: pogoda_temperatura
     type: float
     restore_value: no
-    initial_value: '0'
+    initial_value: "0.0"
 
   - id: pogoda_wilgotnosc
     type: float
     restore_value: no
-    initial_value: '0'
+    initial_value: "0.0"
 
   - id: pogoda_wiatr
     type: float
     restore_value: no
-    initial_value: '0'
+    initial_value: "0.0"
 
   - id: pogoda_kod
     type: int
     restore_value: no
-    initial_value: '-1'
+    initial_value: "-1"
 
   - id: pogoda_dane_ok
     type: bool
     restore_value: no
-    initial_value: 'false'
+    initial_value: "false"
 
   - id: pogoda_opis
     type: std::string
     restore_value: no
-    initial_value: '"Pobieranie danych..."'
+    initial_value: '"Brak danych"'
+
 
 ch422g:
   - id: ch422g_hub
 
+
 i2c:
-  - id: bus_i2c
-    sda: GPIO8
-    scl: GPIO9
-    frequency: 400kHz
-    scan: true
+  id: bus_i2c
+  sda: GPIO8
+  scl: GPIO9
+  scan: true
+  frequency: 400kHz
+
 
 http_request:
-  timeout: 15s
+  timeout: 10s
+  verify_ssl: true
 
-sensor:
-  - platform: wifi_signal
-    id: wifi_sila
-    name: "Siła WiFi"
-    update_interval: 10s
-    unit_of_measurement: "dBm"
-    accuracy_decimals: 0
+
+wifi_signal:
+  name: "WiFi Signal"
+  id: wifi_dbm
+  update_interval: 10s
+
 
 text_sensor:
+
   - platform: wifi_info
     ip_address:
+      name: "IP Address"
       id: wifi_ip
-      name: "Adres IP panelu"
 
-    ssid:
-      id: wifi_ssid
-      name: "Sieć WiFi panelu"
 
 time:
+
   - platform: sntp
-    id: czas_sntp
+    id: czas
     timezone: Europe/Warsaw
+    servers:
+      - pl.pool.ntp.org
+
 
 font:
-  - file: "gfonts://Roboto"
-    id: font_duza
+
+  - file: "Roboto-Regular.ttf"
+    id: font_duzy
     size: 42
-    glyphs: " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ĄĆĘŁŃÓŚŹŻąćęłńóśźż°"
+    glyphs: "ąćęłńóśźżĄĆĘŁŃÓŚŹŻ0123456789°C%:-./"
 
-  - file: "gfonts://Roboto"
-    id: font_srednia
+  - file: "Roboto-Regular.ttf"
+    id: font_sredni
     size: 22
-    glyphs: " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ĄĆĘŁŃÓŚŹŻąćęłńóśźż°"
+    glyphs: "ąćęłńóśźżĄĆĘŁŃÓŚŹŻ0123456789°C%:-./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz "
 
-  - file: "gfonts://Roboto"
-    id: font_mala
+  - file: "Roboto-Regular.ttf"
+    id: font_maly
     size: 16
-    glyphs: " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~ĄĆĘŁŃÓŚŹŻąćęłńóśźż°"
+    glyphs: "ąćęłńóśźżĄĆĘŁŃÓŚŹŻ0123456789°C%:-./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz "
 
-  - file: "gfonts://Roboto"
+  - file: "Roboto-Regular.ttf"
     id: font_zegar
     size: 64
     glyphs: "0123456789:"
 
+
 image:
+
   - file: "weather_partly_cloudy.png"
     id: ikona_pogoda_duza
     type: RGB565
@@ -140,27 +157,30 @@ image:
     type: RGB565
     transparency: alpha_channel
 
+
 script:
+
   - id: pobierz_pogode
     mode: restart
     then:
-      - logger.log: "Pobieram aktualna pogode..."
 
       - http_request.get:
           url: "https://api.open-meteo.com/v1/forecast?latitude=54.60167&longitude=18.23833&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&wind_speed_unit=kmh&timezone=Europe%2FWarsaw"
+
           capture_response: true
           max_response_buffer_size: 4096
 
           on_response:
             then:
+
               - if:
                   condition:
-                    lambda: |-
-                      return response->status_code == 200;
+                    lambda: return response->status_code == 200;
+
                   then:
+
                     - lambda: |-
                         json::parse_json(body, [](JsonObject root) -> bool {
-
                           if (!root["current"]) {
                             return false;
                           }
@@ -168,48 +188,64 @@ script:
                           JsonObject current = root["current"];
 
                           id(pogoda_temperatura) =
-                            current["temperature_2m"].as<float>();
+                              current["temperature_2m"] | 0.0f;
 
                           id(pogoda_wilgotnosc) =
-                            current["relative_humidity_2m"].as<float>();
+                              current["relative_humidity_2m"] | 0.0f;
 
                           id(pogoda_wiatr) =
-                            current["wind_speed_10m"].as<float>();
+                              current["wind_speed_10m"] | 0.0f;
 
                           id(pogoda_kod) =
-                            current["weather_code"].as<int>();
+                              current["weather_code"] | -1;
 
                           int kod = id(pogoda_kod);
 
                           if (kod == 0) {
-                            id(pogoda_opis) = "Bezchmurnie";
-                          } else if (kod == 1) {
-                            id(pogoda_opis) = "Glownie bezchmurnie";
-                          } else if (kod == 2) {
-                            id(pogoda_opis) = "Czesciowe zachmurzenie";
-                          } else if (kod == 3) {
-                            id(pogoda_opis) = "Pochmurno";
-                          } else if (kod == 45 || kod == 48) {
+                            id(pogoda_opis) = "Slonecznie";
+                          }
+
+                          else if (kod <= 3) {
+                            id(pogoda_opis) = "Zachmurzenie";
+                          }
+
+                          else if (kod == 45 || kod == 48) {
                             id(pogoda_opis) = "Mgla";
-                          } else if (kod >= 51 && kod <= 67) {
+                          }
+
+                          else if (kod <= 57) {
+                            id(pogoda_opis) = "Mzy";
+                          }
+
+                          else if (kod <= 67) {
                             id(pogoda_opis) = "Deszcz";
-                          } else if (kod >= 71 && kod <= 77) {
+                          }
+
+                          else if (kod <= 77) {
                             id(pogoda_opis) = "Snieg";
-                          } else if (kod >= 80 && kod <= 82) {
+                          }
+
+                          else if (kod <= 82) {
                             id(pogoda_opis) = "Przelotny deszcz";
-                          } else if (kod >= 85 && kod <= 86) {
+                          }
+
+                          else if (kod <= 86) {
                             id(pogoda_opis) = "Przelotny snieg";
-                          } else if (kod >= 95) {
+                          }
+
+                          else if (kod >= 95) {
                             id(pogoda_opis) = "Burza";
-                          } else {
-                            id(pogoda_opis) = "Nieznana pogoda";
+                          }
+
+                          else {
+                            id(pogoda_opis) = "Pogoda";
                           }
 
                           id(pogoda_dane_ok) = true;
 
                           ESP_LOGI(
-                            "POGODA",
-                            "TEMP %.1f C | WILG %.0f %% | WIATR %.1f km/h | KOD %d",
+                            "pogoda",
+                            "Temp %.1f C, wilgotnosc %.0f %%, wiatr %.1f km/h, kod %d",
                             id(pogoda_temperatura),
                             id(pogoda_wilgotnosc),
                             id(pogoda_wiatr),
@@ -219,705 +255,34 @@ script:
                           return true;
                         });
 
-                  else:
+              - if:
+                  condition:
+                    lambda: return response->status_code != 200;
+
+                  then:
+
                     - lambda: |-
                         id(pogoda_dane_ok) = false;
-                        ESP_LOGE(
-                          "POGODA",
-                          "HTTP ERROR %d",
+
+                        ESP_LOGW(
+                          "pogoda",
+                          "HTTP status: %d",
                           response->status_code
                         );
 
-          on_error:
-            then:
-              - lambda: |-
-                  id(pogoda_dane_ok) = false;
-                  ESP_LOGE(
-                    "POGODA",
-                    "Blad polaczenia"
-                  );
 
 interval:
+
   - interval: 10min
     then:
       - script.execute: pobierz_pogode
 
-display:
-  - platform: mipi_rgb
-    model: ESP32-S3-TOUCH-LCD-4.3
-    id: ekran_waveshare
-    rotation: 0
-    update_interval: 1s
-
-    reset_pin:
-      ch422g: ch422g_hub
-      number: 3
-
-    lambda: |-
-      auto now = id(czas_sntp).now();
-
-      if (id(aktualna_strona) == 2) {
-
-        it.fill(Color(8, 35, 80));
-
-        it.rectangle(
-          10,
-          10,
-          780,
-          460,
-          Color(35, 70, 115)
-        );
-
-        it.line(
-          10,
-          70,
-          790,
-          70,
-          Color(60, 110, 165)
-        );
-
-        it.print(
-          30,
-          20,
-          id(font_srednia),
-          Color(70, 220, 250),
-          TextAlign::TOP_LEFT,
-          "POGODA"
-        );
-
-        it.print(
-          770,
-          20,
-          id(font_mala),
-          Color(180, 200, 220),
-          TextAlign::TOP_RIGHT,
-          "WEJHEROWO"
-        );
-
-        it.print(
-          35,
-          90,
-          id(font_srednia),
-          Color(90, 220, 250),
-          TextAlign::TOP_LEFT,
-          "AKTUALNA TEMPERATURA"
-        );
-
-        if (id(pogoda_dane_ok)) {
-
-          it.printf(
-            35,
-            125,
-            id(font_duza),
-            Color(255, 255, 255),
-            TextAlign::TOP_LEFT,
-            "%.1f °C",
-            id(pogoda_temperatura)
-          );
-
-          it.print(
-            35,
-            185,
-            id(font_srednia),
-            Color(100, 220, 250),
-            TextAlign::TOP_LEFT,
-            "WILGOTNOŚĆ"
-          );
-
-          it.printf(
-            35,
-            215,
-            id(font_duza),
-            Color(255, 255, 255),
-            TextAlign::TOP_LEFT,
-            "%.0f%%",
-            id(pogoda_wilgotnosc)
-          );
-
-          it.print(
-            35,
-            275,
-            id(font_srednia),
-            Color(100, 220, 250),
-            TextAlign::TOP_LEFT,
-            "WIATR"
-          );
-
-          it.printf(
-            35,
-            305,
-            id(font_srednia),
-            Color(255, 255, 255),
-            TextAlign::TOP_LEFT,
-            "%.1f km/h",
-            id(pogoda_wiatr)
-          );
-
-          it.print(
-            35,
-            350,
-            id(font_mala),
-            Color(200, 215, 230),
-            TextAlign::TOP_LEFT,
-            id(pogoda_opis).c_str()
-          );
-
-        } else {
-
-          it.print(
-            35,
-            125,
-            id(font_duza),
-            Color(255, 255, 255),
-            TextAlign::TOP_LEFT,
-            "--.- °C"
-          );
-
-          it.print(
-            35,
-            185,
-            id(font_srednia),
-            Color(100, 220, 250),
-            TextAlign::TOP_LEFT,
-            "WILGOTNOŚĆ"
-          );
-
-          it.print(
-            35,
-            215,
-            id(font_duza),
-            Color(255, 255, 255),
-            TextAlign::TOP_LEFT,
-            "--%"
-          );
-
-          it.print(
-            35,
-            275,
-            id(font_srednia),
-            Color(100, 220, 250),
-            TextAlign::TOP_LEFT,
-            "WIATR"
-          );
-
-          it.print(
-            35,
-            305,
-            id(font_srednia),
-            Color(255, 255, 255),
-            TextAlign::TOP_LEFT,
-            "--.- km/h"
-          );
-
-          it.print(
-            35,
-            350,
-            id(font_mala),
-            Color(200, 215, 230),
-            TextAlign::TOP_LEFT,
-            "Pobieranie danych..."
-          );
-        }
-
-        /*
-         * BEZCHMURNE NIEBO
-         */
-
-        if (
-          id(pogoda_dane_ok) &&
-          id(pogoda_kod) == 0
-        ) {
-
-          it.filled_circle(
-            615,
-            175,
-            58,
-            Color(255, 205, 20)
-          );
-
-          it.filled_circle(
-            615,
-            175,
-            48,
-            Color(255, 220, 40)
-          );
-
-          it.line(
-            615, 95,
-            615, 115,
-            Color(255, 220, 40)
-          );
-
-          it.line(
-            615, 235,
-            615, 255,
-            Color(255, 220, 40)
-          );
-
-          it.line(
-            535, 175,
-            555, 175,
-            Color(255, 220, 40)
-          );
-
-          it.line(
-            675, 175,
-            695, 175,
-            Color(255, 220, 40)
-          );
-
-          it.line(
-            558, 118,
-            572, 132,
-            Color(255, 220, 40)
-          );
-
-          it.line(
-            658, 218,
-            672, 232,
-            Color(255, 220, 40)
-          );
-
-          it.line(
-            558, 232,
-            572, 218,
-            Color(255, 220, 40)
-          );
-
-          it.line(
-            658, 132,
-            672, 118,
-            Color(255, 220, 40)
-          );
-
-        } else {
-
-          it.image(
-            475,
-            105,
-            id(ikona_pogoda_duza)
-          );
-        }
-
-        it.image(
-          30,
-          390,
-          id(ikona_pogoda_mala)
-        );
-
-        it.print(
-          125,
-          395,
-          id(font_mala),
-          Color(120, 210, 240),
-          TextAlign::TOP_LEFT,
-          "Dane pogodowe"
-        );
-
-        it.print(
-          125,
-          418,
-          id(font_mala),
-          Color(180, 195, 210),
-          TextAlign::TOP_LEFT,
-          "zrodlo: Open-Meteo"
-        );
-
-        if (now.is_valid()) {
-
-          it.strftime(
-            765,
-            350,
-            id(font_zegar),
-            Color(255, 255, 255),
-            TextAlign::TOP_RIGHT,
-            "%H:%M",
-            now
-          );
-
-        } else {
-
-          it.print(
-            765,
-            350,
-            id(font_zegar),
-            Color(255, 255, 255),
-            TextAlign::TOP_RIGHT,
-            "--:--"
-          );
-        }
-
-        it.print(
-          765,
-          425,
-          id(font_mala),
-          Color(130, 160, 190),
-          TextAlign::TOP_RIGHT,
-          "STRONA 3/3"
-        );
-
-        return;
-      }
-
-      it.fill(Color(18, 24, 38));
-
-      it.rectangle(
-        10,
-        10,
-        780,
-        460,
-        Color(45, 55, 72)
-      );
-
-      it.line(
-        10,
-        70,
-        790,
-        70,
-        Color(45, 55, 72)
-      );
-
-      it.print(
-        25,
-        20,
-        id(font_srednia),
-        Color(200, 210, 225),
-        TextAlign::TOP_LEFT,
-        "DASHBOARD"
-      );
-
-      if (id(wifi_ssid).has_state()) {
-
-        it.print(
-          285,
-          18,
-          id(font_srednia),
-          Color(72, 187, 120),
-          TextAlign::TOP_LEFT,
-          "WIFI OK"
-        );
-
-      } else {
-
-        it.print(
-          285,
-          18,
-          id(font_srednia),
-          Color(229, 62, 62),
-          TextAlign::TOP_LEFT,
-          "WIFI OFF"
-        );
-      }
-
-      if (!isnan(id(wifi_sila).state)) {
-
-        it.printf(
-          390,
-          20,
-          id(font_mala),
-          Color(180, 190, 205),
-          TextAlign::TOP_LEFT,
-          "%0.0f dBm",
-          id(wifi_sila).state
-        );
-      }
-
-      if (id(wifi_ip).has_state()) {
-
-        it.printf(
-          770,
-          20,
-          id(font_mala),
-          Color(90, 200, 250),
-          TextAlign::TOP_RIGHT,
-          "%s",
-          id(wifi_ip).state.c_str()
-        );
-      }
-
-      if (id(aktualna_strona) == 0) {
-
-        it.line(
-          400,
-          70,
-          400,
-          470,
-          Color(45, 55, 72)
-        );
-
-        it.line(
-          10,
-          270,
-          790,
-          270,
-          Color(45, 55, 72)
-        );
-
-        it.print(
-          770,
-          75,
-          id(font_mala),
-          Color(120, 130, 145),
-          TextAlign::TOP_RIGHT,
-          "STRONA 1/3"
-        );
-
-        it.print(
-          30,
-          90,
-          id(font_srednia),
-          Color(237, 137, 54),
-          TextAlign::TOP_LEFT,
-          "ROLETY OKIENNE"
-        );
-
-        it.print(
-          30,
-          130,
-          id(font_mala),
-          Color(160, 174, 192),
-          TextAlign::TOP_LEFT,
-          "okno 1 & okno 2"
-        );
-
-        it.rectangle(
-          30,
-          170,
-          100,
-          50,
-          Color(66, 153, 225)
-        );
-
-        it.print(
-          80,
-          185,
-          id(font_mala),
-          Color(255, 255, 255),
-          TextAlign::TOP_CENTER,
-          "OTWÓRZ"
-        );
-
-        it.rectangle(
-          140,
-          170,
-          100,
-          50,
-          Color(229, 62, 62)
-        );
-
-        it.print(
-          190,
-          185,
-          id(font_mala),
-          Color(255, 255, 255),
-          TextAlign::TOP_CENTER,
-          "STOP"
-        );
-
-        it.rectangle(
-          250,
-          170,
-          100,
-          50,
-          Color(66, 153, 225)
-        );
-
-        it.print(
-          300,
-          185,
-          id(font_mala),
-          Color(255, 255, 255),
-          TextAlign::TOP_CENTER,
-          "ZAMKNIJ"
-        );
-
-        it.print(
-          430,
-          90,
-          id(font_srednia),
-          Color(90, 200, 250),
-          TextAlign::TOP_LEFT,
-          "KLIMATYZACJA"
-        );
-
-        it.print(
-          430,
-          120,
-          id(font_mala),
-          Color(160, 174, 192),
-          TextAlign::TOP_LEFT,
-          "ROTENSO"
-        );
-
-        it.print(
-          535,
-          175,
-          id(font_duza),
-          Color(255, 255, 255),
-          TextAlign::TOP_CENTER,
-          "22°C"
-        );
-
-        it.print(
-          30,
-          290,
-          id(font_srednia),
-          Color(72, 187, 120),
-          TextAlign::TOP_LEFT,
-          "CZUJNIK ZIGBEE"
-        );
-
-        it.print(
-          30,
-          340,
-          id(font_duza),
-          Color(255, 255, 255),
-          TextAlign::TOP_LEFT,
-          "21.5 °C"
-        );
-
-        it.print(
-          30,
-          400,
-          id(font_srednia),
-          Color(160, 174, 192),
-          TextAlign::TOP_LEFT,
-          "Wilgotność: 55%"
-        );
-
-        it.rectangle(
-          420,
-          285,
-          360,
-          175,
-          Color(45, 55, 72)
-        );
-
-        it.print(
-          440,
-          295,
-          id(font_srednia),
-          Color(255, 170, 60),
-          TextAlign::TOP_LEFT,
-          "OGRZEWANIE"
-        );
-
-        it.print(
-          440,
-          325,
-          id(font_mala),
-          Color(160, 174, 192),
-          TextAlign::TOP_LEFT,
-          "TERMOSTAT"
-        );
-
-        it.filled_rectangle(
-          555,
-          340,
-          120,
-          80,
-          Color(235, 238, 242)
-        );
-
-        it.filled_circle(
-          615,
-          340,
-          40,
-          Color(235, 238, 242)
-        );
-
-        it.filled_circle(
-          615,
-          325,
-          18,
-          Color(155, 160, 165)
-        );
-
-        it.filled_circle(
-          615,
-          325,
-          10,
-          Color(205, 210, 215)
-        );
-
-        it.filled_rectangle(
-          570,
-          355,
-          90,
-          42,
-          Color(30, 35, 42)
-        );
-
-        it.print(
-          615,
-          357,
-          id(font_srednia),
-          Color(255, 255, 255),
-          TextAlign::TOP_CENTER,
-          "26°"
-        );
-
-        it.print(
-          440,
-          400,
-          id(font_mala),
-          Color(160, 174, 192),
-          TextAlign::TOP_LEFT,
-          "STATUS:"
-        );
-
-        it.print(
-          505,
-          400,
-          id(font_mala),
-          Color(100, 220, 130),
-          TextAlign::TOP_LEFT,
-          "GRZEJE"
-        );
-
-      } else if (id(aktualna_strona) == 1) {
-
-        it.print(
-          770,
-          75,
-          id(font_mala),
-          Color(120, 130, 145),
-          TextAlign::TOP_RIGHT,
-          "STRONA 2/3"
-        );
-
-        it.print(
-          400,
-          150,
-          id(font_duza),
-          Color(255, 255, 255),
-          TextAlign::TOP_CENTER,
-          "DRUGI KAFEL"
-        );
-
-        it.print(
-          400,
-          220,
-          id(font_srednia),
-          Color(160, 174, 192),
-          TextAlign::TOP_CENTER,
-          "Miejsce na kolejne"
-        );
-
-        it.print(
-          400,
-          250,
-          id(font_srednia),
-          Color(160, 174, 192),
-          TextAlign::TOP_CENTER,
-          "przyciski i sensory"
-        );
-      }
 
 touchscreen:
+
   - platform: gt911
-    id: panel_dotykowy
-    i2c_id: bus_i2c
+
+    id: ekran_dotykowy
 
     interrupt_pin: GPIO4
 
@@ -926,62 +291,484 @@ touchscreen:
       number: 1
 
     transform:
-      swap_xy: false
       mirror_x: false
       mirror_y: false
+      swap_xy: false
 
     on_touch:
-      - lambda: |-
-          int x = touch.x;
-          int y = touch.y;
+      then:
 
-          ESP_LOGI(
-            "TOUCH",
-            "X=%d Y=%d",
-            x,
-            y
+        - lambda: |-
+            int x = touch.x;
+            int y = touch.y;
+
+            if (x < 267) {
+              id(aktualna_strona) = 0;
+            }
+
+            else if (x < 534) {
+              id(aktualna_strona) = 1;
+            }
+
+            else {
+              id(aktualna_strona) = 2;
+            }
+
+            ESP_LOGI(
+              "touch",
+              "X=%d Y=%d strona=%d",
+              x,
+              y,
+              id(aktualna_strona)
+            );
+
+
+display:
+
+  - platform: mipi_rgb
+
+    id: ekran
+
+    model: ESP32-S3-TOUCH-LCD-4.3
+
+    rotation: 0
+
+    update_interval: 1s
+
+    reset_pin:
+      ch422g: ch422g_hub
+      number: 3
+
+    lambda: |-
+
+      it.fill(Color(0x101923));
+
+      auto now = id(czas).now();
+
+
+      if (id(aktualna_strona) == 0) {
+
+        it.print(
+          30,
+          25,
+          id(font_duzy),
+          Color(0xFFFFFF),
+          "DASHBOARD"
+        );
+
+        it.print(
+          30,
+          95,
+          id(font_sredni),
+          Color(0x00D8FF),
+          "PANEL GLOWNY"
+        );
+
+        it.print(
+          30,
+          145,
+          id(font_maly),
+          Color(0xFFFFFF),
+          "WIFI"
+        );
+
+        if (id(wifi_dbm).has_state()) {
+
+          it.printf(
+            90,
+            145,
+            id(font_maly),
+            Color(0x00FF80),
+            "%.0f dBm",
+            id(wifi_dbm).state
+          );
+        }
+
+        it.print(
+          30,
+          190,
+          id(font_maly),
+          Color(0xFFFFFF),
+          "IP"
+        );
+
+        if (id(wifi_ip).has_state()) {
+
+          it.print(
+            90,
+            190,
+            id(font_maly),
+            Color(0x00BFFF),
+            id(wifi_ip).state.c_str()
+          );
+        }
+
+        it.print(
+          30,
+          260,
+          id(font_sredni),
+          Color(0xFFFFFF),
+          "DOTKNIJ LEWEJ CZESCI"
+        );
+
+        it.print(
+          30,
+          300,
+          id(font_sredni),
+          Color(0xFFFFFF),
+          "STRONA 1"
+        );
+
+        it.print(
+          30,
+          410,
+          id(font_maly),
+          Color(0x808A96),
+          "STRONA 1/3"
+        );
+
+        if (now.is_valid()) {
+
+          it.strftime(
+            650,
+            30,
+            id(font_sredni),
+            Color(0xFFFFFF),
+            "%H:%M",
+            now
+          );
+        }
+      }
+
+
+      else if (id(aktualna_strona) == 1) {
+
+        it.print(
+          30,
+          25,
+          id(font_duzy),
+          Color(0xFFFFFF),
+          "DASHBOARD"
+        );
+
+        it.print(
+          30,
+          100,
+          id(font_sredni),
+          Color(0x00D8FF),
+          "INFORMACJE"
+        );
+
+        it.print(
+          30,
+          160,
+          id(font_sredni),
+          Color(0xFFFFFF),
+          "WIFI:"
+        );
+
+        if (id(wifi_dbm).has_state()) {
+
+          it.printf(
+            130,
+            160,
+            id(font_sredni),
+            Color(0x00FF80),
+            "%.0f dBm",
+            id(wifi_dbm).state
+          );
+        }
+
+        it.print(
+          30,
+          210,
+          id(font_sredni),
+          Color(0xFFFFFF),
+          "ADRES IP:"
+        );
+
+        if (id(wifi_ip).has_state()) {
+
+          it.print(
+            170,
+            210,
+            id(font_sredni),
+            Color(0x00BFFF),
+            id(wifi_ip).state.c_str()
+          );
+        }
+
+        it.print(
+          30,
+          280,
+          id(font_sredni),
+          Color(0xFFFFFF),
+          "POGODA JEST POBIERANA"
+        );
+
+        it.print(
+          30,
+          320,
+          id(font_maly),
+          Color(0xAAB4C0),
+          "Open-Meteo / Wejherowo"
+        );
+
+        it.print(
+          30,
+          410,
+          id(font_maly),
+          Color(0x808A96),
+          "STRONA 2/3"
+        );
+
+        if (now.is_valid()) {
+
+          it.strftime(
+            650,
+            30,
+            id(font_sredni),
+            Color(0xFFFFFF),
+            "%H:%M",
+            now
+          );
+        }
+      }
+
+
+      else {
+
+        it.print(
+          30,
+          20,
+          id(font_duzy),
+          Color(0x00D8FF),
+          "POGODA"
+        );
+
+
+        if (id(pogoda_dane_ok)) {
+
+          it.printf(
+            30,
+            95,
+            id(font_duzy),
+            Color(0xFFFFFF),
+            "%.1f °C",
+            id(pogoda_temperatura)
           );
 
-          if (id(aktualna_strona) == 2) {
+          it.print(
+            30,
+            155,
+            id(font_sredni),
+            Color(0x38A8FF),
+            "Wilgotnosc"
+          );
 
-            id(aktualna_strona) = 0;
+          it.printf(
+            180,
+            155,
+            id(font_sredni),
+            Color(0xFFFFFF),
+            "%.0f %%",
+            id(pogoda_wilgotnosc)
+          );
 
-          } else if (y <= 70) {
+          it.print(
+            30,
+            205,
+            id(font_sredni),
+            Color(0x38A8FF),
+            "Wiatr"
+          );
 
-            id(aktualna_strona) =
-              (id(aktualna_strona) + 1) % 3;
+          it.printf(
+            110,
+            205,
+            id(font_sredni),
+            Color(0xFFFFFF),
+            "%.1f km/h",
+            id(pogoda_wiatr)
+          );
 
-          } else if (id(aktualna_strona) == 0) {
+          it.print(
+            30,
+            255,
+            id(font_sredni),
+            Color(0xFFFFFF),
+            id(pogoda_opis).c_str()
+          );
 
-            if (
-              y >= 170 &&
-              y <= 220 &&
-              x >= 30 &&
-              x <= 130
-            ) {
 
-              ESP_LOGI(
-                "TOUCH",
-                "OTWORZ OKNA"
-              );
+          if (id(pogoda_kod) == 0) {
 
-            } else if (
-              y >= 170 &&
-              y <= 220 &&
-              x >= 140 &&
-              x <= 240
-            ) {
+            Color sun = Color(0xFFD21F);
+            Color rays = Color(0xFFB000);
 
-              ESP_LOGI(
-                "TOUCH",
-                "STOP ROLETY"
-              );
+            it.filled_circle(
+              625,
+              190,
+              55,
+              sun
+            );
 
-            } else if (
-              y >= 170 &&
-              y <= 220 &&
-              x >= 250 &&
-              x <= 350
-            ) {
+            it.line(
+              625,
+              105,
+              625,
+              80,
+              rays
+            );
 
-              ESP_LO
+            it.line(
+              625,
+              275,
+              625,
+              300,
+              rays
+            );
+
+            it.line(
+              540,
+              190,
+              515,
+              190,
+              rays
+            );
+
+            it.line(
+              710,
+              190,
+              735,
+              190,
+              rays
+            );
+
+            it.line(
+              565,
+              130,
+              545,
+              110,
+              rays
+            );
+
+            it.line(
+              685,
+              130,
+              705,
+              110,
+              rays
+            );
+
+            it.line(
+              565,
+              250,
+              545,
+              270,
+              rays
+            );
+
+            it.line(
+              685,
+              250,
+              705,
+              270,
+              rays
+            );
+
+            it.print(
+              555,
+              310,
+              id(font_sredni),
+              Color(0xFFD21F),
+              "SLONCE"
+            );
+          }
+
+
+          else {
+
+            it.image(
+              475,
+              100,
+              id(ikona_pogoda_duza)
+            );
+          }
+        }
+
+
+        else {
+
+          it.print(
+            30,
+            100,
+            id(font_sredni),
+            Color(0xFFFFFF),
+            "POBIERAM POGODE..."
+          );
+
+          it.image(
+            475,
+            100,
+            id(ikona_pogoda_duza)
+          );
+        }
+
+
+        it.line(
+          25,
+          350,
+          775,
+          350,
+          Color(0x334A60)
+        );
+
+
+        it.print(
+          30,
+          370,
+          id(font_maly),
+          Color(0xAAB4C0),
+          "ZRODLO"
+        );
+
+        it.print(
+          95,
+          370,
+          id(font_maly),
+          Color(0x00D8FF),
+          "OPEN-METEO"
+        );
+
+
+        if (now.is_valid()) {
+
+          it.strftime(
+            505,
+            370,
+            id(font_maly),
+            Color(0xAAB4C0),
+            "%d.%m.%Y",
+            now
+          );
+
+          it.strftime(
+            500,
+            405,
+            id(font_zegar),
+            Color(0xFFFFFF),
+            "%H:%M",
+            now
+          );
+        }
+
+
+        it.print(
+          30,
+          455,
+          id(font_maly),
+          Color(0x808A96),
+          "STRONA 3/3"
+        );
+      }
