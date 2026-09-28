@@ -132,34 +132,20 @@ time:
 font:
 
   - file: "Roboto-Regular.ttf"
-    id: font_42
-    size: 42
-    glyphs: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789:-./% "
+    id: font_duzy
+    size: 36
 
   - file: "Roboto-Regular.ttf"
-    id: font_32
-    size: 32
-    glyphs: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789:-./% "
+    id: font_sredni
+    size: 22
 
   - file: "Roboto-Regular.ttf"
-    id: font_24
-    size: 24
-    glyphs: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789:-./% "
+    id: font_maly
+    size: 16
 
   - file: "Roboto-Regular.ttf"
-    id: font_18
-    size: 18
-    glyphs: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789:-./% "
-
-  - file: "Roboto-Regular.ttf"
-    id: font_14
-    size: 14
-    glyphs: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789:-./% "
-
-  - file: "Roboto-Regular.ttf"
-    id: font_clock
+    id: font_zegar
     size: 56
-    glyphs: "0123456789:"
 
 
 image:
@@ -266,6 +252,7 @@ interval:
 
   - interval: 150ms
     then:
+
       - lambda: |-
           id(animacja)++;
 
@@ -276,6 +263,7 @@ interval:
 
   - interval: 10min
     then:
+
       - script.execute: pobierz_pogode
 
 
@@ -295,49 +283,45 @@ display:
 
       auto now = id(czas).now();
 
-      Color tlo = Color(0x08111F);
-      Color karta = Color(0x172B43);
-      Color obramowanie = Color(0x315274);
+      Color tlo = Color(0x091525);
+      Color karta = Color(0x142A42);
+      Color linia = Color(0x355675);
       Color bialy = Color(0xFFFFFF);
       Color niebieski = Color(0x35C8FF);
-      Color zielony = Color(0x55E58A);
-      Color zolty = Color(0xFFD34E);
 
 
-      // =========================================================
+      // =====================================================
       // STRONA 1
-      // =========================================================
+      // =====================================================
 
       if (id(aktualna_strona) == 0) {
 
         it.fill(tlo);
 
 
-        // GORA
-
         it.filled_rectangle(
           0,
           0,
           800,
-          48,
-          Color(0x0D1D30)
+          50,
+          Color(0x0C1D30)
         );
 
         it.print(
           20,
-          8,
-          id(font_24),
-          Color(0x35C8FF),
+          10,
+          id(font_sredni),
+          niebieski,
           "STRONA 1"
         );
 
         if (id(wifi_dbm).has_state()) {
 
           it.printf(
-            535,
-            10,
-            id(font_14),
-            Color(0xAFC6D9),
+            540,
+            12,
+            id(font_maly),
+            Color(0x65E58A),
             "%.0f dBm",
             id(wifi_dbm).state
           );
@@ -347,8 +331,8 @@ display:
 
           it.strftime(
             700,
-            8,
-            id(font_18),
+            10,
+            id(font_sredni),
             bialy,
             "%H:%M",
             now
@@ -356,388 +340,307 @@ display:
         }
 
 
-        // -------------------------------------------------------
-        // KAFEL 1 - LAMPA
-        // -------------------------------------------------------
-
-        it.rounded_rectangle(
-          15,
-          65,
-          245,
-          120,
-          10,
-          karta
-        );
+        // KAFEL 1
 
         it.rectangle(
           15,
           65,
-          245,
-          120,
-          obramowanie
+          250,
+          115,
+          linia
         );
 
-        // ikona lampy
-
-        it.filled_circle(
-          75,
-          108,
-          23,
-          Color(0xFFE8A83A)
+        it.filled_rectangle(
+          17,
+          67,
+          246,
+          111,
+          karta
         );
-
-        it.line(75, 78, 75, 67, zolty);
-        it.line(52, 86, 44, 78, zolty);
-        it.line(98, 86, 106, 78, zolty);
-
-        it.line(48, 108, 37, 108, zolty);
-        it.line(102, 108, 113, 108, zolty);
 
         it.print(
-          125,
-          92,
-          id(font_18),
+          35,
+          82,
+          id(font_sredni),
           bialy,
-          "Oswietlenie"
+          "OSWIETLENIE"
+        );
+
+        it.filled_circle(
+          70,
+          135,
+          22,
+          Color(0xFFD34E)
         );
 
         it.print(
           225,
-          150,
-          id(font_18),
+          145,
+          id(font_sredni),
           Color(0x8FA8C0),
           ">"
         );
 
 
-        // -------------------------------------------------------
-        // KAFEL 2 - TEMPERATURA
-        // -------------------------------------------------------
-
-        it.rounded_rectangle(
-          275,
-          65,
-          245,
-          120,
-          10,
-          karta
-        );
+        // KAFEL 2
 
         it.rectangle(
           275,
           65,
-          245,
-          120,
-          obramowanie
+          250,
+          115,
+          linia
         );
 
-        // termometr
-
-        it.line(
-          325,
-          87,
-          325,
-          125,
-          Color(0xD9F4FF)
-        );
-
-        it.filled_circle(
-          325,
-          132,
-          10,
-          Color(0x51C9FF)
+        it.filled_rectangle(
+          277,
+          67,
+          246,
+          111,
+          karta
         );
 
         it.print(
-          350,
-          92,
-          id(font_18),
+          295,
+          82,
+          id(font_sredni),
           bialy,
+          "TEMPERATURA"
+        );
+
+        it.print(
+          295,
+          125,
+          id(font_sredni),
+          Color(0x5CCBFF),
           "22.5 C"
         );
 
         it.print(
-          350,
-          125,
-          id(font_14),
-          Color(0x9DB4C8),
-          "Temperatura"
-        );
-
-        it.print(
           485,
-          150,
-          id(font_18),
+          145,
+          id(font_sredni),
           Color(0x8FA8C0),
           ">"
         );
 
 
-        // -------------------------------------------------------
-        // KAFEL 3 - WILGOTNOSC
-        // -------------------------------------------------------
-
-        it.rounded_rectangle(
-          15,
-          200,
-          245,
-          120,
-          10,
-          karta
-        );
+        // KAFEL 3
 
         it.rectangle(
           15,
-          200,
-          245,
-          120,
-          obramowanie
+          195,
+          250,
+          115,
+          linia
         );
 
-        it.filled_circle(
-          75,
-          245,
-          25,
-          Color(0x43D79B)
+        it.filled_rectangle(
+          17,
+          197,
+          246,
+          111,
+          karta
         );
 
         it.print(
-          125,
-          225,
-          id(font_18),
+          35,
+          212,
+          id(font_sredni),
           bialy,
+          "WILGOTNOSC"
+        );
+
+        it.print(
+          35,
+          255,
+          id(font_sredni),
+          Color(0x48D99A),
           "59%"
         );
 
         it.print(
-          40,
-          280,
-          id(font_14),
-          Color(0xD4E5F0),
-          "Wilgotnosc"
-        );
-
-        it.print(
           225,
-          285,
-          id(font_18),
+          275,
+          id(font_sredni),
           Color(0x8FA8C0),
           ">"
         );
 
 
-        // -------------------------------------------------------
-        // KAFEL 4 - GNIAZDKO
-        // -------------------------------------------------------
-
-        it.rounded_rectangle(
-          275,
-          200,
-          245,
-          120,
-          10,
-          karta
-        );
+        // KAFEL 4
 
         it.rectangle(
           275,
-          200,
-          245,
-          120,
-          obramowanie
+          195,
+          250,
+          115,
+          linia
         );
-
-        // ikona wtyczki
 
         it.filled_rectangle(
-          335,
-          225,
-          35,
-          42,
-          Color(0xDDEAF5)
-        );
-
-        it.line(
-          345,
-          215,
-          345,
-          228,
-          Color(0xDDEAF5)
-        );
-
-        it.line(
-          360,
-          215,
-          360,
-          228,
-          Color(0xDDEAF5)
+          277,
+          197,
+          246,
+          111,
+          karta
         );
 
         it.print(
-          395,
-          230,
-          id(font_18),
+          295,
+          212,
+          id(font_sredni),
           bialy,
-          "Gniazdko"
+          "GNIAZDKO"
+        );
+
+        it.print(
+          295,
+          255,
+          id(font_sredni),
+          Color(0xDDEAF5),
+          "ON"
         );
 
         it.print(
           485,
-          285,
-          id(font_18),
+          275,
+          id(font_sredni),
           Color(0x8FA8C0),
           ">"
         );
 
 
-        // -------------------------------------------------------
-        // KAFEL 5 - WENTYLACJA
-        // -------------------------------------------------------
-
-        it.rounded_rectangle(
-          15,
-          335,
-          245,
-          120,
-          10,
-          karta
-        );
+        // KAFEL 5
 
         it.rectangle(
           15,
-          335,
-          245,
-          120,
-          obramowanie
+          325,
+          250,
+          115,
+          linia
         );
 
-        // wiatraczek
-
-        it.filled_circle(
-          75,
-          385,
-          10,
-          Color(0x48BFF0)
-        );
-
-        it.filled_circle(
-          75,
-          360,
-          12,
-          Color(0x48BFF0)
-        );
-
-        it.filled_circle(
-          100,
-          385,
-          12,
-          Color(0x48BFF0)
-        );
-
-        it.filled_circle(
-          75,
-          410,
-          12,
-          Color(0x48BFF0)
-        );
-
-        it.filled_circle(
-          50,
-          385,
-          12,
-          Color(0x48BFF0)
+        it.filled_rectangle(
+          17,
+          327,
+          246,
+          111,
+          karta
         );
 
         it.print(
-          125,
-          370,
-          id(font_18),
+          35,
+          342,
+          id(font_sredni),
           bialy,
-          "Wentylacja"
+          "WENTYLACJA"
         );
 
-        it.print(
-          225,
-          420,
-          id(font_18),
-          Color(0x8FA8C0),
-          ">"
+        it.filled_circle(
+          70,
+          395,
+          12,
+          Color(0x42C8F2)
         );
 
-
-        // -------------------------------------------------------
-        // KAFEL 6 - USTAWIENIA
-        // -------------------------------------------------------
-
-        it.rounded_rectangle(
-          275,
-          335,
-          245,
-          120,
+        it.filled_circle(
+          70,
+          370,
           10,
-          karta
+          Color(0x42C8F2)
         );
+
+        it.filled_circle(
+          95,
+          395,
+          10,
+          Color(0x42C8F2)
+        );
+
+        it.filled_circle(
+          70,
+          420,
+          10,
+          Color(0x42C8F2)
+        );
+
+
+        // KAFEL 6
 
         it.rectangle(
           275,
-          335,
-          245,
-          120,
-          obramowanie
+          325,
+          250,
+          115,
+          linia
         );
 
-        // trybik
+        it.filled_rectangle(
+          277,
+          327,
+          246,
+          111,
+          karta
+        );
+
+        it.print(
+          295,
+          342,
+          id(font_sredni),
+          bialy,
+          "USTAWIENIA"
+        );
 
         it.filled_circle(
-          335,
+          345,
           395,
           25,
-          Color(0xC5D2DE)
+          Color(0xC7D4DF)
         );
 
         it.filled_circle(
-          335,
+          345,
           395,
           10,
           karta
         );
 
-        it.print(
-          390,
-          370,
-          id(font_18),
-          bialy,
-          "Ustawienia"
+
+        it.filled_circle(
+          360,
+          465,
+          7,
+          Color(0x35C8FF)
+        );
+
+        it.filled_circle(
+          385,
+          465,
+          7,
+          Color(0x66798A)
+        );
+
+        it.filled_circle(
+          410,
+          465,
+          7,
+          Color(0x66798A)
         );
 
         it.print(
-          485,
-          420,
-          id(font_18),
-          Color(0x8FA8C0),
-          ">"
-        );
-
-
-        // KROPKI STRON
-
-        it.filled_circle(360, 470, 7, Color(0x27B9FF));
-        it.filled_circle(385, 470, 7, Color(0x8799A9));
-        it.filled_circle(410, 470, 7, Color(0x8799A9));
-
-        it.print(
-          700,
-          460,
-          id(font_14),
+          720,
+          450,
+          id(font_maly),
           Color(0x8097AC),
           "1/3"
         );
       }
 
 
-      // =========================================================
+      // =====================================================
       // STRONA 2
-      // =========================================================
+      // =====================================================
 
       else if (id(aktualna_strona) == 1) {
 
@@ -748,25 +651,25 @@ display:
           0,
           0,
           800,
-          48,
-          Color(0x0D1D30)
+          50,
+          Color(0x0C1D30)
         );
 
         it.print(
           20,
-          8,
-          id(font_24),
-          Color(0x42D67B),
+          10,
+          id(font_sredni),
+          Color(0x4DE58A),
           "STRONA 2"
         );
 
         if (id(wifi_dbm).has_state()) {
 
           it.printf(
-            535,
-            10,
-            id(font_14),
-            Color(0xAFC6D9),
+            540,
+            12,
+            id(font_maly),
+            Color(0x65E58A),
             "%.0f dBm",
             id(wifi_dbm).state
           );
@@ -776,8 +679,8 @@ display:
 
           it.strftime(
             700,
-            8,
-            id(font_18),
+            10,
+            id(font_sredni),
             bialy,
             "%H:%M",
             now
@@ -785,357 +688,890 @@ display:
         }
 
 
-        // KAFEL 1 - DOM
-
-        it.rounded_rectangle(
-          15,
-          65,
-          245,
-          120,
-          10,
-          karta
-        );
+        // DOM
 
         it.rectangle(
           15,
           65,
-          245,
-          120,
-          obramowanie
+          250,
+          115,
+          linia
         );
 
-        // dom
+        it.filled_rectangle(
+          17,
+          67,
+          246,
+          111,
+          karta
+        );
+
+        it.print(
+          35,
+          82,
+          id(font_sredni),
+          bialy,
+          "TRYBY DOMU"
+        );
 
         it.filled_triangle(
           55,
-          110,
-          90,
-          78,
-          125,
-          110,
-          Color(0xE2EAF5)
-        );
-
-        it.filled_rectangle(
-          68,
-          105,
-          45,
-          35,
-          Color(0xE2EAF5)
-        );
-
-        it.print(
           135,
-          92,
-          id(font_18),
-          bialy,
-          "Tryby domu"
-        );
-
-        it.print(
-          225,
-          150,
-          id(font_18),
-          Color(0x8FA8C0),
-          ">"
-        );
-
-
-        // KAFEL 2 - ALARM
-
-        it.rounded_rectangle(
-          275,
-          65,
-          245,
-          120,
-          10,
-          karta
-        );
-
-        it.rectangle(
-          275,
-          65,
-          245,
-          120,
-          obramowanie
-        );
-
-        it.rectangle(
-          330,
-          90,
-          35,
-          45,
-          Color(0xDCEAF5)
-        );
-
-        it.print(
-          390,
-          92,
-          id(font_18),
-          bialy,
-          "Alarm"
-        );
-
-        it.print(
-          485,
-          150,
-          id(font_18),
-          Color(0x8FA8C0),
-          ">"
-        );
-
-
-        // KAFEL 3 - KAMERY
-
-        it.rounded_rectangle(
-          15,
-          200,
-          245,
-          120,
-          10,
-          karta
-        );
-
-        it.rectangle(
-          15,
-          200,
-          245,
-          120,
-          obramowanie
+          85,
+          105,
+          115,
+          135,
+          Color(0xE7EFF8)
         );
 
         it.filled_rectangle(
-          55,
-          235,
-          60,
+          65,
+          130,
+          40,
+          30,
+          Color(0xE7EFF8)
+        );
+
+
+        // ALARM
+
+        it.rectangle(
+          275,
+          65,
+          250,
+          115,
+          linia
+        );
+
+        it.filled_rectangle(
+          277,
+          67,
+          246,
+          111,
+          karta
+        );
+
+        it.print(
+          295,
+          82,
+          id(font_sredni),
+          bialy,
+          "ALARM"
+        );
+
+        it.rectangle(
+          350,
+          110,
+          45,
+          45,
+          Color(0xDDEAF5)
+        );
+
+
+        // KAMERY
+
+        it.rectangle(
+          15,
+          195,
+          250,
+          115,
+          linia
+        );
+
+        it.filled_rectangle(
+          17,
+          197,
+          246,
+          111,
+          karta
+        );
+
+        it.print(
           35,
-          Color(0xD9E7F2)
+          212,
+          id(font_sredni),
+          bialy,
+          "KAMERY"
+        );
+
+        it.filled_rectangle(
+          45,
+          255,
+          65,
+          35,
+          Color(0xDDEAF5)
         );
 
         it.filled_circle(
-          108,
-          252,
-          10,
-          Color(0x4DC7FF)
-        );
-
-        it.print(
-          135,
-          230,
-          id(font_18),
-          bialy,
-          "Kamery"
-        );
-
-        it.print(
-          225,
-          285,
-          id(font_18),
-          Color(0x8FA8C0),
-          ">"
+          100,
+          272,
+          9,
+          Color(0x45C9FF)
         );
 
 
-        // KAFEL 4 - FOTOWOLTAIKA
-
-        it.rounded_rectangle(
-          275,
-          200,
-          245,
-          120,
-          10,
-          karta
-        );
+        // FOTOWOLTAIKA
 
         it.rectangle(
           275,
-          200,
-          245,
-          120,
-          obramowanie
+          195,
+          250,
+          115,
+          linia
         );
-
-        // panel
 
         it.filled_rectangle(
-          325,
-          225,
-          65,
-          45,
-          Color(0x72D3D8)
-        );
-
-        it.line(
-          347,
-          225,
-          347,
-          270,
-          Color(0x1D6072)
-        );
-
-        it.line(
-          369,
-          225,
-          369,
-          270,
-          Color(0x1D6072)
-        );
-
-        it.line(
-          325,
-          247,
-          390,
-          247,
-          Color(0x1D6072)
-        );
-
-        it.print(
-          405,
-          230,
-          id(font_18),
-          bialy,
-          "Fotowoltaika"
-        );
-
-
-        // KAFEL 5 - STATYSTYKI
-
-        it.rounded_rectangle(
-          15,
-          335,
-          245,
-          120,
-          10,
+          277,
+          197,
+          246,
+          111,
           karta
         );
 
-        it.rectangle(
-          15,
-          335,
-          245,
-          120,
-          obramowanie
+        it.print(
+          295,
+          212,
+          id(font_sredni),
+          bialy,
+          "FOTOWOLTAIKA"
         );
 
         it.filled_rectangle(
-          55,
-          390,
+          325,
+          255,
+          70,
+          35,
+          Color(0x54C9D6)
+        );
+
+
+        // STATYSTYKI
+
+        it.rectangle(
+          15,
+          325,
+          250,
+          115,
+          linia
+        );
+
+        it.filled_rectangle(
+          17,
+          327,
+          246,
+          111,
+          karta
+        );
+
+        it.print(
+          35,
+          342,
+          id(font_sredni),
+          bialy,
+          "STATYSTYKI"
+        );
+
+        it.filled_rectangle(
+          50,
+          395,
           12,
           25,
-          Color(0x62D6E9)
+          Color(0x50CBE8)
         );
 
         it.filled_rectangle(
-          75,
-          375,
+          70,
+          380,
           12,
           40,
-          Color(0x62D6E9)
+          Color(0x50CBE8)
         );
 
         it.filled_rectangle(
-          95,
-          360,
+          90,
+          365,
           12,
           55,
-          Color(0x62D6E9)
-        );
-
-        it.print(
-          130,
-          370,
-          id(font_18),
-          bialy,
-          "Statystyki"
+          Color(0x50CBE8)
         );
 
 
-        // KAFEL 6 - NARZEDZIA
-
-        it.rounded_rectangle(
-          275,
-          335,
-          245,
-          120,
-          10,
-          karta
-        );
+        // NARZEDZIA
 
         it.rectangle(
           275,
-          335,
-          245,
-          120,
-          obramowanie
+          325,
+          250,
+          115,
+          linia
+        );
+
+        it.filled_rectangle(
+          277,
+          327,
+          246,
+          111,
+          karta
+        );
+
+        it.print(
+          295,
+          342,
+          id(font_sredni),
+          bialy,
+          "NARZEDZIA"
         );
 
         it.line(
           330,
           410,
-          385,
+          390,
           355,
-          Color(0xDCEAF5)
+          Color(0xDDEAF5)
         );
 
         it.filled_circle(
           330,
           410,
-          12,
-          Color(0xDCEAF5)
+          11,
+          Color(0xDDEAF5)
+        );
+
+        it.filled_circle(
+          390,
+          355,
+          11,
+          Color(0xDDEAF5)
+        );
+
+
+        it.filled_circle(
+          360,
+          465,
+          7,
+          Color(0x66798A)
         );
 
         it.filled_circle(
           385,
-          355,
-          12,
-          Color(0xDCEAF5)
+          465,
+          7,
+          Color(0x35C8FF)
+        );
+
+        it.filled_circle(
+          410,
+          465,
+          7,
+          Color(0x66798A)
         );
 
         it.print(
-          405,
-          370,
-          id(font_18),
-          bialy,
-          "Narzedzia"
-        );
-
-
-        it.filled_circle(360, 470, 7, Color(0x8799A9));
-        it.filled_circle(385, 470, 7, Color(0x27B9FF));
-        it.filled_circle(410, 470, 7, Color(0x8799A9));
-
-        it.print(
-          700,
-          460,
-          id(font_14),
+          720,
+          450,
+          id(font_maly),
           Color(0x8097AC),
           "2/3"
         );
       }
 
 
-      // =========================================================
+      // =====================================================
       // STRONA 3 - POGODA
-      // =========================================================
+      // =====================================================
 
       else {
 
         // NIEBO
 
-        it.fill(Color(0x2B9DD5));
+        it.fill(Color(0x248FCC));
 
         it.filled_rectangle(
           0,
           0,
           800,
-          90,
-          Color(0x177BB7)
+          80,
+          Color(0x1675B2)
         );
 
         it.filled_rectangle(
           0,
-          90,
+          80,
           800,
-          100,
-          Color(0x2390C9)
- 
+          90,
+          Color(0x2088C0)
+        );
+
+        it.filled_rectangle(
+          0,
+          170,
+          800,
+          120,
+          Color(0x319ED2)
+        );
+
+
+        // GORA
+
+        it.print(
+          25,
+          10,
+          id(font_sredni),
+          bialy,
+          "POGODA"
+        );
+
+        if (now.is_valid()) {
+
+          it.strftime(
+            700,
+            10,
+            id(font_sredni),
+            bialy,
+            "%H:%M",
+            now
+          );
+        }
+
+
+        if (id(pogoda_dane_ok)) {
+
+          it.printf(
+            25,
+            65,
+            id(font_duzy),
+            bialy,
+            "%.0f C",
+            id(pogoda_temperatura)
+          );
+
+          it.print(
+            30,
+            115,
+            id(font_sredni),
+            bialy,
+            id(pogoda_opis).c_str()
+          );
+
+
+          // =================================================
+          // SLONCE
+          // =================================================
+
+          if (id(pogoda_kod) == 0) {
+
+            int p = id(animacja);
+
+            int sun_x = 620;
+            int sun_y = 160;
+
+            int promien = 50;
+
+            if (p < 180) {
+              promien = 50 + p / 30;
+            }
+            else {
+              promien = 56 - (p - 180) / 30;
+            }
+
+
+            // POSWIATA
+
+            it.filled_circle(
+              sun_x,
+              sun_y,
+              promien + 18,
+              Color(0x6BD0EC)
+            );
+
+
+            // PROMIENIE - 4 RUCHOME POZYCJE
+
+            int faza = (p / 45) % 4;
+
+
+            if (faza == 0) {
+
+              it.line(
+                sun_x - 90,
+                sun_y,
+                sun_x - 65,
+                sun_y,
+                Color(0xFFD33F)
+              );
+
+              it.line(
+                sun_x + 65,
+                sun_y,
+                sun_x + 90,
+                sun_y,
+                Color(0xFFD33F)
+              );
+
+              it.line(
+                sun_x,
+                sun_y - 90,
+                sun_x,
+                sun_y - 65,
+                Color(0xFFD33F)
+              );
+
+              it.line(
+                sun_x,
+                sun_y + 65,
+                sun_x,
+                sun_y + 90,
+                Color(0xFFD33F)
+              );
+            }
+
+
+            else if (faza == 1) {
+
+              it.line(
+                sun_x - 70,
+                sun_y - 70,
+                sun_x - 50,
+                sun_y - 50,
+                Color(0xFFD33F)
+              );
+
+              it.line(
+                sun_x + 50,
+                sun_y + 50,
+                sun_x + 70,
+                sun_y + 70,
+                Color(0xFFD33F)
+              );
+
+              it.line(
+                sun_x + 70,
+                sun_y - 70,
+                sun_x + 50,
+                sun_y - 50,
+                Color(0xFFD33F)
+              );
+
+              it.line(
+                sun_x - 50,
+                sun_y + 50,
+                sun_x - 70,
+                sun_y + 70,
+                Color(0xFFD33F)
+              );
+            }
+
+
+            else if (faza == 2) {
+
+              it.line(
+                sun_x - 90,
+                sun_y,
+                sun_x - 65,
+                sun_y,
+                Color(0xFFE7A72E)
+              );
+
+              it.line(
+                sun_x + 65,
+                sun_y,
+                sun_x + 90,
+                sun_y,
+                Color(0xFFE7A72E)
+              );
+
+              it.line(
+                sun_x,
+                sun_y - 90,
+                sun_x,
+                sun_y - 65,
+                Color(0xFFE7A72E)
+              );
+
+              it.line(
+                sun_x,
+                sun_y + 65,
+                sun_x,
+                sun_y + 90,
+                Color(0xFFE7A72E)
+              );
+            }
+
+
+            else {
+
+              it.line(
+                sun_x - 70,
+                sun_y - 70,
+                sun_x - 50,
+                sun_y - 50,
+                Color(0xFFE7A72E)
+              );
+
+              it.line(
+                sun_x + 50,
+                sun_y + 50,
+                sun_x + 70,
+                sun_y + 70,
+                Color(0xFFE7A72E)
+              );
+
+              it.line(
+                sun_x + 70,
+                sun_y - 70,
+                sun_x + 50,
+                sun_y - 50,
+                Color(0xFFE7A72E)
+              );
+
+              it.line(
+                sun_x - 50,
+                sun_y + 50,
+                sun_x - 70,
+                sun_y + 70,
+                Color(0xFFE7A72E)
+              );
+            }
+
+
+            // SLONCE
+
+            it.filled_circle(
+              sun_x,
+              sun_y,
+              promien,
+              Color(0xFFD52D25)
+            );
+
+            it.filled_circle(
+              sun_x,
+              sun_y,
+              promien - 7,
+              Color(0xFFDCA72E)
+            );
+
+
+            // LEKKA CHMURA
+
+            int chmura = 430 + ((p / 4) % 120);
+
+            if (chmura > 680) {
+              chmura = 430;
+            }
+
+            it.filled_circle(
+              chmura,
+              230,
+              25,
+              Color(0xD5E6EE)
+            );
+
+            it.filled_circle(
+              chmura + 32,
+              218,
+              34,
+              Color(0xF0F6F9)
+            );
+
+            it.filled_circle(
+              chmura + 68,
+              230,
+              24,
+              Color(0xD5E6EE)
+            );
+
+            it.filled_rectangle(
+              chmura - 15,
+              230,
+              100,
+              25,
+              Color(0xD5E6EE)
+            );
+          }
+
+
+          else {
+
+            it.image(
+              500,
+              80,
+              id(ikona_pogoda_duza)
+            );
+          }
+
+
+          // DANE
+
+          it.print(
+            25,
+            195,
+            id(font_maly),
+            Color(0xE1F5FF),
+            "Wilgotnosc"
+          );
+
+          it.printf(
+            130,
+            192,
+            id(font_sredni),
+            bialy,
+            "%.0f %%",
+            id(pogoda_wilgotnosc)
+          );
+
+
+          it.print(
+            25,
+            230,
+            id(font_maly),
+            Color(0xE1F5FF),
+            "Wiatr"
+          );
+
+          it.printf(
+            90,
+            227,
+            id(font_sredni),
+            bialy,
+            "%.0f km/h",
+            id(pogoda_wiatr)
+          );
+
+
+          it.print(
+            25,
+            265,
+            id(font_sredni),
+            bialy,
+            "WEJHEROWO"
+          );
+
+
+          // DOLNY PASEK
+
+          it.line(
+            20,
+            310,
+            780,
+            310,
+            Color(0x8BCFE8)
+          );
+
+
+          // DNI
+
+          it.rectangle(
+            15,
+            325,
+            145,
+            80,
+            Color(0x2B7FB0)
+          );
+
+          it.print(
+            28,
+            335,
+            id(font_maly),
+            bialy,
+            "DZISIAJ"
+          );
+
+          it.print(
+            28,
+            365,
+            id(font_sredni),
+            bialy,
+            "SLONCE"
+          );
+
+
+          it.rectangle(
+            170,
+            325,
+            145,
+            80,
+            Color(0x2B7FB0)
+          );
+
+          it.print(
+            183,
+            335,
+            id(font_maly),
+            bialy,
+            "JUTRO"
+          );
+
+          it.print(
+            183,
+            365,
+            id(font_sredni),
+            bialy,
+            "18 C"
+          );
+
+
+          it.rectangle(
+            325,
+            325,
+            145,
+            80,
+            Color(0x2B7FB0)
+          );
+
+          it.print(
+            338,
+            335,
+            id(font_maly),
+            bialy,
+            "PIATEK"
+          );
+
+          it.print(
+            338,
+            365,
+            id(font_sredni),
+            bialy,
+            "17 C"
+          );
+
+
+          it.rectangle(
+            480,
+            325,
+            145,
+            80,
+            Color(0x2B7FB0)
+          );
+
+          it.print(
+            493,
+            335,
+            id(font_maly),
+            bialy,
+            "SOBOTA"
+          );
+
+          it.print(
+            493,
+            365,
+            id(font_sredni),
+            bialy,
+            "19 C"
+          );
+
+
+          it.rectangle(
+            635,
+            325,
+            145,
+            80,
+            Color(0x2B7FB0)
+          );
+
+          it.print(
+            648,
+            335,
+            id(font_maly),
+            bialy,
+            "NIEDZIELA"
+          );
+
+          it.print(
+            648,
+            365,
+            id(font_sredni),
+            bialy,
+            "20 C"
+          );
+
+
+        } else {
+
+          it.print(
+            25,
+            190,
+            id(font_sredni),
+            bialy,
+            "POBIERAM POGODE..."
+          );
+        }
+
+
+        // KROPKI
+
+        it.filled_circle(
+          360,
+          440,
+          7,
+          Color(0x65798B)
+        );
+
+        it.filled_circle(
+          385,
+          440,
+          7,
+          Color(0x65798B)
+        );
+
+        it.filled_circle(
+          410,
+          440,
+          7,
+          Color(0x35C8FF)
+        );
+
+
+        it.print(
+          720,
+          445,
+          id(font_maly),
+          Color(0xD8F3FF),
+          "3/3"
+        );
+      }
+
+
+touchscreen:
+
+  - platform: gt911
+
+    id: ekran_dotykowy
+
+    display: ekran
+
+    interrupt_pin: GPIO4
+
+    reset_pin:
+      ch422g: ch422g_hub
+      number: 1
+
+    transform:
+      mirror_x: false
+      mirror_y: false
+      swap_xy: false
+
+    on_touch:
+
+      then:
+
+        - lambda: |-
+            int x = touch.x;
+            int y = touch.y;
+
+            if (x < 267) {
+              id(aktualna_strona) = 0;
+            }
+            else if (x < 534) {
+              id(aktualna_strona) = 1;
+            }
+            else {
+              id(aktualna_strona) = 2;
+            }
+
+            ESP_LOGI(
+              "touch",
+              "X=%d Y=%d -> STRONA %d",
+              x,
+              y,
+              id(aktualna_strona)
+            );
