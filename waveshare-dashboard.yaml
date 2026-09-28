@@ -129,39 +129,32 @@ font:
     glyphsets:
       - GF_Latin_Core
 
-image:
-  - platform: animation
-    file: "pogoda_slonecznie.gif"
+animation:
+  - file: "pogoda_slonecznie.gif"
     id: animacja_slonecznie
     type: RGB565
 
-  - platform: animation
-    file: "pogoda_noc.gif"
+  - file: "pogoda_noc.gif"
     id: animacja_noc
     type: RGB565
 
-  - platform: animation
-    file: "pogoda_zachmurzenie.gif"
+  - file: "pogoda_zachmurzenie.gif"
     id: animacja_zachmurzenie
     type: RGB565
 
-  - platform: animation
-    file: "pogoda_deszcz.gif"
+  - file: "pogoda_deszcz.gif"
     id: animacja_deszcz
     type: RGB565
 
-  - platform: animation
-    file: "pogoda_snieg.gif"
+  - file: "pogoda_snieg.gif"
     id: animacja_snieg
     type: RGB565
 
-  - platform: animation
-    file: "pogoda_burza.gif"
+  - file: "pogoda_burza.gif"
     id: animacja_burza
     type: RGB565
 
-  - platform: animation
-    file: "pogoda_mgla.gif"
+  - file: "pogoda_mgla.gif"
     id: animacja_mgla
     type: RGB565
 
@@ -1024,4 +1017,13 @@ touchscreen:
             if (
               x >= 420 &&
               x <= 780 &&
-              
+              y >= 285 &&
+              y <= 460
+            ) {
+
+              ESP_LOGI(
+                "TOUCH",
+                "OGRZEWANIE"
+              );
+            }
+   
