@@ -129,17 +129,17 @@ font:
   - file: "Roboto-Regular.ttf"
     id: font_duzy
     size: 42
-    glyphs: "ąćęłńóśźżĄĆĘŁŃÓŚŹŻ0123456789°C%:-./"
+    glyphs: "0123456789°C%:-./"
 
   - file: "Roboto-Regular.ttf"
     id: font_sredni
     size: 22
-    glyphs: "ąćęłńóśźżĄĆĘŁŃÓŚŹŻ0123456789°C%:-./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz "
+    glyphs: "ąćęłńóśźżĄĆĘŁŃÓŚŹŻ0123456789°%:-./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz "
 
   - file: "Roboto-Regular.ttf"
     id: font_maly
     size: 16
-    glyphs: "ąćęłńóśźżĄĆĘŁŃÓŚŹŻ0123456789°C%:-./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz "
+    glyphs: "ąćęłńóśźżĄĆĘŁŃÓŚŹŻ0123456789°%:-./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz "
 
   - file: "Roboto-Regular.ttf"
     id: font_zegar
