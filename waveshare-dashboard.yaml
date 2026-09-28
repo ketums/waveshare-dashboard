@@ -12,6 +12,8 @@ esp32:
   board: esp32-s3-devkitc-1
   variant: esp32s3
   flash_size: 16MB
+  partitions: partitions.csv
+
   framework:
     type: esp-idf
 
@@ -23,9 +25,6 @@ logger:
   level: DEBUG
 
 api:
-
-ota:
-  - platform: esphome
 
 wifi:
   ssid: "skrapi 2,4GHZ"
@@ -364,7 +363,7 @@ display:
           id(font_mala),
           Color(120, 130, 145),
           TextAlign::TOP_RIGHT,
-          "STRONA 1/3"
+          "STRONA 1/2"
         );
 
         it.line(
@@ -630,44 +629,6 @@ display:
           "GRZEJE"
         );
 
-      } else if (id(aktualna_strona) == 1) {
-
-        it.print(
-          770,
-          75,
-          id(font_mala),
-          Color(120, 130, 145),
-          TextAlign::TOP_RIGHT,
-          "STRONA 2/3"
-        );
-
-        it.print(
-          400,
-          150,
-          id(font_duza),
-          Color(255, 255, 255),
-          TextAlign::TOP_CENTER,
-          "DRUGI KAFEL"
-        );
-
-        it.print(
-          400,
-          220,
-          id(font_srednia),
-          Color(160, 174, 192),
-          TextAlign::TOP_CENTER,
-          "Miejsce na kolejne"
-        );
-
-        it.print(
-          400,
-          250,
-          id(font_srednia),
-          Color(160, 174, 192),
-          TextAlign::TOP_CENTER,
-          "przyciski i sensory"
-        );
-
       } else {
 
         it.print(
@@ -676,7 +637,7 @@ display:
           id(font_mala),
           Color(120, 130, 145),
           TextAlign::TOP_RIGHT,
-          "STRONA 3/3"
+          "STRONA 2/2"
         );
 
         it.print(
@@ -937,7 +898,7 @@ display:
           id(font_mala),
           Color(120, 130, 145),
           TextAlign::BOTTOM_RIGHT,
-          "STRONA 3/3"
+          "STRONA 2/2"
         );
       }
 
@@ -961,5 +922,5 @@ touchscreen:
         - lambda: |-
             if (touch.y <= 70) {
               id(aktualna_strona) =
-                (id(aktualna_strona) + 1) % 3;
+                (id(aktualna_strona) + 1) % 2;
             }
