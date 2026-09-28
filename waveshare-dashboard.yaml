@@ -62,12 +62,12 @@ globals:
     restore_value: no
     initial_value: '-1'
 
-  - id: pogoda_ok
-    type: bool
+  - id: pora_dnia
+    type: int
     restore_value: no
-    initial_value: 'false'
+    initial_value: '1'
 
-  - id: animacja_ikony
+  - id: pogoda_ok
     type: bool
     restore_value: no
     initial_value: 'false'
@@ -130,21 +130,46 @@ font:
       - GF_Latin_Core
 
 image:
-  - file: "weather_partly_cloudy.png"
-    id: ikona_pogoda_duza
+  - platform: animation
+    file: "pogoda_slonecznie.gif"
+    id: animacja_slonecznie
     type: RGB565
-    transparency: alpha_channel
 
-  - file: "weather_partly_cloudy_small.png"
-    id: ikona_pogoda_mala
+  - platform: animation
+    file: "pogoda_noc.gif"
+    id: animacja_noc
     type: RGB565
-    transparency: alpha_channel
+
+  - platform: animation
+    file: "pogoda_zachmurzenie.gif"
+    id: animacja_zachmurzenie
+    type: RGB565
+
+  - platform: animation
+    file: "pogoda_deszcz.gif"
+    id: animacja_deszcz
+    type: RGB565
+
+  - platform: animation
+    file: "pogoda_snieg.gif"
+    id: animacja_snieg
+    type: RGB565
+
+  - platform: animation
+    file: "pogoda_burza.gif"
+    id: animacja_burza
+    type: RGB565
+
+  - platform: animation
+    file: "pogoda_mgla.gif"
+    id: animacja_mgla
+    type: RGB565
 
 script:
   - id: pobierz_pogode
     then:
       - http_request.get:
-          url: "https://api.open-meteo.com/v1/forecast?latitude=54.6059&longitude=18.2356&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&timezone=Europe%2FWarsaw"
+          url: "https://api.open-meteo.com/v1/forecast?latitude=54.6059&longitude=18.2356&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,is_day&timezone=Europe%2FWarsaw"
           capture_response: true
           max_response_buffer_size: 4096
 
@@ -158,6 +183,7 @@ script:
                   }
 
                   json::parse_json(body, [](JsonObject root) -> bool {
+
                     if (!root["current"]) {
                       return false;
                     }
@@ -176,15 +202,19 @@ script:
                     id(kod_pogody) =
                       c["weather_code"].as<int>();
 
+                    id(pora_dnia) =
+                      c["is_day"].as<int>();
+
                     id(pogoda_ok) = true;
 
                     ESP_LOGI(
                       "POGODA",
-                      "Temp %.1f C, wilg %d%%, wiatr %.1f km/h, kod %d",
+                      "Temp %.1f C, wilg %d%%, wiatr %.1f km/h, kod %d, dzien %d",
                       id(temp_pogody),
                       id(wilg_pogody),
                       id(wiatr_pogody),
-                      id(kod_pogody)
+                      id(kod_pogody),
+                      id(pora_dnia)
                     );
 
                     return true;
@@ -195,10 +225,57 @@ interval:
     then:
       - script.execute: pobierz_pogode
 
-  - interval: 1s
+  - interval: 140ms
     then:
       - lambda: |-
-          id(animacja_ikony) = !id(animacja_ikony);
+          if (!id(pogoda_ok)) {
+            return;
+          }
+
+          if (id(kod_pogody) == 0) {
+
+            if (id(pora_dnia) == 1) {
+              id(animacja_slonecznie).next_frame();
+            } else {
+              id(animacja_noc).next_frame();
+            }
+
+          } else if (
+            id(kod_pogody) >= 1 &&
+            id(kod_pogody) <= 3
+          ) {
+
+            id(animacja_zachmurzenie).next_frame();
+
+          } else if (
+            id(kod_pogody) >= 45 &&
+            id(kod_pogody) <= 48
+          ) {
+
+            id(animacja_mgla).next_frame();
+
+          } else if (
+            (id(kod_pogody) >= 51 &&
+             id(kod_pogody) <= 67) ||
+            (id(kod_pogody) >= 80 &&
+             id(kod_pogody) <= 82)
+          ) {
+
+            id(animacja_deszcz).next_frame();
+
+          } else if (
+            (id(kod_pogody) >= 71 &&
+             id(kod_pogody) <= 77) ||
+            (id(kod_pogody) >= 85 &&
+             id(kod_pogody) <= 86)
+          ) {
+
+            id(animacja_snieg).next_frame();
+
+          } else if (id(kod_pogody) >= 95) {
+
+            id(animacja_burza).next_frame();
+          }
 
 display:
   - platform: mipi_rgb
@@ -600,28 +677,28 @@ display:
       } else {
 
         it.print(
-          400,
+          770,
+          75,
+          id(font_mala),
+          Color(120, 130, 145),
+          TextAlign::TOP_RIGHT,
+          "STRONA 3/3"
+        );
+
+        it.print(
+          55,
           82,
           id(font_srednia),
           Color(90, 200, 250),
-          TextAlign::TOP_CENTER,
+          TextAlign::TOP_LEFT,
           "POGODA - WEJHEROWO"
         );
 
         if (id(pogoda_ok)) {
 
-          it.print(
-            55,
-            120,
-            id(font_mala),
-            Color(150, 170, 195),
-            TextAlign::TOP_LEFT,
-            "AKTUALNA TEMPERATURA"
-          );
-
           it.printf(
             55,
-            145,
+            125,
             id(font_duza),
             Color(255, 255, 255),
             TextAlign::TOP_LEFT,
@@ -631,47 +708,62 @@ display:
 
           it.printf(
             55,
-            210,
+            180,
             id(font_srednia),
-            Color(90, 200, 250),
+            Color(70, 175, 255),
             TextAlign::TOP_LEFT,
-            "Wilgotność: %d%%",
+            "Wilgotność  %d%%",
             id(wilg_pogody)
           );
 
           it.printf(
             55,
-            250,
+            220,
             id(font_srednia),
-            Color(160, 200, 230),
+            Color(170, 200, 225),
             TextAlign::TOP_LEFT,
-            "Wiatr: %.1f km/h",
+            "Wiatr  %.1f km/h",
             id(wiatr_pogody)
           );
 
-          if (id(animacja_ikony)) {
-            it.image(
-              470,
-              105,
-              id(ikona_pogoda_duza)
-            );
-          } else {
-            it.image(
-              580,
-              165,
-              id(ikona_pogoda_mala)
-            );
-          }
+          if (
+            id(kod_pogody) == 0 &&
+            id(pora_dnia) == 1
+          ) {
 
-          if (id(kod_pogody) == 0) {
+            it.image(
+              450,
+              105,
+              id(animacja_slonecznie)
+            );
 
             it.print(
-              620,
-              275,
+              600,
+              300,
               id(font_srednia),
-              Color(255, 210, 70),
+              Color(255, 215, 70),
               TextAlign::TOP_CENTER,
               "BEZCHMURNIE"
+            );
+
+          } else if (
+            id(kod_pogody) == 0 &&
+            id(pora_dnia) == 0
+          ) {
+
+            it.image(
+              450,
+              105,
+              id(animacja_noc)
+            );
+
+            it.print(
+              600,
+              300,
+              id(font_srednia),
+              Color(220, 225, 240),
+              TextAlign::TOP_CENTER,
+              "BEZCHMURNA NOC"
             );
 
           } else if (
@@ -679,61 +771,115 @@ display:
             id(kod_pogody) <= 3
           ) {
 
+            it.image(
+              450,
+              105,
+              id(animacja_zachmurzenie)
+            );
+
             it.print(
-              620,
-              275,
+              600,
+              300,
               id(font_srednia),
-              Color(180, 205, 230),
+              Color(190, 210, 230),
               TextAlign::TOP_CENTER,
               "ZACHMURZENIE"
             );
 
           } else if (
-            id(kod_pogody) >= 51 &&
-            id(kod_pogody) <= 67
+            id(kod_pogody) >= 45 &&
+            id(kod_pogody) <= 48
           ) {
 
+            it.image(
+              450,
+              105,
+              id(animacja_mgla)
+            );
+
             it.print(
-              620,
-              275,
+              600,
+              300,
               id(font_srednia),
-              Color(70, 180, 240),
+              Color(190, 205, 220),
+              TextAlign::TOP_CENTER,
+              "MGŁA"
+            );
+
+          } else if (
+            (id(kod_pogody) >= 51 &&
+             id(kod_pogody) <= 67) ||
+            (id(kod_pogody) >= 80 &&
+             id(kod_pogody) <= 82)
+          ) {
+
+            it.image(
+              450,
+              105,
+              id(animacja_deszcz)
+            );
+
+            it.print(
+              600,
+              300,
+              id(font_srednia),
+              Color(70, 180, 245),
               TextAlign::TOP_CENTER,
               "DESZCZ"
             );
 
           } else if (
-            id(kod_pogody) >= 71 &&
-            id(kod_pogody) <= 77
+            (id(kod_pogody) >= 71 &&
+             id(kod_pogody) <= 77) ||
+            (id(kod_pogody) >= 85 &&
+             id(kod_pogody) <= 86)
           ) {
 
+            it.image(
+              450,
+              105,
+              id(animacja_snieg)
+            );
+
             it.print(
-              620,
-              275,
+              600,
+              300,
               id(font_srednia),
-              Color(220, 230, 240),
+              Color(225, 235, 245),
               TextAlign::TOP_CENTER,
-              "SNIEG"
+              "ŚNIEG"
             );
 
           } else if (id(kod_pogody) >= 95) {
 
+            it.image(
+              450,
+              105,
+              id(animacja_burza)
+            );
+
             it.print(
-              620,
-              275,
+              600,
+              300,
               id(font_srednia),
-              Color(220, 220, 150),
+              Color(255, 220, 80),
               TextAlign::TOP_CENTER,
               "BURZA"
             );
 
           } else {
 
+            it.image(
+              450,
+              105,
+              id(animacja_zachmurzenie)
+            );
+
             it.print(
-              620,
-              275,
+              600,
+              300,
               id(font_srednia),
-              Color(190, 205, 220),
+              Color(190, 210, 230),
               TextAlign::TOP_CENTER,
               "POGODA"
             );
@@ -741,35 +887,27 @@ display:
 
           it.line(
             40,
-            315,
+            320,
             760,
-            315,
+            320,
             Color(65, 82, 112)
-          );
-
-          it.print(
-            55,
-            340,
-            id(font_mala),
-            Color(150, 170, 195),
-            TextAlign::TOP_LEFT,
-            "ŹRÓDŁO"
-          );
-
-          it.print(
-            55,
-            365,
-            id(font_srednia),
-            Color(90, 200, 250),
-            TextAlign::TOP_LEFT,
-            "OPEN-METEO"
           );
 
           if (now.is_valid()) {
 
             it.strftime(
+              55,
+              345,
+              id(font_srednia),
+              Color(180, 195, 215),
+              TextAlign::TOP_LEFT,
+              "%d.%m.%Y",
+              now
+            );
+
+            it.strftime(
               760,
-              350,
+              335,
               id(font_duza),
               Color(255, 255, 255),
               TextAlign::TOP_RIGHT,
@@ -782,7 +920,7 @@ display:
 
           it.print(
             400,
-            165,
+            150,
             id(font_srednia),
             Color(220, 225, 235),
             TextAlign::TOP_CENTER,
@@ -791,7 +929,7 @@ display:
 
           it.print(
             400,
-            210,
+            195,
             id(font_mala),
             Color(150, 170, 195),
             TextAlign::TOP_CENTER,
@@ -886,13 +1024,4 @@ touchscreen:
             if (
               x >= 420 &&
               x <= 780 &&
-              y >= 285 &&
-              y <= 460
-            ) {
-
-              ESP_LOGI(
-                "TOUCH",
-                "OGRZEWANIE"
-              );
-            }
-          }
+              
