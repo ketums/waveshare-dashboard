@@ -5,7 +5,7 @@ esphome:
   on_boot:
     priority: -100
     then:
-      - delay: 15s
+      - delay: 10s
       - script.execute: pobierz_pogode
 
 esp32:
@@ -45,17 +45,17 @@ globals:
   - id: pogoda_temperatura
     type: float
     restore_value: no
-    initial_value: '0.0'
+    initial_value: '0'
 
   - id: pogoda_wilgotnosc
     type: float
     restore_value: no
-    initial_value: '0.0'
+    initial_value: '0'
 
   - id: pogoda_wiatr
     type: float
     restore_value: no
-    initial_value: '0.0'
+    initial_value: '0'
 
   - id: pogoda_kod
     type: int
@@ -83,107 +83,7 @@ i2c:
     scan: true
 
 http_request:
-  timeout: 10s
-
-script:
-  - id: pobierz_pogode
-    then:
-      - http_request.get:
-          url: "https://api.open-meteo.com/v1/forecast?latitude=54.60167&longitude=18.23833&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&wind_speed_unit=kmh&timezone=Europe%2FWarsaw"
-          capture_response: true
-          max_response_buffer_size: 2048
-
-          on_response:
-            then:
-              - if:
-                  condition:
-                    lambda: |-
-                      return response->status_code == 200;
-                  then:
-                    - lambda: |-
-                        json::parse_json(body, [](JsonObject root) -> bool {
-
-                          if (!root["current"]) {
-                            ESP_LOGE("POGODA", "Brak sekcji current");
-                            return false;
-                          }
-
-                          id(pogoda_temperatura) =
-                              root["current"]["temperature_2m"];
-
-                          id(pogoda_wilgotnosc) =
-                              root["current"]["relative_humidity_2m"];
-
-                          id(pogoda_wiatr) =
-                              root["current"]["wind_speed_10m"];
-
-                          id(pogoda_kod) =
-                              root["current"]["weather_code"];
-
-                          int kod = id(pogoda_kod);
-
-                          if (kod == 0) {
-                            id(pogoda_opis) = "Bezchmurnie";
-                          }
-                          else if (kod >= 1 && kod <= 3) {
-                            id(pogoda_opis) =
-                                "Pochmurno z przejasnieniami";
-                          }
-                          else if (kod == 45 || kod == 48) {
-                            id(pogoda_opis) = "Mgla";
-                          }
-                          else if (kod >= 51 && kod <= 57) {
-                            id(pogoda_opis) = "Mżawka";
-                          }
-                          else if (kod >= 61 && kod <= 67) {
-                            id(pogoda_opis) = "Deszcz";
-                          }
-                          else if (kod >= 71 && kod <= 77) {
-                            id(pogoda_opis) = "Snieg";
-                          }
-                          else if (kod >= 80 && kod <= 82) {
-                            id(pogoda_opis) = "Przelotny deszcz";
-                          }
-                          else if (kod == 85 || kod == 86) {
-                            id(pogoda_opis) = "Przelotny snieg";
-                          }
-                          else if (kod >= 95 && kod <= 99) {
-                            id(pogoda_opis) = "Burza";
-                          }
-                          else {
-                            id(pogoda_opis) = "Aktualna pogoda";
-                          }
-
-                          id(pogoda_dane_ok) = true;
-
-                          ESP_LOGI(
-                            "POGODA",
-                            "Temp=%.1f C Wilg=%.0f %% Wiatr=%.1f km/h Kod=%d",
-                            id(pogoda_temperatura),
-                            id(pogoda_wilgotnosc),
-                            id(pogoda_wiatr),
-                            id(pogoda_kod)
-                          );
-
-                          return true;
-                        });
-
-                  else:
-                    - lambda: |-
-                        id(pogoda_dane_ok) = false;
-
-                        ESP_LOGE(
-                          "POGODA",
-                          "Blad HTTP: %d",
-                          response->status_code
-                        );
-
-      - delay: 10s
-
-interval:
-  - interval: 10min
-    then:
-      - script.execute: pobierz_pogode
+  timeout: 15s
 
 sensor:
   - platform: wifi_signal
@@ -239,6 +139,174 @@ image:
     id: ikona_pogoda_mala
     type: RGB565
     transparency: alpha_channel
+
+script:
+  - id: pobierz_pogode
+    mode: restart
+    then:
+      - logger.log: "Pobieram aktualna pogode z Open-Meteo..."
+
+      - http_request.get:
+          url: "https://api.open-meteo.com/v1/forecast?latitude=54.60167&longitude=18.23833&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&wind_speed_unit=kmh&timezone=Europe%2FWarsaw"
+          capture_response: true
+          max_response_buffer_size: 4096
+
+          on_response:
+            then:
+              - if:
+                  condition:
+                    lambda: |-
+                      return response->status_code == 200;
+                  then:
+                    - lambda: |-
+                        bool parsed = json::parse_json(
+                          body,
+                          [](JsonObject root) -> bool {
+
+                            if (!root["current"]) {
+                              ESP_LOGE("POGODA", "Brak sekcji current");
+                              return false;
+                            }
+
+                            JsonObject current = root["current"];
+
+                            if (!current["temperature_2m"]) {
+                              ESP_LOGE("POGODA", "Brak temperatury");
+                              return false;
+                            }
+
+                            if (!current["relative_humidity_2m"]) {
+                              ESP_LOGE("POGODA", "Brak wilgotnosci");
+                              return false;
+                            }
+
+                            if (!current["wind_speed_10m"]) {
+                              ESP_LOGE("POGODA", "Brak predkosci wiatru");
+                              return false;
+                            }
+
+                            if (!current["weather_code"]) {
+                              ESP_LOGE("POGODA", "Brak weather_code");
+                              return false;
+                            }
+
+                            id(pogoda_temperatura) =
+                              current["temperature_2m"].as<float>();
+
+                            id(pogoda_wilgotnosc) =
+                              current["relative_humidity_2m"].as<float>();
+
+                            id(pogoda_wiatr) =
+                              current["wind_speed_10m"].as<float>();
+
+                            id(pogoda_kod) =
+                              current["weather_code"].as<int>();
+
+                            int kod = id(pogoda_kod);
+
+                            if (kod == 0) {
+                              id(pogoda_opis) = "Bezchmurnie";
+                            }
+                            else if (kod == 1 || kod == 2) {
+                              id(pogoda_opis) = "Czesciowe zachmurzenie";
+                            }
+                            else if (kod == 3) {
+                              id(pogoda_opis) = "Pochmurno";
+                            }
+                            else if (kod == 45 || kod == 48) {
+                              id(pogoda_opis) = "Mgla";
+                            }
+                            else if (
+                              kod == 51 ||
+                              kod == 53 ||
+                              kod == 55 ||
+                              kod == 56 ||
+                              kod == 57
+                            ) {
+                              id(pogoda_opis) = "MZawka";
+                            }
+                            else if (
+                              kod == 61 ||
+                              kod == 63 ||
+                              kod == 65 ||
+                              kod == 66 ||
+                              kod == 67
+                            ) {
+                              id(pogoda_opis) = "Deszcz";
+                            }
+                            else if (
+                              kod == 71 ||
+                              kod == 73 ||
+                              kod == 75 ||
+                              kod == 77
+                            ) {
+                              id(pogoda_opis) = "Snieg";
+                            }
+                            else if (
+                              kod == 80 ||
+                              kod == 81 ||
+                              kod == 82
+                            ) {
+                              id(pogoda_opis) = "Przelotny deszcz";
+                            }
+                            else if (
+                              kod == 85 ||
+                              kod == 86
+                            ) {
+                              id(pogoda_opis) = "Przelotny snieg";
+                            }
+                            else if (
+                              kod == 95 ||
+                              kod == 96 ||
+                              kod == 99
+                            ) {
+                              id(pogoda_opis) = "Burza";
+                            }
+                            else {
+                              id(pogoda_opis) = "Nieznana pogoda";
+                            }
+
+                            id(pogoda_dane_ok) = true;
+
+                            ESP_LOGI(
+                              "POGODA",
+                              "Temperatura: %.1f C | Wilgotnosc: %.0f %% | Wiatr: %.1f km/h | Kod: %d | %s",
+                              id(pogoda_temperatura),
+                              id(pogoda_wilgotnosc),
+                              id(pogoda_wiatr),
+                              id(pogoda_kod),
+                              id(pogoda_opis).c_str()
+                            );
+
+                            return true;
+                          }
+                        );
+
+                        if (!parsed) {
+                          id(pogoda_dane_ok) = false;
+                          ESP_LOGE("POGODA", "Nie udalo sie odczytac JSON");
+                        }
+
+                  else:
+                    - lambda: |-
+                        id(pogoda_dane_ok) = false;
+
+                        ESP_LOGE(
+                          "POGODA",
+                          "Blad HTTP: %d",
+                          response->status_code
+                        );
+
+          on_error:
+            then:
+              - lambda: |-
+                  id(pogoda_dane_ok) = false;
+                  ESP_LOGE("POGODA", "Blad polaczenia z Open-Meteo");
+
+interval:
+  - interval: 10min
+    then:
+      - script.execute: pobierz_pogode
 
 display:
   - platform: mipi_rgb
@@ -444,7 +512,7 @@ display:
           id(font_mala),
           Color(155, 170, 190),
           TextAlign::TOP_LEFT,
-          "źródło: Open-Meteo"
+          "zrodlo: Open-Meteo"
         );
 
         if (time_now.is_valid()) {
@@ -841,129 +909,6 @@ display:
           440,
           400,
           id(font_mala),
-          Color(160, 170, 190),
-          TextAlign::TOP_LEFT,
-          "STATUS:"
-        );
-
-        it.print(
-          505,
-          400,
-          id(font_mala),
-          Color(100, 220, 130),
-          TextAlign::TOP_LEFT,
-          "GRZEJE"
-        );
-      }
-
-      else if (id(aktualna_strona) == 1) {
-
-        it.print(
-          770,
-          75,
-          id(font_mala),
-          Color(120, 130, 145),
-          TextAlign::TOP_RIGHT,
-          "STRONA 2/3"
-        );
-
-        it.print(
-          400,
-          150,
-          id(font_duza),
-          Color(255, 255, 255),
-          TextAlign::TOP_CENTER,
-          "DRUGI KAFEL"
-        );
-
-        it.print(
-          400,
-          220,
-          id(font_srednia),
           Color(160, 174, 192),
-          TextAlign::TOP_CENTER,
-          "Miejsce na kolejne"
-        );
-
-        it.print(
-          400,
-          250,
-          id(font_srednia),
-          Color(160, 174, 192),
-          TextAlign::TOP_CENTER,
-          "przyciski i sensory"
-        );
-      }
-
-touchscreen:
-  - platform: gt911
-    id: panel_dotykowy
-    i2c_id: bus_i2c
-    interrupt_pin: GPIO4
-
-    reset_pin:
-      ch422g: ch422g_hub
-      number: 1
-
-    transform:
-      swap_xy: false
-      mirror_x: false
-      mirror_y: false
-
-    on_touch:
-      - lambda: |-
-          int x = touch.x;
-          int y = touch.y;
-
-          ESP_LOGI(
-            "TOUCH",
-            "Dotyk X=%d Y=%d",
-            x,
-            y
-          );
-
-          if (id(aktualna_strona) == 2) {
-            id(aktualna_strona) = 0;
-            return;
-          }
-
-          if (y >= 0 && y <= 70) {
-            id(aktualna_strona) =
-              (id(aktualna_strona) + 1) % 3;
-            return;
-          }
-
-          if (id(aktualna_strona) == 0) {
-
-            if (y >= 170 && y <= 220) {
-
-              if (x >= 30 && x <= 130) {
-                ESP_LOGI("TOUCH", "OTWORZ OKNA");
-              }
-
-              else if (x >= 140 && x <= 240) {
-                ESP_LOGI("TOUCH", "STOP ROLETY");
-              }
-
-              else if (x >= 250 && x <= 350) {
-                ESP_LOGI("TOUCH", "ZAMKNIJ OKNA");
-              }
-
-              else if (x >= 430 && x <= 490) {
-                ESP_LOGI("TOUCH", "TEMP -");
-              }
-
-              else if (x >= 580 && x <= 640) {
-                ESP_LOGI("TOUCH", "TEMP +");
-              }
-            }
-
-            if (
-              x >= 420 &&
-              x <= 780 &&
-              y >= 285 &&
-              y <= 460
-            ) {
-              ESP_LOGI("TOUCH", "OGRZEWANIE");
-            }
-          }
+          TextAlign::TOP_LEFT,
+          "STA
