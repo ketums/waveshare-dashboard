@@ -57,6 +57,11 @@ globals:
     restore_value: no
     initial_value: '0'
 
+  - id: pogoda_kod
+    type: int
+    restore_value: no
+    initial_value: '0'
+
   - id: pogoda_dane_ok
     type: bool
     restore_value: no
@@ -66,11 +71,6 @@ globals:
     type: std::string
     restore_value: no
     initial_value: '"Pobieranie danych..."'
-
-  - id: promien_frame
-    type: int
-    restore_value: no
-    initial_value: '0'
 
 ch422g:
   - id: ch422g_hub
@@ -144,7 +144,7 @@ script:
   - id: pobierz_pogode
     mode: restart
     then:
-      - logger.log: "Pobieram aktualna pogode z Open-Meteo..."
+      - logger.log: "POGODA: pobieranie danych..."
 
       - http_request.get:
           url: "https://api.open-meteo.com/v1/forecast?latitude=54.60167&longitude=18.23833&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&wind_speed_unit=kmh&timezone=Europe%2FWarsaw"
@@ -159,86 +159,115 @@ script:
                       return response->status_code == 200;
                   then:
                     - lambda: |-
-                        json::parse_json(body, [](JsonObject root) -> bool {
+                        bool ok = json::parse_json(
+                          body,
+                          [](JsonObject root) -> bool {
 
-                          if (!root["current"]) {
-                            return false;
-                          }
+                            if (!root["current"]) {
+                              ESP_LOGE(
+                                "POGODA",
+                                "Brak current w odpowiedzi"
+                              );
+                              return false;
+                            }
 
-                          JsonObject current = root["current"];
+                            JsonObject current = root["current"];
 
-                          if (!current["temperature_2m"]) {
-                            return false;
-                          }
+                            id(pogoda_temperatura) =
+                              current["temperature_2m"].as<float>();
 
-                          if (!current["relative_humidity_2m"]) {
-                            return false;
-                          }
+                            id(pogoda_wilgotnosc) =
+                              current["relative_humidity_2m"].as<float>();
 
-                          if (!current["wind_speed_10m"]) {
-                            return false;
-                          }
+                            id(pogoda_wiatr) =
+                              current["wind_speed_10m"].as<float>();
 
-                          if (!current["weather_code"]) {
-                            return false;
-                          }
+                            id(pogoda_kod) =
+                              current["weather_code"].as<int>();
 
-                          id(pogoda_temperatura) =
-                            current["temperature_2m"].as<float>();
+                            int kod = id(pogoda_kod);
 
-                          id(pogoda_wilgotnosc) =
-                            current["relative_humidity_2m"].as<float>();
+                            if (kod == 0) {
+                              id(pogoda_opis) =
+                                "Bezchmurnie";
+                            }
+                            else if (kod == 1) {
+                              id(pogoda_opis) =
+                                "Glownie bezchmurnie";
+                            }
+                            else if (kod == 2) {
+                              id(pogoda_opis) =
+                                "Czesciowe zachmurzenie";
+                            }
+                            else if (kod == 3) {
+                              id(pogoda_opis) =
+                                "Pochmurno";
+                            }
+                            else if (kod == 45 || kod == 48) {
+                              id(pogoda_opis) =
+                                "Mgla";
+                            }
+                            else if (
+                              kod >= 51 &&
+                              kod <= 67
+                            ) {
+                              id(pogoda_opis) =
+                                "Deszcz";
+                            }
+                            else if (
+                              kod >= 71 &&
+                              kod <= 77
+                            ) {
+                              id(pogoda_opis) =
+                                "Snieg";
+                            }
+                            else if (
+                              kod >= 80 &&
+                              kod <= 82
+                            ) {
+                              id(pogoda_opis) =
+                                "Przelotny deszcz";
+                            }
+                            else if (
+                              kod >= 85 &&
+                              kod <= 86
+                            ) {
+                              id(pogoda_opis) =
+                                "Przelotny snieg";
+                            }
+                            else if (kod >= 95) {
+                              id(pogoda_opis) =
+                                "Burza";
+                            }
+                            else {
+                              id(pogoda_opis) =
+                                "Nieznana pogoda";
+                            }
 
-                          id(pogoda_wiatr) =
-                            current["wind_speed_10m"].as<float>();
+                            id(pogoda_dane_ok) = true;
 
-                          int kod =
-                            current["weather_code"].as<int>();
+                            ESP_LOGI(
+                              "POGODA",
+                              "AKTUALNA: %.1f C | %.0f %% | %.1f km/h | kod %d | %s",
+                              id(pogoda_temperatura),
+                              id(pogoda_wilgotnosc),
+                              id(pogoda_wiatr),
+                              id(pogoda_kod),
+                              id(pogoda_opis).c_str()
+                            );
 
-                          if (kod == 0) {
-                            id(pogoda_opis) = "Bezchmurnie";
+                            return true;
                           }
-                          else if (kod == 1 || kod == 2) {
-                            id(pogoda_opis) = "Czesciowe zachmurzenie";
-                          }
-                          else if (kod == 3) {
-                            id(pogoda_opis) = "Pochmurno";
-                          }
-                          else if (kod == 45 || kod == 48) {
-                            id(pogoda_opis) = "Mgla";
-                          }
-                          else if (kod >= 51 && kod <= 67) {
-                            id(pogoda_opis) = "Deszcz";
-                          }
-                          else if (kod >= 71 && kod <= 77) {
-                            id(pogoda_opis) = "Snieg";
-                          }
-                          else if (kod >= 80 && kod <= 82) {
-                            id(pogoda_opis) = "Przelotny deszcz";
-                          }
-                          else if (kod >= 85 && kod <= 86) {
-                            id(pogoda_opis) = "Przelotny snieg";
-                          }
-                          else if (kod >= 95) {
-                            id(pogoda_opis) = "Burza";
-                          }
-                          else {
-                            id(pogoda_opis) = "Nieznana pogoda";
-                          }
+                        );
 
-                          id(pogoda_dane_ok) = true;
+                        if (!ok) {
+                          id(pogoda_dane_ok) = false;
 
-                          ESP_LOGI(
+                          ESP_LOGE(
                             "POGODA",
-                            "TEMP %.1f C | WILG %.0f %% | WIATR %.1f km/h | KOD %d",
-                            id(pogoda_temperatura),
-                            id(pogoda_wilgotnosc),
-                            id(pogoda_wiatr),
-                            kod
+                            "Blad odczytu JSON"
                           );
-
-                          return true;
-                        });
+                        }
 
                   else:
                     - lambda: |-
@@ -246,7 +275,7 @@ script:
 
                         ESP_LOGE(
                           "POGODA",
-                          "HTTP ERROR %d",
+                          "HTTP ERROR: %d",
                           response->status_code
                         );
 
@@ -254,21 +283,13 @@ script:
             then:
               - lambda: |-
                   id(pogoda_dane_ok) = false;
+
                   ESP_LOGE(
                     "POGODA",
-                    "Blad polaczenia z Open-Meteo"
+                    "Nie mozna polaczyc z Open-Meteo"
                   );
 
 interval:
-  - interval: 150ms
-    then:
-      - lambda: |-
-          id(promien_frame)++;
-
-          if (id(promien_frame) >= 8) {
-            id(promien_frame) = 0;
-          }
-
   - interval: 10min
     then:
       - script.execute: pobierz_pogode
@@ -278,7 +299,7 @@ display:
     model: ESP32-S3-TOUCH-LCD-4.3
     id: ekran_waveshare
     rotation: 0
-    update_interval: 150ms
+    update_interval: 1s
 
     reset_pin:
       ch422g: ch422g_hub
@@ -289,7 +310,9 @@ display:
 
       if (id(aktualna_strona) == 2) {
 
-        it.fill(Color(10, 18, 32));
+        it.fill(
+          Color(10, 18, 32)
+        );
 
         it.rectangle(
           10,
@@ -450,237 +473,11 @@ display:
           );
         }
 
-        /*
-         * GLOWNE PNG
-         */
         it.image(
           475,
           105,
           id(ikona_pogoda_duza)
         );
-
-        /*
-         * ANIMOWANE PROMIENIE
-         *
-         * Srodek slonca:
-         * X = 615
-         * Y = 170
-         */
-
-        int frame = id(promien_frame);
-
-        if (frame == 0) {
-
-          it.line(
-            615, 82,
-            615, 105,
-            Color(255, 215, 40)
-          );
-
-          it.line(
-            615, 235,
-            615, 258,
-            Color(255, 215, 40)
-          );
-
-          it.line(
-            527, 170,
-            550, 170,
-            Color(255, 215, 40)
-          );
-
-          it.line(
-            680, 170,
-            703, 170,
-            Color(255, 215, 40)
-          );
-
-        } else if (frame == 1) {
-
-          it.line(
-            552, 107,
-            568, 123,
-            Color(255, 215, 40)
-          );
-
-          it.line(
-            662, 217,
-            678, 233,
-            Color(255, 215, 40)
-          );
-
-          it.line(
-            552, 233,
-            568, 217,
-            Color(255, 215, 40)
-          );
-
-          it.line(
-            662, 123,
-            678, 107,
-            Color(255, 215, 40)
-          );
-
-        } else if (frame == 2) {
-
-          it.line(
-            535, 130,
-            558, 142,
-            Color(255, 215, 40)
-          );
-
-          it.line(
-            672, 198,
-            695, 210,
-            Color(255, 215, 40)
-          );
-
-          it.line(
-            535, 210,
-            558, 198,
-            Color(255, 215, 40)
-          );
-
-          it.line(
-            672, 142,
-            695, 130,
-            Color(255, 215, 40)
-          );
-
-        } else if (frame == 3) {
-
-          it.line(
-            548, 95,
-            560, 118,
-            Color(255, 215, 40)
-          );
-
-          it.line(
-            670, 222,
-            682, 245,
-            Color(255, 215, 40)
-          );
-
-          it.line(
-            540, 185,
-            563, 173,
-            Color(255, 215, 40)
-          );
-
-          it.line(
-            667, 167,
-            690, 155,
-            Color(255, 215, 40)
-          );
-
-        } else if (frame == 4) {
-
-          it.line(
-            615, 82,
-            615, 105,
-            Color(255, 215, 40)
-          );
-
-          it.line(
-            615, 235,
-            615, 258,
-            Color(255, 215, 40)
-          );
-
-          it.line(
-            527, 170,
-            550, 170,
-            Color(255, 215, 40)
-          );
-
-          it.line(
-            680, 170,
-            703, 170,
-            Color(255, 215, 40)
-          );
-
-        } else if (frame == 5) {
-
-          it.line(
-            552, 233,
-            568, 217,
-            Color(255, 215, 40)
-          );
-
-          it.line(
-            662, 123,
-            678, 107,
-            Color(255, 215, 40)
-          );
-
-          it.line(
-            552, 107,
-            568, 123,
-            Color(255, 215, 40)
-          );
-
-          it.line(
-            662, 217,
-            678, 233,
-            Color(255, 215, 40)
-          );
-
-        } else if (frame == 6) {
-
-          it.line(
-            535, 210,
-            558, 198,
-            Color(255, 215, 40)
-          );
-
-          it.line(
-            672, 142,
-            695, 130,
-            Color(255, 215, 40)
-          );
-
-          it.line(
-            535, 130,
-            558, 142,
-            Color(255, 215, 40)
-          );
-
-          it.line(
-            672, 198,
-            695, 210,
-            Color(255, 215, 40)
-          );
-
-        } else {
-
-          it.line(
-            548, 245,
-            560, 222,
-            Color(255, 215, 40)
-          );
-
-          it.line(
-            670, 118,
-            682, 95,
-            Color(255, 215, 40)
-          );
-
-          it.line(
-            540, 155,
-            563, 167,
-            Color(255, 215, 40)
-          );
-
-          it.line(
-            667, 173,
-            690, 185,
-            Color(255, 215, 40)
-          );
-        }
-
-        /*
-         * MALA IKONA NA DOLE
-         */
 
         it.image(
           30,
@@ -706,10 +503,6 @@ display:
           "zrodlo: Open-Meteo"
         );
 
-        /*
-         * ZEGAR
-         */
-
         if (time_now.is_valid()) {
 
           it.strftime(
@@ -728,7 +521,7 @@ display:
             765,
             350,
             id(font_zegar),
-            Color(255, 255, 255, 255),
+            Color(255, 255, 255),
             TextAlign::TOP_RIGHT,
             "--:--"
           );
@@ -746,11 +539,9 @@ display:
         return;
       }
 
-      /*
-       * STRONA 1 / 2
-       */
-
-      it.fill(Color(18, 24, 38));
+      it.fill(
+        Color(18, 24, 38)
+      );
 
       it.rectangle(
         10,
@@ -849,6 +640,22 @@ display:
       }
 
       if (id(aktualna_strona) == 0) {
+
+        it.line(
+          400,
+          70,
+          400,
+          470,
+          Color(45, 55, 72)
+        );
+
+        it.line(
+          10,
+          270,
+          790,
+          270,
+          Color(45, 55, 72)
+        );
 
         it.print(
           770,
@@ -977,4 +784,167 @@ display:
           30,
           400,
           id(font_srednia),
-          Colo
+          Color(160, 174, 192),
+          TextAlign::TOP_LEFT,
+          "Wilgotność: 55%"
+        );
+
+        it.rectangle(
+          420,
+          285,
+          360,
+          175,
+          Color(45, 55, 72)
+        );
+
+        it.print(
+          440,
+          295,
+          id(font_srednia),
+          Color(255, 170, 60),
+          TextAlign::TOP_LEFT,
+          "OGRZEWANIE"
+        );
+
+        it.print(
+          440,
+          325,
+          id(font_mala),
+          Color(160, 174, 192),
+          TextAlign::TOP_LEFT,
+          "TERMOSTAT"
+        );
+
+        it.filled_rectangle(
+          555,
+          340,
+          120,
+          80,
+          Color(235, 238, 242)
+        );
+
+        it.filled_circle(
+          615,
+          340,
+          40,
+          Color(235, 238, 242)
+        );
+
+        it.filled_circle(
+          615,
+          325,
+          18,
+          Color(155, 160, 165)
+        );
+
+        it.filled_circle(
+          615,
+          325,
+          10,
+          Color(205, 210, 215)
+        );
+
+        it.filled_rectangle(
+          570,
+          355,
+          90,
+          42,
+          Color(30, 35, 42)
+        );
+
+        it.print(
+          615,
+          357,
+          id(font_srednia),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "26°"
+        );
+
+        it.print(
+          440,
+          400,
+          id(font_mala),
+          Color(160, 174, 192),
+          TextAlign::TOP_LEFT,
+          "STATUS:"
+        );
+
+        it.print(
+          505,
+          400,
+          id(font_mala),
+          Color(100, 220, 130),
+          TextAlign::TOP_LEFT,
+          "GRZEJE"
+        );
+
+      } else if (id(aktualna_strona) == 1) {
+
+        it.print(
+          770,
+          75,
+          id(font_mala),
+          Color(120, 130, 145),
+          TextAlign::TOP_RIGHT,
+          "STRONA 2/3"
+        );
+
+        it.print(
+          400,
+          150,
+          id(font_duza),
+          Color(255, 255, 255),
+          TextAlign::TOP_CENTER,
+          "DRUGI KAFEL"
+        );
+
+        it.print(
+          400,
+          220,
+          id(font_srednia),
+          Color(160, 174, 192),
+          TextAlign::TOP_CENTER,
+          "Miejsce na kolejne"
+        );
+
+        it.print(
+          400,
+          250,
+          id(font_srednia),
+          Color(160, 174, 192),
+          TextAlign::TOP_CENTER,
+          "przyciski i sensory"
+        );
+      }
+
+touchscreen:
+  - platform: gt911
+    id: panel_dotykowy
+    i2c_id: bus_i2c
+    interrupt_pin: GPIO4
+
+    reset_pin:
+      ch422g: ch422g_hub
+      number: 1
+
+    transform:
+      swap_xy: false
+      mirror_x: false
+      mirror_y: false
+
+    on_touch:
+      - lambda: |-
+          int x = touch.x;
+          int y = touch.y;
+
+          ESP_LOGI(
+            "TOUCH",
+            "Dotyk X=%d Y=%d",
+            x,
+            y
+          );
+
+          if (id(aktualna_strona) == 2) {
+
+            id(aktu
