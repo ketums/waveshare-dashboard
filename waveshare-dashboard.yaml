@@ -5,7 +5,7 @@ esphome:
   on_boot:
     priority: -100
     then:
-      - delay: 10s
+      - delay: 8s
       - script.execute: pobierz_pogode
 
 
@@ -129,17 +129,17 @@ font:
   - file: "Roboto-Regular.ttf"
     id: font_duzy
     size: 42
-    glyphs: "0123456789°C%:-./"
+    glyphs: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ąćęłńóśźżĄĆĘŁŃÓŚŹŻ °%:-./"
 
   - file: "Roboto-Regular.ttf"
     id: font_sredni
     size: 22
-    glyphs: "ąćęłńóśźżĄĆĘŁŃÓŚŹŻ0123456789°%:-./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz "
+    glyphs: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ąćęłńóśźżĄĆĘŁŃÓŚŹŻ °%:-./"
 
   - file: "Roboto-Regular.ttf"
     id: font_maly
     size: 16
-    glyphs: "ąćęłńóśźżĄĆĘŁŃÓŚŹŻ0123456789°%:-./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz "
+    glyphs: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ąćęłńóśźżĄĆĘŁŃÓŚŹŻ °%:-./"
 
   - file: "Roboto-Regular.ttf"
     id: font_zegar
@@ -151,11 +151,6 @@ image:
 
   - file: "weather_partly_cloudy.png"
     id: ikona_pogoda_duza
-    type: RGB565
-    transparency: alpha_channel
-
-  - file: "weather_partly_cloudy_small.png"
-    id: ikona_pogoda_mala
     type: RGB565
     transparency: alpha_channel
 
@@ -207,41 +202,23 @@ script:
 
                           if (kod == 0) {
                             id(pogoda_opis) = "Slonecznie";
-                          }
-
-                          else if (kod <= 3) {
+                          } else if (kod <= 3) {
                             id(pogoda_opis) = "Zachmurzenie";
-                          }
-
-                          else if (kod == 45 || kod == 48) {
+                          } else if (kod == 45 || kod == 48) {
                             id(pogoda_opis) = "Mgla";
-                          }
-
-                          else if (kod <= 57) {
+                          } else if (kod <= 57) {
                             id(pogoda_opis) = "Mzy";
-                          }
-
-                          else if (kod <= 67) {
+                          } else if (kod <= 67) {
                             id(pogoda_opis) = "Deszcz";
-                          }
-
-                          else if (kod <= 77) {
+                          } else if (kod <= 77) {
                             id(pogoda_opis) = "Snieg";
-                          }
-
-                          else if (kod <= 82) {
+                          } else if (kod <= 82) {
                             id(pogoda_opis) = "Przelotny deszcz";
-                          }
-
-                          else if (kod <= 86) {
+                          } else if (kod <= 86) {
                             id(pogoda_opis) = "Przelotny snieg";
-                          }
-
-                          else if (kod >= 95) {
+                          } else if (kod >= 95) {
                             id(pogoda_opis) = "Burza";
-                          }
-
-                          else {
+                          } else {
                             id(pogoda_opis) = "Pogoda";
                           }
 
@@ -269,12 +246,6 @@ script:
                     - lambda: |-
                         id(pogoda_dane_ok) = false;
 
-                        ESP_LOGW(
-                          "pogoda",
-                          "HTTP status: %d",
-                          response->status_code
-                        );
-
 
 interval:
 
@@ -283,61 +254,12 @@ interval:
       - script.execute: pobierz_pogode
 
 
-touchscreen:
-
-  - platform: gt911
-
-    id: ekran_dotykowy
-
-    interrupt_pin: GPIO4
-
-    reset_pin:
-      ch422g: ch422g_hub
-      number: 1
-
-    transform:
-      mirror_x: false
-      mirror_y: false
-      swap_xy: false
-
-    on_touch:
-      then:
-
-        - lambda: |-
-            int x = touch.x;
-            int y = touch.y;
-
-            if (x < 267) {
-              id(aktualna_strona) = 0;
-            }
-
-            else if (x < 534) {
-              id(aktualna_strona) = 1;
-            }
-
-            else {
-              id(aktualna_strona) = 2;
-            }
-
-            ESP_LOGI(
-              "touch",
-              "X=%d Y=%d strona=%d",
-              x,
-              y,
-              id(aktualna_strona)
-            );
-
-
 display:
 
   - platform: mipi_rgb
-
     id: ekran
-
     model: ESP32-S3-TOUCH-LCD-4.3
-
     rotation: 0
-
     update_interval: 1s
 
     reset_pin:
@@ -363,7 +285,7 @@ display:
 
         it.print(
           30,
-          95,
+          90,
           id(font_sredni),
           Color(0x00D8FF),
           "PANEL GLOWNY"
@@ -372,18 +294,17 @@ display:
         it.print(
           30,
           145,
-          id(font_maly),
+          id(font_sredni),
           Color(0xFFFFFF),
           "WIFI"
         );
 
         if (id(wifi_dbm).has_state()) {
-
           it.printf(
-            90,
+            130,
             145,
-            id(font_maly),
-            Color(0x00FF80),
+            id(font_sredni),
+            Color(0x00FF70),
             "%.0f dBm",
             id(wifi_dbm).state
           );
@@ -391,34 +312,25 @@ display:
 
         it.print(
           30,
-          190,
-          id(font_maly),
+          200,
+          id(font_sredni),
           Color(0xFFFFFF),
           "IP"
         );
 
         if (id(wifi_ip).has_state()) {
-
           it.print(
-            90,
-            190,
-            id(font_maly),
-            Color(0x00BFFF),
+            130,
+            200,
+            id(font_sredni),
+            Color(0x00C8FF),
             id(wifi_ip).state.c_str()
           );
         }
 
         it.print(
           30,
-          260,
-          id(font_sredni),
-          Color(0xFFFFFF),
-          "DOTKNIJ LEWEJ CZESCI"
-        );
-
-        it.print(
-          30,
-          300,
+          285,
           id(font_sredni),
           Color(0xFFFFFF),
           "STRONA 1"
@@ -426,17 +338,24 @@ display:
 
         it.print(
           30,
+          330,
+          id(font_maly),
+          Color(0xAAB4C0),
+          "Dotknij prawej strony ekranu"
+        );
+
+        it.print(
+          30,
           410,
           id(font_maly),
-          Color(0x808A96),
+          Color(0x707C88),
           "STRONA 1/3"
         );
 
         if (now.is_valid()) {
-
           it.strftime(
             650,
-            30,
+            25,
             id(font_sredni),
             Color(0xFFFFFF),
             "%H:%M",
@@ -458,7 +377,7 @@ display:
 
         it.print(
           30,
-          100,
+          90,
           id(font_sredni),
           Color(0x00D8FF),
           "INFORMACJE"
@@ -466,19 +385,18 @@ display:
 
         it.print(
           30,
-          160,
+          150,
           id(font_sredni),
           Color(0xFFFFFF),
           "WIFI:"
         );
 
         if (id(wifi_dbm).has_state()) {
-
           it.printf(
-            130,
-            160,
+            140,
+            150,
             id(font_sredni),
-            Color(0x00FF80),
+            Color(0x00FF70),
             "%.0f dBm",
             id(wifi_dbm).state
           );
@@ -486,29 +404,28 @@ display:
 
         it.print(
           30,
-          210,
+          205,
           id(font_sredni),
           Color(0xFFFFFF),
           "ADRES IP:"
         );
 
         if (id(wifi_ip).has_state()) {
-
           it.print(
-            170,
-            210,
+            160,
+            205,
             id(font_sredni),
-            Color(0x00BFFF),
+            Color(0x00C8FF),
             id(wifi_ip).state.c_str()
           );
         }
 
         it.print(
           30,
-          280,
+          275,
           id(font_sredni),
           Color(0xFFFFFF),
-          "POGODA JEST POBIERANA"
+          "POGODA"
         );
 
         it.print(
@@ -516,22 +433,29 @@ display:
           320,
           id(font_maly),
           Color(0xAAB4C0),
-          "Open-Meteo / Wejherowo"
+          "Open-Meteo"
+        );
+
+        it.print(
+          30,
+          350,
+          id(font_maly),
+          Color(0xAAB4C0),
+          "Wejherowo"
         );
 
         it.print(
           30,
           410,
           id(font_maly),
-          Color(0x808A96),
+          Color(0x707C88),
           "STRONA 2/3"
         );
 
         if (now.is_valid()) {
-
           it.strftime(
             650,
-            30,
+            25,
             id(font_sredni),
             Color(0xFFFFFF),
             "%H:%M",
@@ -551,12 +475,11 @@ display:
           "POGODA"
         );
 
-
         if (id(pogoda_dane_ok)) {
 
           it.printf(
             30,
-            95,
+            100,
             id(font_duzy),
             Color(0xFFFFFF),
             "%.1f °C",
@@ -565,7 +488,7 @@ display:
 
           it.print(
             30,
-            155,
+            160,
             id(font_sredni),
             Color(0x38A8FF),
             "Wilgotnosc"
@@ -573,7 +496,7 @@ display:
 
           it.printf(
             180,
-            155,
+            160,
             id(font_sredni),
             Color(0xFFFFFF),
             "%.0f %%",
@@ -582,7 +505,7 @@ display:
 
           it.print(
             30,
-            205,
+            210,
             id(font_sredni),
             Color(0x38A8FF),
             "Wiatr"
@@ -590,7 +513,7 @@ display:
 
           it.printf(
             110,
-            205,
+            210,
             id(font_sredni),
             Color(0xFFFFFF),
             "%.1f km/h",
@@ -599,7 +522,7 @@ display:
 
           it.print(
             30,
-            255,
+            260,
             id(font_sredni),
             Color(0xFFFFFF),
             id(pogoda_opis).c_str()
@@ -613,101 +536,44 @@ display:
 
             it.filled_circle(
               625,
-              190,
+              185,
               55,
               sun
             );
 
-            it.line(
-              625,
-              105,
-              625,
-              80,
-              rays
-            );
+            it.line(625, 105, 625, 75, rays);
+            it.line(625, 265, 625, 295, rays);
+            it.line(545, 185, 515, 185, rays);
+            it.line(705, 185, 735, 185, rays);
 
-            it.line(
-              625,
-              275,
-              625,
-              300,
-              rays
-            );
-
-            it.line(
-              540,
-              190,
-              515,
-              190,
-              rays
-            );
-
-            it.line(
-              710,
-              190,
-              735,
-              190,
-              rays
-            );
-
-            it.line(
-              565,
-              130,
-              545,
-              110,
-              rays
-            );
-
-            it.line(
-              685,
-              130,
-              705,
-              110,
-              rays
-            );
-
-            it.line(
-              565,
-              250,
-              545,
-              270,
-              rays
-            );
-
-            it.line(
-              685,
-              250,
-              705,
-              270,
-              rays
-            );
+            it.line(565, 125, 545, 105, rays);
+            it.line(685, 125, 705, 105, rays);
+            it.line(565, 245, 545, 265, rays);
+            it.line(685, 245, 705, 265, rays);
 
             it.print(
               555,
-              310,
+              305,
               id(font_sredni),
               Color(0xFFD21F),
               "SLONCE"
             );
           }
 
-
           else {
 
             it.image(
               475,
-              100,
+              95,
               id(ikona_pogoda_duza)
             );
           }
-        }
 
-
-        else {
+        } else {
 
           it.print(
             30,
-            100,
+            105,
             id(font_sredni),
             Color(0xFFFFFF),
             "POBIERAM POGODE..."
@@ -715,7 +581,7 @@ display:
 
           it.image(
             475,
-            100,
+            95,
             id(ikona_pogoda_duza)
           );
         }
@@ -728,7 +594,6 @@ display:
           350,
           Color(0x334A60)
         );
-
 
         it.print(
           30,
@@ -746,12 +611,11 @@ display:
           "OPEN-METEO"
         );
 
-
         if (now.is_valid()) {
 
           it.strftime(
-            505,
-            370,
+            500,
+            365,
             id(font_maly),
             Color(0xAAB4C0),
             "%d.%m.%Y",
@@ -760,7 +624,7 @@ display:
 
           it.strftime(
             500,
-            405,
+            400,
             id(font_zegar),
             Color(0xFFFFFF),
             "%H:%M",
@@ -768,12 +632,54 @@ display:
           );
         }
 
-
         it.print(
           30,
           455,
           id(font_maly),
-          Color(0x808A96),
+          Color(0x707C88),
           "STRONA 3/3"
         );
       }
+
+
+touchscreen:
+
+  - platform: gt911
+
+    id: ekran_dotykowy
+
+    display: ekran
+
+    interrupt_pin: GPIO4
+
+    reset_pin:
+      ch422g: ch422g_hub
+      number: 1
+
+    transform:
+      mirror_x: false
+      mirror_y: false
+      swap_xy: false
+
+    on_touch:
+      then:
+
+        - lambda: |-
+            int x = touch.x;
+            int y = touch.y;
+
+            if (x < 267) {
+              id(aktualna_strona) = 0;
+            } else if (x < 534) {
+              id(aktualna_strona) = 1;
+            } else {
+              id(aktualna_strona) = 2;
+            }
+
+            ESP_LOGI(
+              "touch",
+              "Dotyk X=%d Y=%d -> strona %d",
+              x,
+              y,
+              id(aktualna_strona)
+            );
