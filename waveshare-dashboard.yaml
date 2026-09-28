@@ -99,10 +99,12 @@ http_request:
   verify_ssl: true
 
 
-wifi_signal:
-  name: "WiFi Signal"
-  id: wifi_dbm
-  update_interval: 10s
+sensor:
+
+  - platform: wifi_signal
+    name: "WiFi Signal"
+    id: wifi_dbm
+    update_interval: 10s
 
 
 text_sensor:
@@ -175,12 +177,14 @@ script:
 
               - if:
                   condition:
-                    lambda: return response->status_code == 200;
+                    lambda: |-
+                      return response->status_code == 200;
 
                   then:
 
                     - lambda: |-
                         json::parse_json(body, [](JsonObject root) -> bool {
+
                           if (!root["current"]) {
                             return false;
                           }
@@ -188,16 +192,16 @@ script:
                           JsonObject current = root["current"];
 
                           id(pogoda_temperatura) =
-                              current["temperature_2m"] | 0.0f;
+                            current["temperature_2m"] | 0.0f;
 
                           id(pogoda_wilgotnosc) =
-                              current["relative_humidity_2m"] | 0.0f;
+                            current["relative_humidity_2m"] | 0.0f;
 
                           id(pogoda_wiatr) =
-                              current["wind_speed_10m"] | 0.0f;
+                            current["wind_speed_10m"] | 0.0f;
 
                           id(pogoda_kod) =
-                              current["weather_code"] | -1;
+                            current["weather_code"] | -1;
 
                           int kod = id(pogoda_kod);
 
@@ -257,7 +261,8 @@ script:
 
               - if:
                   condition:
-                    lambda: return response->status_code != 200;
+                    lambda: |-
+                      return response->status_code != 200;
 
                   then:
 
