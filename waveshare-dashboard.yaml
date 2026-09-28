@@ -796,7 +796,7 @@ display:
               id(font_srednia),
               Color(190, 205, 220),
               TextAlign::TOP_CENTER,
-              "MGŁA"
+              "MGLA"
             );
 
           } else if (
@@ -840,7 +840,7 @@ display:
               id(font_srednia),
               Color(225, 235, 245),
               TextAlign::TOP_CENTER,
-              "ŚNIEG"
+              "SNIEG"
             );
 
           } else if (id(kod_pogody) >= 95) {
@@ -956,74 +956,9 @@ touchscreen:
       mirror_y: false
 
     on_touch:
-      - lambda: |-
-          int x = touch.x;
-          int y = touch.y;
-
-          ESP_LOGI(
-            "TOUCH",
-            "X=%d Y=%d",
-            x,
-            y
-          );
-
-          if (y <= 70) {
-            id(aktualna_strona) =
-              (id(aktualna_strona) + 1) % 3;
-            return;
-          }
-
-          if (id(aktualna_strona) == 0) {
-
-            if (y >= 170 && y <= 220) {
-
-              if (x >= 30 && x <= 130) {
-
-                ESP_LOGI(
-                  "TOUCH",
-                  "OTWORZ OKNA"
-                );
-
-              } else if (x >= 145 && x <= 245) {
-
-                ESP_LOGI(
-                  "TOUCH",
-                  "STOP ROLETY"
-                );
-
-              } else if (x >= 260 && x <= 360) {
-
-                ESP_LOGI(
-                  "TOUCH",
-                  "ZAMKNIJ OKNA"
-                );
-
-              } else if (x >= 430 && x <= 490) {
-
-                ESP_LOGI(
-                  "TOUCH",
-                  "TEMP -"
-                );
-
-              } else if (x >= 580 && x <= 640) {
-
-                ESP_LOGI(
-                  "TOUCH",
-                  "TEMP +"
-                );
-              }
+      then:
+        - lambda: |-
+            if (touch.y <= 70) {
+              id(aktualna_strona) =
+                (id(aktualna_strona) + 1) % 3;
             }
-
-            if (
-              x >= 420 &&
-              x <= 780 &&
-              y >= 285 &&
-              y <= 460
-            ) {
-
-              ESP_LOGI(
-                "TOUCH",
-                "OGRZEWANIE"
-              );
-            }
-   
