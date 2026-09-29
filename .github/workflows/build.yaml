@@ -1,4 +1,4 @@
-name: ESPHome Build .bin
+name: ESPHome Build Dashboard
 
 on:
   push:
@@ -20,15 +20,23 @@ jobs:
           python-version: '3.11'
 
       - name: Install ESPHome
-        run: |
-          pip install esphome
+        run: pip install esphome==2026.6.5
 
-      - name: Build Firmware
-        run: |
-          esphome compile waveshare-dashboard.yaml
+      - name: Check configuration
+        run: esphome config waveshare-dashboard.yaml
 
-      - name: Upload factory firmware
+      - name: Build Dashboard
+        run: esphome compile waveshare-dashboard.yaml
+
+      - name: Show firmware files
+        run: |
+          echo "=== GOTOWE PLIKI BIN ==="
+          find .esphome/build/waveshare-dashboard -type f -name "*.bin" -exec ls -lh {} \;
+
+      - name: Upload complete firmware package
         uses: actions/upload-artifact@v4
         with:
-          name: esp32-firmware
-          path: .esphome/build/waveshare-dashboard/.pioenvs/waveshare-dashboard/firmware.factory.bin
+          name: waveshare-dashboard-firmware
+          path: |
+            .esphome/build/waveshare-dashboard/.pioenvs/waveshare-dashboard/*.bin
+          if-no-files-found: error
