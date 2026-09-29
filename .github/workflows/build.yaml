@@ -3,11 +3,13 @@ name: ESPHome Build .bin
 on:
   push:
     branches: [ main, master ]
+
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -25,8 +27,8 @@ jobs:
         run: |
           esphome compile waveshare-dashboard.yaml
 
-      - name: Upload .bin artifact
+      - name: Upload factory firmware
         uses: actions/upload-artifact@v4
         with:
           name: esp32-firmware
-          path: .esphome/build/waveshare-dashboard/.pioenvs/waveshare-dashboard/firmware.bin
+          path: .esphome/build/waveshare-dashboard/.pioenvs/waveshare-dashboard/firmware.factory.bin
