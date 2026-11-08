@@ -29,6 +29,27 @@ time:
     id: czas
     timezone: Europe/Warsaw
 
+# Konfiguracja ekspandera I2C / IO (CH422G w Waveshare 4.3), który steruje podświetleniem ekranu
+i2c:
+  - id: bus_i2c
+    sda: GPIO8
+    scl: GPIO9
+    scan: true
+
+# Włączenie podświetlenia ekranu (wyjściowy pin cyfrowy przez ekspander lub bezpośredni pin PWM)
+# W modelu Waveshare ESP32-S3-Touch-LCD-4.3 podświetlenie często wymaga inicjalizacji pinów panelu.
+output:
+  - platform: ledc
+    pin: GPIO2
+    id: backlight_pin
+
+light:
+  - platform: monochromatic
+    output: backlight_pin
+    name: "Podświetlenie ekranu"
+    default_transition_length: 0s
+    restore_mode: RESTORE_DEFAULT_ON
+
 display:
   - platform: rpi_dpi_rgb
     id: ekran
@@ -88,20 +109,14 @@ display:
 
     lambda: |-
       it.fill(Color(0, 0, 0));
-
       it.rectangle(0, 0, 799, 479, Color(0, 255, 255));
-
       it.filled_rectangle(20, 20, 760, 440, Color(0, 0, 80));
-
       it.print(400, 120, id(font_test), Color(255, 255, 255),
                TextAlign::CENTER, "WAVESHARE");
-
       it.print(400, 190, id(font_test), Color(0, 255, 255),
                TextAlign::CENTER, "ESP32-S3");
-
       it.print(400, 260, id(font_test), Color(255, 255, 0),
                TextAlign::CENTER, "800 x 480");
-
       it.print(400, 330, id(font_test), Color(255, 255, 255),
                TextAlign::CENTER, "TEST EKRANU");
 
