@@ -1,3 +1,4 @@
+
 esphome:
   name: waveshare-dashboard
   friendly_name: Waveshare Dashboard
@@ -5,6 +6,7 @@ esphome:
 esp32:
   board: esp32-s3-devkitc-1
   variant: esp32s3
+  flash_size: 16MB
   framework:
     type: esp-idf
 
@@ -13,10 +15,11 @@ psram:
   speed: 80MHz
 
 logger:
+  hardware_uart: USB_SERIAL_JTAG
 
 wifi:
-  ssid: "skrapi 2,4GHZ"
-  password: "RejtanA77"
+  ssid: "WPISZ_NAZWE_WIFI"
+  password: "WPISZ_HASLO_WIFI"
 
 api:
 
@@ -29,22 +32,27 @@ time:
     timezone: Europe/Warsaw
 
 i2c:
-  - id: bus_i2c
-    sda: GPIO8
-    scl: GPIO9
-    scan: true
+  sda: GPIO8
+  scl: GPIO9
+  scan: true
+  frequency: 400kHz
+  id: bus_i2c
 
-output:
-  - platform: ledc
-    pin: GPIO4
-    id: backlight_pin
+# Sterownik CH422G
+ch422g:
+  - id: io_ex
 
-light:
-  - platform: monochromatic
-    output: backlight_pin
+# Podświetlenie ekranu przez CH422G
+switch:
+  - platform: gpio
     name: "Podświetlenie ekranu"
-    default_transition_length: 0s
-    restore_mode: RESTORE_DEFAULT_ON
+    id: podswietlenie
+    pin:
+      ch422g: io_ex
+      number: 2
+      mode:
+        output: true
+    restore_mode: ALWAYS_ON
 
 display:
   - platform: rpi_dpi_rgb
@@ -71,6 +79,14 @@ display:
       ignore_strapping_warning: true
 
     pclk_pin: GPIO7
+
+    reset_pin:
+      ch422g: io_ex
+      number: 3
+
+    enable_pin:
+      ch422g: io_ex
+      number: 2
 
     hsync_back_porch: 30
     hsync_front_porch: 210
@@ -105,25 +121,49 @@ display:
 
     lambda: |-
       it.fill(Color(0, 0, 0));
-      it.rectangle(0, 0, 799, 479, Color(0, 255, 255));
-      it.filled_rectangle(20, 20, 760, 440, Color(0, 0, 80));
-      it.print(400, 120, id(font_test), Color(255, 255, 255), TextAlign::CENTER, "WAVESHARE");
-      it.print(400, 190, id(font_test), Color(0, 255, 255), TextAlign::CENTER, "ESP32-S3");
-      it.print(400, 260, id(font_test), Color(255, 255, 0), TextAlign::CENTER, "800 x 480");
-      it.print(400, 330, id(font_test), Color(255, 255, 255), TextAlign::CENTER, "TEST EKRANU");
+
+      it.filled_rectangle(0, 0, 800, 480,
+                          Color(5, 12, 35));
+
+      it.rectangle(5, 5, 790, 470,
+                   Color(0, 220, 255));
+
+      it.print(400, 90, id(font_test),
+               Color(255, 255, 255),
+               TextAlign::CENTER, "WAVESHARE");
+
+      it.print(400, 165, id(font_test),
+               Color(0, 220, 255),
+               TextAlign::CENTER, "ESP32-S3");
+
+      it.print(400, 245, id(font_test),
+               Color(255, 220, 0),
+               TextAlign::CENTER, "800 x 480");
+
+      it.print(400, 315, id(font_test),
+               Color(255, 255, 255),
+               TextAlign::CENTER, "TEST EKRANU");
 
       if (id(czas).now().is_valid()) {
-        it.strftime(400, 400, id(font_small), Color(255, 255, 255), TextAlign::CENTER, "%H:%M:%S", id(czas).now());
+        it.strftime(400, 405, id(font_small),
+                    Color(0, 255, 200),
+                    TextAlign::CENTER,
+                    "%H:%M:%S",
+                    id(czas).now());
+      } else {
+        it.print(400, 405, id(font_small),
+                 Color(255, 255, 255),
+                 TextAlign::CENTER, "LACZENIE Z CZASEM");
       }
 
 font:
-  - file: "Roboto-Regular.ttf"
+  - file: "gfonts://Roboto"
     id: font_test
     size: 42
     glyphsets:
       - GF_Latin_Core
 
-  - file: "Roboto-Regular.ttf"
+  - file: "gfonts://Roboto"
     id: font_small
     size: 28
     glyphsets:
