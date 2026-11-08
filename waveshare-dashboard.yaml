@@ -1,3 +1,54 @@
+esphome:
+  name: waveshare-test
+  friendly_name: Waveshare Test
+
+esp32:
+  board: esp32-s3-devkitc-1
+  variant: esp32s3
+  flash_size: 16MB
+  framework:
+    type: esp-idf
+
+psram:
+  mode: octal
+  speed: 80MHz
+
+logger:
+
+wifi:
+  ssid: "skrapi 2,4GHZ"
+  password: "RejtanA77"
+
+api:
+
+ota:
+  - platform: esphome
+
+time:
+  - platform: sntp
+    id: czas
+    timezone: Europe/Warsaw
+
+# Konfiguracja ekspandera I2C (jeśli potrzebny do dotyku / peryferiów)
+i2c:
+  - id: bus_i2c
+    sda: GPIO8
+    scl: GPIO9
+    scan: true
+
+# Konfiguracja podświetlenia ekranu (przeniesione z GPIO2 na GPIO4, aby uniknąć konfliktu z panelem RGB)
+output:
+  - platform: ledc
+    pin: GPIO4
+    id: backlight_pin
+
+light:
+  - platform: monochromatic
+    output: backlight_pin
+    name: "Podświetlenie ekranu"
+    default_transition_length: 0s
+    restore_mode: RESTORE_DEFAULT_ON
+
 display:
   - platform: rpi_dpi_rgb
     id: ekran
