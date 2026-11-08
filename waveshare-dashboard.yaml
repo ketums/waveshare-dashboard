@@ -1,55 +1,3 @@
-esphome:
-  name: waveshare-test
-  friendly_name: Waveshare Test
-
-esp32:
-  board: esp32-s3-devkitc-1
-  variant: esp32s3
-  flash_size: 16MB
-  framework:
-    type: esp-idf
-
-psram:
-  mode: octal
-  speed: 80MHz
-
-logger:
-
-wifi:
-  ssid: "skrapi 2,4GHZ"
-  password: "RejtanA77"
-
-api:
-
-ota:
-  - platform: esphome
-
-time:
-  - platform: sntp
-    id: czas
-    timezone: Europe/Warsaw
-
-# Konfiguracja ekspandera I2C / IO (CH422G w Waveshare 4.3), który steruje podświetleniem ekranu
-i2c:
-  - id: bus_i2c
-    sda: GPIO8
-    scl: GPIO9
-    scan: true
-
-# Włączenie podświetlenia ekranu (wyjściowy pin cyfrowy przez ekspander lub bezpośredni pin PWM)
-# W modelu Waveshare ESP32-S3-Touch-LCD-4.3 podświetlenie często wymaga inicjalizacji pinów panelu.
-output:
-  - platform: ledc
-    pin: GPIO2
-    id: backlight_pin
-
-light:
-  - platform: monochromatic
-    output: backlight_pin
-    name: "Podświetlenie ekranu"
-    default_transition_length: 0s
-    restore_mode: RESTORE_DEFAULT_ON
-
 display:
   - platform: rpi_dpi_rgb
     id: ekran
@@ -111,29 +59,23 @@ display:
       it.fill(Color(0, 0, 0));
       it.rectangle(0, 0, 799, 479, Color(0, 255, 255));
       it.filled_rectangle(20, 20, 760, 440, Color(0, 0, 80));
-      it.print(400, 120, id(font_test), Color(255, 255, 255),
-               TextAlign::CENTER, "WAVESHARE");
-      it.print(400, 190, id(font_test), Color(0, 255, 255),
-               TextAlign::CENTER, "ESP32-S3");
-      it.print(400, 260, id(font_test), Color(255, 255, 0),
-               TextAlign::CENTER, "800 x 480");
-      it.print(400, 330, id(font_test), Color(255, 255, 255),
-               TextAlign::CENTER, "TEST EKRANU");
+      it.print(400, 120, id(font_test), Color(255, 255, 255), TextAlign::CENTER, "WAVESHARE");
+      it.print(400, 190, id(font_test), Color(0, 255, 255), TextAlign::CENTER, "ESP32-S3");
+      it.print(400, 260, id(font_test), Color(255, 255, 0), TextAlign::CENTER, "800 x 480");
+      it.print(400, 330, id(font_test), Color(255, 255, 255), TextAlign::CENTER, "TEST EKRANU");
 
       if (id(czas).now().is_valid()) {
-        it.strftime(400, 400, id(font_small), Color(255, 255, 255),
-                    TextAlign::CENTER, "%H:%M:%S",
-                    id(czas).now());
+        it.strftime(400, 400, id(font_small), Color(255, 255, 255), TextAlign::CENTER, "%H:%M:%S", id(czas).now());
       }
 
 font:
-  - file: "gfonts://Roboto"
+  - file: "Roboto-Regular.ttf"
     id: font_test
     size: 42
     glyphsets:
       - GF_Latin_Core
 
-  - file: "gfonts://Roboto"
+  - file: "Roboto-Regular.ttf"
     id: font_small
     size: 28
     glyphsets:
